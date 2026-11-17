@@ -1,0 +1,45 @@
+{
+  "project": "elite-business-systems-portfolio",
+  "repository": "https://github.com/Witcher-Geralt-of-Rivia/elite-business-systems-portfolio",
+  "updated": "2026-11-17",
+  "current_milestone": "M0",
+  "current_task": "Push initial tracking structure",
+  "status": "in_progress",
+  "last_verified_commit": "bcae89761a4bcccfec0db4007f5699f8917eef7c",
+  "completed_tasks": [
+    "M0.1 verify GitHub identity (Witcher-Geralt-of-Rivia, scopes repo+workflow)",
+    "M0.2 create public repo",
+    "M0.3 verify visibility=public, default_branch=main, issues=true, actions=true, initial commit, push permission"
+  ],
+  "pending_tasks": [
+    "M0.4 push tracking structure and verify",
+    "M1 upstream audit: atomic-crm, erpnext+frappe_docker, NexoPOS (versions, licenses, extension points, schemas, tests, pin revisions)",
+    "M2 confirm nested virtualization (read-only CPU feature check), WSL1 feasibility, native-Windows runtime feasibility per app, resource budget"
+  ],
+  "blocked_tasks": [],
+  "owner_decisions_needed": [
+    "Approval before any change to the existing Caddy configuration on the VPS",
+    "Approval before installing Windows features (WSL) that require a reboot"
+  ],
+  "host_facts": {
+    "os": "Windows Server 2025 Standard 26100",
+    "is_vm_guest": true,
+    "logical_cpus": 3,
+    "ram_gb": 12,
+    "free_disk_gb_at_inspection": 18,
+    "wsl_installed": false,
+    "docker_installed": false,
+    "virtualization_exposed_to_guest": "appears_false_unconfirmed",
+    "existing_reverse_proxy": "caddy (windows service) on 80/443"
+  },
+  "last_test_results": {
+    "M0": "repo verification passed (see docs/TEST_RESULTS.md)"
+  },
+  "deployment_status": {
+    "crm": "not_started",
+    "erp": "not_started",
+    "pos": "not_started",
+    "portal": "not_started"
+  },
+  "next_action": "Push M0 commit, verify via GitHub API, then start M1 upstream audit"
+}
