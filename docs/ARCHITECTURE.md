@@ -42,13 +42,30 @@ Known facts (inspected 2026-11-17, read-only):
 - No WSL installed; no Docker installed. **Confirmed: virtualization extensions are not exposed to the guest** → WSL2/Hyper-V/Docker Linux containers are impossible (R-001).
 - An existing Caddy service already terminates HTTP/HTTPS for other workloads on this host, with working sslip.io certificates; it must be extended, not replaced.
 
-Proposed runtime per app (D-007, awaiting owner approval):
+Since 2026-11-17 the VPS is dedicated to this portfolio (D-008). Runtime per app (D-009 supersedes D-007's CRM row):
 
 | App | Runtime | DB |
 |---|---|---|
 | POS | Native Windows: PHP 8.3 (NTS) via Caddy `php_fastcgi` → php-cgi, Task Scheduler for `schedule:run` | MariaDB 11.8 (native, loopback) |
-| CRM | Static SPA via Caddy + self-hosted Supabase subset: PostgREST (Windows binary), GoTrue, Storage API (Node), Deno edge functions | Dedicated PostgreSQL 16 cluster (loopback, non-default port) |
-| ERP | WSL1 Ubuntu: Frappe bench v16 (gunicorn, socketio, RQ workers, scheduler) — **PoC-gated** | MariaDB 11.8 (native, loopback) + Redis-compatible server |
+| CRM | Atomic CRM SPA (static, served by Caddy) + **own Fastify API** (Node 24, Windows service) + Node simulation worker. **No Supabase.** | Isolated database + restricted role in the existing PostgreSQL 16 cluster (loopback) |
+| ERP | WSL1 Ubuntu: Frappe bench v16 (gunicorn, socketio, RQ workers, scheduler) — **PoC-gated, reboot needs separate approval** | MariaDB 11.8 (native, loopback) + Redis-compatible server |
+
+### CRM backend (D-009)
+
+```text
+browser ──HTTPS──► Caddy ──► crm.<ip>.sslip.io
+                             ├─ /            static Atomic CRM build
+                             └─ /api/*  ──►  Fastify API (127.0.0.1)
+                                              ├─ auth: sessions (httpOnly cookie), argon2/scrypt
+                                              ├─ REST resources (react-admin conventions)
+                                              ├─ RBAC + record-level rules (server-enforced)
+                                              ├─ attachments → C:\srv\portfolio\crm\files (+ metadata rows)
+                                              ├─ SSE /api/events (LISTEN/NOTIFY fan-out)
+                                              └─ pg pool ──► PostgreSQL 16 (db: crm, role: crm_app)
+                         Node sim worker ──(same domain services)──► PostgreSQL
+```
+
+The browser never talks to PostgreSQL. Migration inventory: [CRM_SUPABASE_MIGRATION.md](CRM_SUPABASE_MIGRATION.md).
 
 ## 4. Data engines
 

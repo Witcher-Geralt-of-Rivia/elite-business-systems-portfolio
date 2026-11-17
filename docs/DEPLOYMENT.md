@@ -21,7 +21,32 @@ https://pos.<VPS_IP>.sslip.io
 
 ## Runbook
 
-_TBD (M3)._
+### Reverse proxy (done 2026-11-17)
+
+1. Host Caddyfile (`C:\srv\caddy\Caddyfile`) = original global options + `import C:/srv/portfolio/caddy/*.caddy` (shape: `infrastructure/proxy/Caddyfile.host.example`).
+2. Site templates live in `infrastructure/proxy/sites/*.caddy.tmpl`. Render and hot-reload:
+   ```powershell
+   $env:PUBLIC_IP = '<VPS_IP>'
+   .\scripts\provisioning\render-caddy-sites.ps1      # validates; restores previous files on failure; graceful reload
+   ```
+3. Caddy runs as `NT SERVICE\caddy`. Each new portfolio directory it must read needs an explicit grant (the parent `C:\srv` is locked down):
+   ```powershell
+   icacls C:\srv\portfolio\<dir> /grant "NT SERVICE\caddy:(OI)(CI)(RX)"   # read-only content
+   icacls C:\srv\portfolio\logs  /grant "NT SERVICE\caddy:(OI)(CI)(M)"    # logs only
+   ```
+   Symptom when missing: `caddy reload` → HTTP 400 "mkdir … Cannot create a file when that file already exists"; the running config stays unchanged.
+
+### Runtime layout on the host
+
+```text
+C:\srv\portfolio\
+  caddy\        rendered site files (imported by host Caddyfile)
+  portal\www\   portal static build
+  logs\         access/app logs (rotated)
+  backups\      per-app DB backups (never committed)
+```
+
+Application runbooks: _TBD (M4–M6)._
 
 ## Backup & restore
 

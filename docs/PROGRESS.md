@@ -2,6 +2,13 @@
 
 Newest first. Every entry states what was **verified**, not just what was written.
 
+## 2026-11-17 — Host consolidation done; portfolio HTTPS live (M3 partial)
+
+- Owner decisions D-008 (retire four unrelated sites) and D-009 (CRM without Supabase) recorded; D-007 superseded.
+- Four sites retired reversibly: Caddy routes removed via validated graceful reload, three services stopped and Disabled, data untouched, host-side backups + restore script. Verified unreachable over HTTPS.
+- `https://portfolio.<VPS_IP>.sslip.io/healthz` → 200 with a publicly trusted certificate (M3 acceptance criterion met; logging/backup/health scripts still pending).
+- Resource finding: the retired sites used only ~100 MB; the host's pressure comes from interactive tooling (R-013). Working budget ≈3.9 GB RAM, 17.6 GB disk.
+
 ## 2026-11-17 — M1 complete, M2 inspection complete → awaiting owner decisions
 
 - **M1:** audited all four upstreams from source + GitHub API ([UPSTREAM_AUDIT.md](UPSTREAM_AUDIT.md)). Licenses verified (one upstream inconsistency: NexoPOS `composer.json` says MIT, LICENSE says GPL-3.0 → GPL-3.0 applied). Pins chosen (D-005). Simulator integration points identified with file/line references (D-006).

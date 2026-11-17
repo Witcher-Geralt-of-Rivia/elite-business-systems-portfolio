@@ -1,0 +1,19 @@
+# Host Caddyfile (C:\srv\caddy\Caddyfile) as reshaped during the 2026-11-17
+# hosting consolidation. Sanitized: the real file binds to the VPS public IP.
+#
+# Previous site blocks for unrelated, retired sites are preserved verbatim in a
+# dated backup next to the live file (Caddyfile.bak-*) — never in this repo.
+
+{
+	default_bind <VPS_IP>
+	storage file_system C:/srv/caddy/data
+	log {
+		output file C:/srv/caddy/logs/caddy.log {
+			roll_size 10MiB
+			roll_keep 4
+		}
+	}
+}
+
+# Elite Business Systems Portfolio sites (rendered from infrastructure/proxy/sites/*.tmpl)
+import C:/srv/portfolio/caddy/*.caddy

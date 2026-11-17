@@ -35,4 +35,19 @@ Format: ID · date · decision · alternatives rejected · status.
 ## D-007 · 2026-11-17 · Host runtime strategy (proposed — awaiting owner approval)
 - No nested virtualization (R-001) rules out Docker/WSL2. Proposed: POS fully native Windows (PHP + MariaDB); CRM as a self-hosted Supabase subset (Postgres, PostgREST, GoTrue, Storage, Deno) behind Caddy; ERP via WSL1 for Python/Node processes with native MariaDB + Redis-compatible server, gated by a time-boxed PoC.
 - Rejected: Docker Desktop on Windows Server (unsupported, and needs virtualization anyway); reinstalling/migrating the VPS (prohibited without permission); Supabase cloud (external service; fallback only).
-- Status: **proposed**.
+- Status: **superseded by D-008 and D-009** (2026-11-17, owner decision). Retained for history.
+
+## D-008 · 2026-11-17 · Host consolidation (owner decision)
+- The owner authorized retiring four unrelated websites hosted on the VPS. Their Caddy routes were removed (graceful `caddy reload`), their dedicated Windows services stopped and set to **Disabled**. Nothing was deleted: project files, databases, and their dedicated PostgreSQL service are untouched; dated backups and a restore script exist on the host (not in this repo).
+- The host Caddyfile now holds only the original global options plus `import C:/srv/portfolio/caddy/*.caddy` (see `infrastructure/proxy/Caddyfile.host.example`).
+- Caddy runs as the virtual account `NT SERVICE\caddy`; portfolio directories grant it least privilege (RX on site config + web root, Modify on logs only).
+- Not stopped (out of scope / owner's tooling): PostgreSQL services, remote-access tools, unrelated loopback-only dev processes, an `nginx` service not tied to the retired sites.
+- Status: **done**, verified (TEST_RESULTS §Consolidation).
+
+## D-009 · 2026-11-17 · CRM without Supabase (owner decision; supersedes D-007 CRM row)
+- Atomic CRM frontend (React/TS) is kept. Supabase (cloud and self-hosted) is removed entirely.
+- New backend: native-Windows Node.js service (**Fastify**), PostgreSQL 16 via a restricted role, REST API consumed through a custom react-admin `DataProvider` + `AuthProvider`, application-managed sessions (httpOnly cookies, argon2id/scrypt hashing), server-enforced RBAC and record-level rules, local attachment storage with metadata in Postgres, SSE for live activity, dedicated Node simulation worker.
+- Fastify over NestJS: smaller footprint on a RAM-constrained host, first-class JSON-schema validation, fewer abstractions to maintain for a ~30-endpoint API.
+- PostgreSQL: isolated database + restricted role inside the **existing** PostgreSQL 16 cluster (saves ~100–150 MB vs. a second cluster), provided this can be done without altering other databases.
+- Gate: proof of concept (auth, one full CRUD workflow, persistence) before full migration. If disproportionate, present a source-backed alternative CRM before changing the foundation.
+- Status: **accepted; PoC in progress**.

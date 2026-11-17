@@ -2,15 +2,15 @@
   "project": "elite-business-systems-portfolio",
   "repository": "https://github.com/Witcher-Geralt-of-Rivia/elite-business-systems-portfolio",
   "updated": "2026-11-17",
-  "current_milestone": "M2",
-  "current_task": "Obtain owner approval for runtime strategy D-007 and shared-host changes",
-  "status": "blocked_on_owner_decision",
-  "last_verified_commit": "16dc51f662a44773e51d77d6e6173db2e2559413",
+  "current_milestone": "M3/M4",
+  "current_task": "CRM PostgreSQL migration proof of concept (D-009)",
+  "status": "in_progress",
+  "last_verified_commit": "3bcd31f",
   "milestones": {
     "M0": "done",
     "M1": "done",
-    "M2": "inspection_done_decision_pending",
-    "M3": "not_started",
+    "M2": "done (D-008/D-009 owner decisions; ERP WSL1 reboot pending separate approval)",
+    "M3": "partial: portfolio HTTPS + healthz verified; logging/backups/health scripts pending",
     "M4": "not_started",
     "M5": "not_started",
     "M6": "not_started",
@@ -29,25 +29,28 @@
     "M0 repo created and verified (public, main, issues, actions, push)",
     "M0 tracking structure pushed (16dc51f)",
     "M1 upstream audit: licenses, pins, extension points, schemas, simulator APIs (docs/UPSTREAM_AUDIT.md)",
-    "M2 read-only host inspection: OS, CPU, RAM, disk, virtualization (none), runtimes, sslip.io DNS, existing Caddy + HTTPS"
+    "M2 read-only host inspection: OS, CPU, RAM, disk, virtualization (none), runtimes, sslip.io DNS, existing Caddy + HTTPS",
+    "Consolidation: 4 unrelated sites retired (routes removed, 3 services stopped+Disabled), backups + restore script on host, verified unreachable",
+    "M3: host Caddyfile reduced to global options + portfolio import; portfolio.<ip>.sslip.io/healthz 200 with trusted cert"
   ],
   "pending_tasks": [
-    "M2 finalize D-007 after owner answers",
-    "M3 install POS runtime (PHP 8.3 NTS + MariaDB 11.8, loopback only) and add portfolio Caddy import",
-    "M3 minimal health endpoint reachable at https://portfolio.<VPS_IP>.sslip.io",
-    "M3 ERP WSL1 proof of concept (time-boxed)"
+    "CRM: Supabase migration inventory (docs/CRM_SUPABASE_MIGRATION.md)",
+    "CRM PoC: Fastify API + Postgres role/db in existing cluster + session auth + one CRUD workflow + persistence test",
+    "M3: logging/backup/health scripts",
+    "POS: install PHP 8.3 + MariaDB 11.8 under C:\\srv\\portfolio",
+    "ERP: non-disruptive WSL1 preparation + reboot runbook (await reboot approval)"
   ],
   "blocked_tasks": [
     {
-      "task": "Any VPS software installation or Caddy change",
-      "reason": "Shared production host; needs owner approval",
-      "decision_ids": ["Q1", "Q2", "Q3"]
+      "task": "ERP WSL1 feature enable",
+      "reason": "requires reboot; owner wants separate approval",
+      "decision_ids": [
+        "REBOOT"
+      ]
     }
   ],
   "owner_decisions_needed": {
-    "Q1": "Approve enabling the WSL Windows feature (requires one host reboot) for an ERP WSL1 proof of concept",
-    "Q2": "CRM backend: self-hosted Supabase subset on the VPS (default) vs Supabase free tier",
-    "Q3": "Approve installing PHP, MariaDB, PostgreSQL cluster, Deno etc. on the VPS and adding one import line to the shared Caddyfile"
+    "REBOOT": "Approve one host reboot to enable WSL feature for ERP PoC (runbook to be provided)"
   },
   "host_facts": {
     "os": "Windows Server 2025 Standard 26100",
@@ -59,9 +62,15 @@
     "free_disk_gb_at_inspection": 18,
     "wsl_installed": false,
     "docker_installed": false,
-    "runtimes_present": ["node 24.19", "python 3.13"],
+    "runtimes_present": [
+      "node 24.19",
+      "python 3.13"
+    ],
     "existing_reverse_proxy": "caddy windows service, per-site blocks, sslip.io TLS working",
-    "sslip_dns_verified": true
+    "sslip_dns_verified": true,
+    "free_ram_gb_after_consolidation": 3.9,
+    "free_disk_gb_after_consolidation": 17.6,
+    "cpu_load_pct": "73-97 (interactive tooling)"
   },
   "last_test_results": {
     "M0": "pass",
@@ -71,7 +80,7 @@
     "crm": "not_started",
     "erp": "not_started",
     "pos": "not_started",
-    "portal": "not_started"
+    "portal": "placeholder live (healthz verified)"
   },
-  "next_action": "On approval: M3 — install POS runtime natively, add Caddy import for portfolio sites, serve health page at portfolio hostname"
+  "next_action": "Write CRM Supabase migration inventory, then build CRM backend PoC"
 }
