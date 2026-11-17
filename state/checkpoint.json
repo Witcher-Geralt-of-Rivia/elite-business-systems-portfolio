@@ -5,7 +5,7 @@
   "current_milestone": "M4",
   "current_task": "CRM: complete Supabase removal (M4 feature parity list in D-011)",
   "status": "in_progress",
-  "last_verified_commit": "3bcd31f",
+  "last_verified_commit": "60c629c",
   "milestones": {
     "M0": "done",
     "M1": "done",
@@ -55,7 +55,7 @@
     }
   ],
   "owner_decisions_needed": {
-    "REBOOT": "Approve one host reboot to enable WSL feature for ERP PoC (runbook to be provided)"
+    "REBOOT": "Approve one host reboot to enable WSL1 (runbook: docs/runbooks/ERP_WSL1_REBOOT.md). Confirm VPS provider console access first."
   },
   "host_facts": {
     "os": "Windows Server 2025 Standard 26100",
