@@ -7,6 +7,7 @@ export interface AppConfig {
   sessionTtlHours: number;
   attachmentsDir: string;
   logLevel: string;
+  loginRateLimitPerMinute: number;
 }
 
 function required(name: string): string {
@@ -26,5 +27,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     sessionTtlHours: Number(env.CRM_SESSION_TTL_HOURS ?? 12),
     attachmentsDir: env.CRM_ATTACHMENTS_DIR ?? "C:/srv/portfolio/crm/files",
     logLevel: env.CRM_LOG_LEVEL ?? "info",
+    loginRateLimitPerMinute: Number(env.CRM_LOGIN_RATE_LIMIT_PER_MINUTE ?? 10),
   };
 }

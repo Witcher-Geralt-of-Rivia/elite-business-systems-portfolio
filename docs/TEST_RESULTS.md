@@ -62,3 +62,17 @@ Command: `node --env-file=<secrets>/crm-test.env --test --test-concurrency=1 tes
 | Audit | create/update/delete rows written in the same transaction as the change |
 | Permissions | sales rep reads team data, cannot edit/delete others' records, cannot create for or reassign to others; showcase visitor read-only; team members not writable via generic API; auth tables not exposed |
 | Input safety | unknown filter field / operator / sort column → 400 (never interpolated); login rate limit → 429; account lock after 5 failures even with the correct password |
+
+### CRM PoC — browser, live deployment (2026-11-17)
+
+Stack under test: Atomic CRM UI (upstream snapshot + portfolio providers) → Caddy (HTTPS, sslip.io, publicly trusted cert) → `portfolio-crm-api` Windows service (LocalService) → `portfolio-crm-postgres`.
+
+| Check | Method | Result |
+|---|---|---|
+| Public endpoints | `curl https://crm.<VPS_IP>.sslip.io/...` | `/api/health` 200 (`ssl_verify_result=0`); SPA 200; unauthenticated `/api/r/contacts` 401; HSTS, CSP (`script-src 'self'`), X-Frame-Options, nosniff present |
+| Browser E2E | `npx playwright test -c playwright.portfolio.config.ts` (Chromium 1.64) | **2/2 pass**: wrong password → 401 and stays on login; login via UI → dashboard, cookie `HttpOnly`+`Secure`; company created through the real form (201) → visible after reload → API update reflected in UI → deleted → logout redirects to login |
+| DB-side confirmation | `crm.audit_log` | `login_failed`, `login`, `create companies 1 (Bergen)`, `update (Stavanger)`, `delete`, `logout`; 0 companies left behind |
+| Backend suite | `node --test` against `crm_test` | **15/15 pass** (adds configuration read/write permissions and a production-budget rate-limit test) |
+| Backup | `backup-crm.ps1 -VerifyRestore`, scheduled task as SYSTEM | dump + sha256 written; restore into scratch DB, row counts identical; task result 0x0 |
+
+Failures encountered on the way (all fixed, none were product defects in the final state): missing `CHANGELOG.md` in the snapshot broke the Vite build; three deploy scripts aborted on harmless native stderr under Windows PowerShell 5.1; the browser test first used path URLs although the app uses hash routing with relative assets, then guessed the wrong button label.

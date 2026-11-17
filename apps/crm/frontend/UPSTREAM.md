@@ -8,5 +8,8 @@ Excluded from the snapshot: upstream git history, documentation site (`doc/`, `d
 Supabase project (`supabase/` — replaced by `apps/crm/backend`), CI, devcontainer,
 storybook, shadcn registry, and upstream's agent-harness configuration.
 
+`CHANGELOG.md` was added after the initial snapshot (same upstream commit) because the in-app
+Changelog page imports it at build time.
+
 All portfolio changes are made in later, separate commits so `git log -- apps/crm/frontend`
 shows exactly what differs from upstream.

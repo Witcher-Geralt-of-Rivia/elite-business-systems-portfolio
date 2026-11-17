@@ -45,7 +45,7 @@ export function registerAuth(app: FastifyInstance, db: Db, config: AppConfig) {
   app.post(
     "/api/auth/login",
     {
-      config: { rateLimit: { max: 10, timeWindow: "1 minute" } },
+      config: { rateLimit: { max: config.loginRateLimitPerMinute, timeWindow: "1 minute" } },
       schema: {
         body: {
           type: "object",

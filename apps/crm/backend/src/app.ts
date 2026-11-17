@@ -3,6 +3,7 @@ import rateLimit from "@fastify/rate-limit";
 import Fastify, { type FastifyInstance } from "fastify";
 import { registerAuth } from "./auth/routes.ts";
 import type { AppConfig } from "./config.ts";
+import { registerConfigurationRoutes } from "./configuration/routes.ts";
 import type { Db } from "./db.ts";
 import { registerResourceRoutes } from "./resources/routes.ts";
 import { loadSchema } from "./resources/schema.ts";
@@ -52,5 +53,6 @@ export async function buildApp(config: AppConfig, db: Db): Promise<FastifyInstan
   const schema = await loadSchema(db);
   registerAuth(app, db, config);
   registerResourceRoutes(app, new ResourceService(db, schema));
+  registerConfigurationRoutes(app, db);
   return app;
 }

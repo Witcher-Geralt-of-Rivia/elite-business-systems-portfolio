@@ -26,6 +26,16 @@ This repository is the durable state of a multi-session build. Do not rely on co
 - Commit messages end with the `Co-Authored-By` trailer for the agent.
 - Feature branches + PRs for substantial changes once `main` holds working code.
 
+## Host gotchas (learned the hard way)
+
+- **Windows PowerShell 5.1 + native tools:** with `$ErrorActionPreference='Stop'`, any stderr line from a native exe (Caddy's info logs, psql NOTICEs, Vite warnings) becomes a terminating error. Wrap native calls in a helper that sets `'Continue'` locally and judges by `$LASTEXITCODE` (see `Invoke-Native` in `scripts/provisioning/deploy-crm.ps1`).
+- **Caddy runs as `NT SERVICE\caddy`** and `C:\srv` is locked down: grant RX on any new web root and M on log dirs, or `caddy reload` fails with "mkdir … file exists" (running config stays intact).
+- **`initdb`/`postgres` drop admin rights** (restricted token): data dirs need explicit grants for the current user and the service account.
+- **SYSTEM PowerShell cold start ≈ 60 s** on this host (antivirus + CPU load). Scheduled tasks are not hung just because they take a minute.
+- **Secure cookies:** the CRM session cookie is `Secure`; test over `https://crm.<ip>.sslip.io`, not `http://127.0.0.1:8810`.
+- **Atomic CRM uses hash routing with relative assets** (`base: "./"`): browser tests must navigate to `/#/...`.
+- **Secrets layout:** `C:\srv\portfolio\secrets` is Administrators/SYSTEM only. Service accounts get read on their own env file only; superuser URLs live in separate `*-migrate.env` files.
+
 ## Where things are
 
 - Requirements: `docs/MASTER_SPECIFICATION.md` (requirement IDs referenced in commits/tests)

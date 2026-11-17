@@ -2,16 +2,16 @@
   "project": "elite-business-systems-portfolio",
   "repository": "https://github.com/Witcher-Geralt-of-Rivia/elite-business-systems-portfolio",
   "updated": "2026-11-17",
-  "current_milestone": "M3/M4",
-  "current_task": "CRM PostgreSQL migration proof of concept (D-009)",
+  "current_milestone": "M4",
+  "current_task": "CRM: complete Supabase removal (M4 feature parity list in D-011)",
   "status": "in_progress",
   "last_verified_commit": "3bcd31f",
   "milestones": {
     "M0": "done",
     "M1": "done",
     "M2": "done (D-008/D-009 owner decisions; ERP WSL1 reboot pending separate approval)",
-    "M3": "partial: portfolio HTTPS + healthz verified; logging/backups/health scripts pending",
-    "M4": "not_started",
+    "M3": "done for CRM: HTTPS routes, service, logs (WinSW rolling), nightly verified backups; ERP/POS parts pending their runtimes",
+    "M4": "in_progress: PoC gate passed (D-011)",
     "M5": "not_started",
     "M6": "not_started",
     "M7": "not_started",
@@ -33,13 +33,17 @@
     "Consolidation: 4 unrelated sites retired (routes removed, 3 services stopped+Disabled), backups + restore script on host, verified unreachable",
     "M3: host Caddyfile reduced to global options + portfolio import; portfolio.<ip>.sslip.io/healthz 200 with trusted cert",
     "CRM: Supabase migration inventory (docs/CRM_SUPABASE_MIGRATION.md)",
-    "CRM PoC backend: Fastify API + dedicated PG16 cluster (D-010) + session auth + RBAC + audit; 14/14 tests pass"
+    "CRM PoC backend: Fastify API + dedicated PG16 cluster (D-010) + session auth + RBAC + audit; 14/14 tests pass",
+    "CRM PoC frontend: upstream snapshot + portfolio providers; deployed at crm.<ip>.sslip.io; Playwright 2/2 live",
+    "CRM deploy script + WinSW service (LocalService) + least-privilege secrets split (api vs migrate env)",
+    "CRM nightly backup with restore verification (scheduled task, SYSTEM)"
   ],
   "pending_tasks": [
-    "CRM PoC frontend: import Atomic CRM snapshot, replace Supabase data/auth providers, build, browser test login+CRUD",
-    "M3: logging/backup/health scripts",
-    "POS: install PHP 8.3 + MariaDB 11.8",
-    "ERP: WSL1 preparation + reboot runbook"
+    "CRM M4: sign-up, users/invitations, password reset, global search, merge, attachments, SSE, remove supabase deps/UI",
+    "CRM M4: synthetic data generator (history + live simulator) through domain services",
+    "CRM M4: showcase visitor access model (X-ACC-1) + reset",
+    "POS: install PHP 8.3 + MariaDB 11.8 (M6 prep)",
+    "ERP: WSL1 preparation + reboot runbook (await approval)"
   ],
   "blocked_tasks": [
     {
@@ -78,10 +82,10 @@
     "M2_inspection": "see docs/TEST_RESULTS.md#m2"
   },
   "deployment_status": {
-    "crm": "not_started",
+    "crm": "PoC live: login + CRUD verified over HTTPS; empty dataset",
     "erp": "not_started",
     "pos": "not_started",
     "portal": "placeholder live (healthz verified)"
   },
-  "next_action": "Import Atomic CRM frontend snapshot into apps/crm/frontend and wire the new providers"
+  "next_action": "CRM M4: port remaining Supabase-coupled features, starting with global search and team-member management"
 }

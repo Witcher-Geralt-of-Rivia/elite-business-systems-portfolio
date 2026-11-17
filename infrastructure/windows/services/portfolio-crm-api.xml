@@ -1,0 +1,33 @@
+<!-- WinSW 2 service definition for the portfolio CRM API.
+     Installed by scripts/provisioning/deploy-crm.ps1 as C:\srv\portfolio\crm\api\portfolio-crm-api.xml
+     beside a copy of the WinSW wrapper named portfolio-crm-api.exe. -->
+<service>
+  <id>portfolio-crm-api</id>
+  <name>Portfolio CRM API</name>
+  <description>Elite Business Systems Portfolio: Atomic CRM REST API (Fastify, Node 24) on 127.0.0.1:8810.</description>
+
+  <executable>C:\Program Files\nodejs\node.exe</executable>
+  <arguments>--env-file=C:\srv\portfolio\secrets\crm-api.env src\main.ts</arguments>
+  <workingdirectory>%BASE%</workingdirectory>
+  <env name="NODE_ENV" value="production"/>
+
+  <!-- Low-privilege built-in account; needs only read access to the app dir and its env file,
+       and modify access to the attachments directory. -->
+  <serviceaccount>
+    <domain>NT AUTHORITY</domain>
+    <user>LocalService</user>
+  </serviceaccount>
+
+  <startmode>Automatic</startmode>
+  <depend>portfolio-crm-postgres</depend>
+  <stoptimeout>15 sec</stoptimeout>
+  <onfailure action="restart" delay="10 sec"/>
+  <onfailure action="restart" delay="30 sec"/>
+  <resetfailure>1 hour</resetfailure>
+
+  <logpath>C:\srv\portfolio\logs\crm-api</logpath>
+  <log mode="roll-by-size">
+    <sizeThreshold>10240</sizeThreshold>
+    <keepFiles>5</keepFiles>
+  </log>
+</service>

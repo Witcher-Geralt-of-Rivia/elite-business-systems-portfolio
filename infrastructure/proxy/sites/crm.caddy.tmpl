@@ -1,0 +1,45 @@
+# Elite Business Systems Portfolio — CRM (Atomic CRM UI + own API).
+# Template: __PUBLIC_IP__ is substituted by scripts/provisioning/render-caddy-sites.ps1.
+
+crm.__PUBLIC_IP__.sslip.io {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		# img-src https: — company logos / favicons are remote images.
+		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
+		X-Robots-Tag "noindex, nofollow"
+		-Server
+	}
+
+	handle /api/* {
+		request_body {
+			max_size 12MB
+		}
+		reverse_proxy 127.0.0.1:8810 {
+			# Server-sent events: stream immediately, no buffering.
+			flush_interval -1
+		}
+	}
+
+	handle {
+		root * C:/srv/portfolio/crm/www
+		@hashed path /assets/*
+		header @hashed Cache-Control "public, max-age=31536000, immutable"
+		@runtime path /config.js /index.html /
+		header @runtime Cache-Control "no-cache"
+		try_files {path} /index.html
+		file_server
+	}
+
+	log {
+		output file C:/srv/portfolio/logs/caddy-crm-access.log {
+			roll_size 10MiB
+			roll_keep 5
+		}
+	}
+}

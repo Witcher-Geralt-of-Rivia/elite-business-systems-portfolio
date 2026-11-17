@@ -59,3 +59,9 @@ Format: ID · date · decision · alternatives rejected · status.
 - Reversible: if the owner later provides the main cluster's superuser password, `pg_dump`/`pg_restore` into it takes minutes and the dedicated service can be removed.
 - Roles: `crm_owner` (NOLOGIN, owns schema), `crm_app` (LOGIN, DML only, used by API + simulator), `crm_superuser` (cluster admin, used only for bootstrap/migrations). Databases `crm` and `crm_test`.
 - Status: accepted.
+
+## D-011 · 2026-11-17 · CRM PoC gate passed — proceed with full Supabase removal
+- Evidence: 15/15 API tests and 2/2 browser tests against the live HTTPS deployment (TEST_RESULTS §CRM PoC). Upstream UI ran unchanged except for the provider swap (2 import lines) and new provider files; the upstream FakeRest demo provider compiled without edits.
+- Inventory size (CRM_SUPABASE_MIGRATION.md) is proportionate (~32 endpoints), so no alternative CRM is proposed.
+- Remaining Supabase-coupled features scheduled for M4: first-run sign-up, team-member management/invitations, password change/reset, global search (port of `global_search` SQL), contact merge, attachments (local storage), SSE live updates, removal of `@supabase/*` / `ra-supabase-core` dependencies and of the MCP/SSO UI.
+- Status: accepted.

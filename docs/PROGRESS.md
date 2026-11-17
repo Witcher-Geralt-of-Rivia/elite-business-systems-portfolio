@@ -2,6 +2,14 @@
 
 Newest first. Every entry states what was **verified**, not just what was written.
 
+## 2026-11-17 — CRM PoC passed: Atomic CRM running on our own API + PostgreSQL (M4 started)
+
+- **Backend:** Fastify API with app-managed auth, CSRF/origin checks, rate limiting, lockout, server-side filter translation, record-level rules and an audit log, over a dedicated PG16 cluster (D-010). 15/15 tests.
+- **Frontend:** pristine upstream snapshot committed separately; portfolio data/auth providers swapped in with 2 import changes; upstream FakeRest demo provider compiles unmodified.
+- **Live:** `https://crm.<VPS_IP>.sslip.io` — Windows service under LocalService, Caddy route, CSP/HSTS. Playwright 2/2 in a real browser; audit log confirms the persisted sequence.
+- **Ops:** nightly CRM backup with restore verification (SYSTEM scheduled task, result 0x0). Secrets split so the service can't read superuser credentials.
+- **Not done yet (M4):** sign-up, team management, password reset, global search, merge, attachments, SSE, Supabase package removal, data generator, visitor access model. The CRM is live but **empty** and only the admin can log in.
+
 ## 2026-11-17 — Host consolidation done; portfolio HTTPS live (M3 partial)
 
 - Owner decisions D-008 (retire four unrelated sites) and D-009 (CRM without Supabase) recorded; D-007 superseded.

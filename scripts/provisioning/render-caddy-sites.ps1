@@ -43,8 +43,15 @@ foreach ($t in $templates) {
     Write-Host "rendered $name"
 }
 
-& $CaddyExe validate --config $HostCaddyfile --adapter caddyfile 2>&1 | Out-Host
-if ($LASTEXITCODE -ne 0) {
+# Caddy logs to stderr; Windows PowerShell 5.1 would turn that into terminating errors under 'Stop'.
+function Invoke-Caddy([string[]]$arguments) {
+    $ErrorActionPreference = 'Continue'
+    $out = & $CaddyExe @arguments 2>&1 | ForEach-Object { "$_" }
+    $out | Where-Object { $_ -match 'Valid configuration|"level":"(warn|error)"' } | Out-Host
+    return $LASTEXITCODE
+}
+
+if ((Invoke-Caddy @('validate', '--config', $HostCaddyfile, '--adapter', 'caddyfile')) -ne 0) {
     Write-Warning 'Validation failed - restoring previous rendered files.'
     Get-ChildItem $OutDir -Filter '*.caddy' | Remove-Item
     Get-ChildItem $snapshot | Copy-Item -Destination $OutDir
@@ -52,7 +59,8 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 if (-not $NoReload) {
-    & $CaddyExe reload --config $HostCaddyfile --adapter caddyfile 2>&1 | Out-Host
-    if ($LASTEXITCODE -ne 0) { throw 'caddy reload failed (running config unchanged).' }
+    if ((Invoke-Caddy @('reload', '--config', $HostCaddyfile, '--adapter', 'caddyfile')) -ne 0) {
+        throw 'caddy reload failed (running config unchanged).'
+    }
     Write-Host 'caddy reloaded'
 }

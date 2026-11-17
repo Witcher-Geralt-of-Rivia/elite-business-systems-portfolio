@@ -11,7 +11,8 @@ import { hashPassword } from "../src/auth/password.ts";
 import { loadConfig } from "../src/config.ts";
 import { createPool, type Db } from "../src/db.ts";
 
-const config = { ...loadConfig(), cookieSecure: true, logLevel: "silent" };
+// Generous login budget for the shared app; the limiter itself is tested on a dedicated instance.
+const config = { ...loadConfig(), cookieSecure: true, logLevel: "silent", loginRateLimitPerMinute: 1000 };
 assert.match(config.databaseUrl, /\/crm_test(\?|$)/, "tests must run against crm_test");
 
 const PASSWORD = "correct-horse-battery-staple";
@@ -52,6 +53,7 @@ function api(cookie: string) {
     get: (url: string) => app.inject({ method: "GET", url, headers: { cookie } }),
     post: (url: string, payload: object) => app.inject({ method: "POST", url, headers, payload }),
     patch: (url: string, payload: object) => app.inject({ method: "PATCH", url, headers, payload }),
+    put: (url: string, payload: object) => app.inject({ method: "PUT", url, headers, payload }),
     del: (url: string) => app.inject({ method: "DELETE", url, headers }),
   };
 }
@@ -282,6 +284,19 @@ describe("server-enforced permissions", () => {
   });
 });
 
+describe("configuration", () => {
+  test("team reads settings; only administrators change them", async () => {
+    const admin = api(cookieOf(await login("ada.lindqvist@example.com")));
+    const visitor = api(cookieOf(await login("visitor@example.org")));
+    const settings = { title: "Meridian Advisory CRM", dealStages: [{ value: "opportunity", label: "Opportunity" }] };
+    const put = await admin.put("/api/configuration", settings);
+    assert.equal(put.statusCode, 200, put.body);
+    assert.deepEqual((await visitor.get("/api/configuration")).json().data, settings);
+    assert.equal((await visitor.put("/api/configuration", { title: "defaced" })).statusCode, 403);
+    assert.equal((await admin.get("/api/configuration")).json().data.title, "Meridian Advisory CRM");
+  });
+});
+
 describe("input safety", () => {
   test("rejects unknown filter fields, operators and sort columns instead of interpolating them", async () => {
     const admin = api(cookieOf(await login("ada.lindqvist@example.com")));
@@ -293,13 +308,24 @@ describe("input safety", () => {
     assert.ok(rows[0].n >= 1);
   });
 
-  test("rate-limits login attempts per client", async () => {
-    // Earlier tests already spent part of the 10/min budget; keep going until the limiter answers.
-    let status = 0;
-    for (let i = 0; i < 12 && status !== 429; i++) {
-      status = (await login("nobody@example.com", "irrelevant-password")).statusCode;
+  test("rate-limits login attempts per client at the production budget (10/min)", async () => {
+    const limited = await buildApp({ ...config, loginRateLimitPerMinute: 10 }, db);
+    try {
+      const statuses: number[] = [];
+      for (let i = 0; i < 11; i++) {
+        const res = await limited.inject({
+          method: "POST",
+          url: "/api/auth/login",
+          headers: { [CSRF_HEADER]: "1", origin: config.publicOrigin },
+          payload: { email: "nobody@example.com", password: "irrelevant-password" },
+        });
+        statuses.push(res.statusCode);
+      }
+      assert.deepEqual(statuses.slice(0, 10), Array(10).fill(401));
+      assert.equal(statuses[10], 429);
+    } finally {
+      await limited.close();
     }
-    assert.equal(status, 429);
   });
 
   test("locks the account after repeated failures (independent of the rate limiter)", async () => {
