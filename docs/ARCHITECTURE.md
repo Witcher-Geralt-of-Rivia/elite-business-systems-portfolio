@@ -31,7 +31,7 @@ Upstream code is referenced at pinned revisions, not vendored:
 | ERP | Custom Frappe app (`portfolio_sim`) installed alongside pinned ERPNext | DocType hooks, scheduler events, fixtures, whitelisted APIs |
 | POS | NexoPOS module | Module service providers, events, artisan commands, migrations |
 
-Exact revisions, extension points, and schema notes: _TBD (M1)_.
+Pinned revisions (D-005): ERPNext/Frappe v16.60.0, NexoPOS v6.3.0, Atomic CRM `main@22f38f0f`. Extension points, schemas and simulator APIs with source references: [UPSTREAM_AUDIT.md](UPSTREAM_AUDIT.md).
 
 ## 3. Host runtime
 
@@ -39,10 +39,16 @@ Known facts (inspected 2026-11-17, read-only):
 
 - Host: Windows Server 2025 Standard (build 26100), itself a VM under a hypervisor.
 - 2 cores / 3 logical CPUs, 12 GB RAM (~6 GB free at inspection), ~18 GB free disk on the system drive.
-- No WSL installed; no Docker installed. Processor reports virtualization extensions **not** exposed to the guest → WSL2/Hyper-V/Docker Linux containers are likely unavailable (to be confirmed in M2).
-- An existing Caddy service already terminates HTTP/HTTPS for other workloads on this host; it must be extended, not replaced.
+- No WSL installed; no Docker installed. **Confirmed: virtualization extensions are not exposed to the guest** → WSL2/Hyper-V/Docker Linux containers are impossible (R-001).
+- An existing Caddy service already terminates HTTP/HTTPS for other workloads on this host, with working sslip.io certificates; it must be extended, not replaced.
 
-Runtime choice per app: _TBD (M2)_ — see `docs/RISKS.md` R-001..R-003.
+Proposed runtime per app (D-007, awaiting owner approval):
+
+| App | Runtime | DB |
+|---|---|---|
+| POS | Native Windows: PHP 8.3 (NTS) via Caddy `php_fastcgi` → php-cgi, Task Scheduler for `schedule:run` | MariaDB 11.8 (native, loopback) |
+| CRM | Static SPA via Caddy + self-hosted Supabase subset: PostgREST (Windows binary), GoTrue, Storage API (Node), Deno edge functions | Dedicated PostgreSQL 16 cluster (loopback, non-default port) |
+| ERP | WSL1 Ubuntu: Frappe bench v16 (gunicorn, socketio, RQ workers, scheduler) — **PoC-gated** | MariaDB 11.8 (native, loopback) + Redis-compatible server |
 
 ## 4. Data engines
 

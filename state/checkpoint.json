@@ -2,38 +2,70 @@
   "project": "elite-business-systems-portfolio",
   "repository": "https://github.com/Witcher-Geralt-of-Rivia/elite-business-systems-portfolio",
   "updated": "2026-11-17",
-  "current_milestone": "M0",
-  "current_task": "Push initial tracking structure",
-  "status": "in_progress",
-  "last_verified_commit": "bcae89761a4bcccfec0db4007f5699f8917eef7c",
+  "current_milestone": "M2",
+  "current_task": "Obtain owner approval for runtime strategy D-007 and shared-host changes",
+  "status": "blocked_on_owner_decision",
+  "last_verified_commit": "16dc51f662a44773e51d77d6e6173db2e2559413",
+  "milestones": {
+    "M0": "done",
+    "M1": "done",
+    "M2": "inspection_done_decision_pending",
+    "M3": "not_started",
+    "M4": "not_started",
+    "M5": "not_started",
+    "M6": "not_started",
+    "M7": "not_started",
+    "M8": "not_started",
+    "M9": "not_started"
+  },
+  "pins": {
+    "erpnext": "v16.60.0",
+    "frappe": "v16.60.0",
+    "nexopos": "v6.3.0",
+    "atomic_crm": "main@22f38f0f5918187a9c559e75dcc4cd4a329f9af2",
+    "frappe_docker_reference": "main@0ad1a1152f93b1285104bcd0a8059e036dc5bd3d"
+  },
   "completed_tasks": [
-    "M0.1 verify GitHub identity (Witcher-Geralt-of-Rivia, scopes repo+workflow)",
-    "M0.2 create public repo",
-    "M0.3 verify visibility=public, default_branch=main, issues=true, actions=true, initial commit, push permission"
+    "M0 repo created and verified (public, main, issues, actions, push)",
+    "M0 tracking structure pushed (16dc51f)",
+    "M1 upstream audit: licenses, pins, extension points, schemas, simulator APIs (docs/UPSTREAM_AUDIT.md)",
+    "M2 read-only host inspection: OS, CPU, RAM, disk, virtualization (none), runtimes, sslip.io DNS, existing Caddy + HTTPS"
   ],
   "pending_tasks": [
-    "M0.4 push tracking structure and verify",
-    "M1 upstream audit: atomic-crm, erpnext+frappe_docker, NexoPOS (versions, licenses, extension points, schemas, tests, pin revisions)",
-    "M2 confirm nested virtualization (read-only CPU feature check), WSL1 feasibility, native-Windows runtime feasibility per app, resource budget"
+    "M2 finalize D-007 after owner answers",
+    "M3 install POS runtime (PHP 8.3 NTS + MariaDB 11.8, loopback only) and add portfolio Caddy import",
+    "M3 minimal health endpoint reachable at https://portfolio.<VPS_IP>.sslip.io",
+    "M3 ERP WSL1 proof of concept (time-boxed)"
   ],
-  "blocked_tasks": [],
-  "owner_decisions_needed": [
-    "Approval before any change to the existing Caddy configuration on the VPS",
-    "Approval before installing Windows features (WSL) that require a reboot"
+  "blocked_tasks": [
+    {
+      "task": "Any VPS software installation or Caddy change",
+      "reason": "Shared production host; needs owner approval",
+      "decision_ids": ["Q1", "Q2", "Q3"]
+    }
   ],
+  "owner_decisions_needed": {
+    "Q1": "Approve enabling the WSL Windows feature (requires one host reboot) for an ERP WSL1 proof of concept",
+    "Q2": "CRM backend: self-hosted Supabase subset on the VPS (default) vs Supabase free tier",
+    "Q3": "Approve installing PHP, MariaDB, PostgreSQL cluster, Deno etc. on the VPS and adding one import line to the shared Caddyfile"
+  },
   "host_facts": {
     "os": "Windows Server 2025 Standard 26100",
     "is_vm_guest": true,
+    "nested_virtualization": false,
     "logical_cpus": 3,
     "ram_gb": 12,
+    "free_ram_gb_at_inspection": 5.8,
     "free_disk_gb_at_inspection": 18,
     "wsl_installed": false,
     "docker_installed": false,
-    "virtualization_exposed_to_guest": "appears_false_unconfirmed",
-    "existing_reverse_proxy": "caddy (windows service) on 80/443"
+    "runtimes_present": ["node 24.19", "python 3.13"],
+    "existing_reverse_proxy": "caddy windows service, per-site blocks, sslip.io TLS working",
+    "sslip_dns_verified": true
   },
   "last_test_results": {
-    "M0": "repo verification passed (see docs/TEST_RESULTS.md)"
+    "M0": "pass",
+    "M2_inspection": "see docs/TEST_RESULTS.md#m2"
   },
   "deployment_status": {
     "crm": "not_started",
@@ -41,5 +73,5 @@
     "pos": "not_started",
     "portal": "not_started"
   },
-  "next_action": "Push M0 commit, verify via GitHub API, then start M1 upstream audit"
+  "next_action": "On approval: M3 — install POS runtime natively, add Caddy import for portfolio sites, serve health page at portfolio hostname"
 }

@@ -4,9 +4,9 @@ Milestones are sequential. A milestone is complete only when its acceptance crit
 
 | ID | Milestone | Acceptance | Status |
 |---|---|---|---|
-| M0 | GitHub repository creation | Public repo + initial tracking commit independently verifiable | in progress |
-| M1 | Upstream project audit | Documented approach per app with real source references, pinned revisions, license confirmation | not started |
-| M2 | Windows VPS compatibility audit | Verified deployment method, or documented blocker with evidence | not started |
+| M0 | GitHub repository creation | Public repo + initial tracking commit independently verifiable | **done** |
+| M1 | Upstream project audit | Documented approach per app with real source references, pinned revisions, license confirmation | **done** |
+| M2 | Windows VPS compatibility audit | Verified deployment method, or documented blocker with evidence | inspection done; runtime method awaiting owner approval (D-007) |
 | M3 | Infrastructure foundation | Minimal service reachable via intended sslip.io HTTPS route; logging, backups, health checks | not started |
 | M4 | CRM implementation | Working CRM, consistent persisted data, live activity, passing E2E (CRM-W) | not started |
 | M5 | ERP implementation | Working ERP, reconciled transactions, passing E2E (ERP-W) | not started |
