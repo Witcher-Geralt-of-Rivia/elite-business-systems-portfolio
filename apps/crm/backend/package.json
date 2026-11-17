@@ -1,0 +1,29 @@
+{
+  "name": "@portfolio/crm-backend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "PostgreSQL-backed REST API replacing Supabase for the Atomic CRM showcase",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "start": "node --env-file-if-exists=.env src/main.ts",
+    "migrate": "node --env-file-if-exists=.env scripts/migrate.ts",
+    "create-user": "node --env-file-if-exists=.env scripts/create-user.ts",
+    "test": "node --env-file-if-exists=.env.test --test --test-concurrency=1 test/*.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fastify/cookie": "^11.0.2",
+    "@fastify/rate-limit": "^10.2.2",
+    "fastify": "^5.2.1",
+    "pg": "^8.13.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/pg": "^8.11.10",
+    "typescript": "^5.7.3"
+  }
+}

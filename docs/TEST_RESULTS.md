@@ -46,3 +46,19 @@ Only results actually executed are recorded here. Each entry: date · milestone 
 | Portfolio over HTTPS (M3 acceptance) | `curl https://portfolio.<VPS_IP>.sslip.io/healthz` | `ok`, HTTP 200, `ssl_verify_result=0` (publicly trusted cert issued on first request) |
 | Portfolio HTTP→HTTPS | `curl http://portfolio…/` | 308 → https |
 | Resources recovered | process working sets before stop; free RAM/CPU/disk before vs after | Retired sites' process trees held **~100 MB** RAM; net free RAM change was within noise (−336 MB, other processes grew). CPU load (73–97%) and RAM pressure come from interactive tooling on the host (editor ≈3.2 GB across 27 processes, desktop AI/remote-access clients ≈1.2 GB, antivirus). Disk unchanged (no deletion, by design). Free: ~3.9 GB RAM, 17.6 GB disk. |
+
+## CRM backend PoC (D-009) — 2026-11-17
+
+Environment: dedicated PostgreSQL 16 cluster `portfolio-crm-postgres` (127.0.0.1:5433), database `crm_test`, role `crm_app` (DML only). Fastify 5.12.8, pg 8.23.1, Node 24.19 (type-stripping, no build step). `tsc --noEmit` clean.
+
+Command: `node --env-file=<secrets>/crm-test.env --test --test-concurrency=1 test/*.test.ts` → **14/14 pass** (first run 11/13: two test defects fixed — wrong expected type for int8, and lockout test was pre-empted by the login rate limiter; split into two tests).
+
+| Area | Verified behaviour |
+|---|---|
+| Auth | 401 without session; generic error for wrong password / unknown email; failed logins audited; login refused without CSRF header or from a foreign Origin; cookie `HttpOnly; Secure; SameSite=Lax`; only sha256 of the token stored; logout revokes server-side |
+| CRUD workflow | company → contact (jsonb emails/phones, tag array) → deal (array columns) → contact note (jsonb[] attachments) → task; computed view columns (`nb_contacts`, `company_name`, `nb_tasks`) correct and ignored on write; deal stage/amount update bumps `updated_at` |
+| Filters | `q` search across view columns, `@or` + `@ilike`, `@cs` array contains, `@is null`, `in` (getMany), sort + order |
+| Persistence | values re-read on an independent connection |
+| Audit | create/update/delete rows written in the same transaction as the change |
+| Permissions | sales rep reads team data, cannot edit/delete others' records, cannot create for or reassign to others; showcase visitor read-only; team members not writable via generic API; auth tables not exposed |
+| Input safety | unknown filter field / operator / sort column → 400 (never interpolated); login rate limit → 429; account lock after 5 failures even with the correct password |

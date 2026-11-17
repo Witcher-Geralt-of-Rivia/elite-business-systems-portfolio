@@ -31,14 +31,15 @@
     "M1 upstream audit: licenses, pins, extension points, schemas, simulator APIs (docs/UPSTREAM_AUDIT.md)",
     "M2 read-only host inspection: OS, CPU, RAM, disk, virtualization (none), runtimes, sslip.io DNS, existing Caddy + HTTPS",
     "Consolidation: 4 unrelated sites retired (routes removed, 3 services stopped+Disabled), backups + restore script on host, verified unreachable",
-    "M3: host Caddyfile reduced to global options + portfolio import; portfolio.<ip>.sslip.io/healthz 200 with trusted cert"
+    "M3: host Caddyfile reduced to global options + portfolio import; portfolio.<ip>.sslip.io/healthz 200 with trusted cert",
+    "CRM: Supabase migration inventory (docs/CRM_SUPABASE_MIGRATION.md)",
+    "CRM PoC backend: Fastify API + dedicated PG16 cluster (D-010) + session auth + RBAC + audit; 14/14 tests pass"
   ],
   "pending_tasks": [
-    "CRM: Supabase migration inventory (docs/CRM_SUPABASE_MIGRATION.md)",
-    "CRM PoC: Fastify API + Postgres role/db in existing cluster + session auth + one CRUD workflow + persistence test",
+    "CRM PoC frontend: import Atomic CRM snapshot, replace Supabase data/auth providers, build, browser test login+CRUD",
     "M3: logging/backup/health scripts",
-    "POS: install PHP 8.3 + MariaDB 11.8 under C:\\srv\\portfolio",
-    "ERP: non-disruptive WSL1 preparation + reboot runbook (await reboot approval)"
+    "POS: install PHP 8.3 + MariaDB 11.8",
+    "ERP: WSL1 preparation + reboot runbook"
   ],
   "blocked_tasks": [
     {
@@ -82,5 +83,5 @@
     "pos": "not_started",
     "portal": "placeholder live (healthz verified)"
   },
-  "next_action": "Write CRM Supabase migration inventory, then build CRM backend PoC"
+  "next_action": "Import Atomic CRM frontend snapshot into apps/crm/frontend and wire the new providers"
 }

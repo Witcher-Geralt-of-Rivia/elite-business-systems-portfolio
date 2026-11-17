@@ -16,7 +16,8 @@ credentials*.json
 !**/fixtures/**/credentials*.json
 
 # --- Data, dumps & backups ---
-*.sql
+# (source .sql files such as migrations ARE tracked; only dump artifacts are ignored)
+*.dump.sql
 *.sql.gz
 *.dump
 *.bak

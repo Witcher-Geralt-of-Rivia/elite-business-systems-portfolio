@@ -51,3 +51,11 @@ Format: ID · date · decision · alternatives rejected · status.
 - PostgreSQL: isolated database + restricted role inside the **existing** PostgreSQL 16 cluster (saves ~100–150 MB vs. a second cluster), provided this can be done without altering other databases.
 - Gate: proof of concept (auth, one full CRUD workflow, persistence) before full migration. If disproportionate, present a source-backed alternative CRM before changing the foundation.
 - Status: **accepted; PoC in progress**.
+
+## D-010 · 2026-11-17 · Dedicated PostgreSQL cluster for the CRM (deviation from owner preference, justified)
+- The owner preferred a database + restricted role inside the existing PostgreSQL 16 installation. That cluster enforces `scram-sha-256` for every connection and its superuser password is not available to the agent. The only ways in would be (a) temporarily switching its `pg_hba.conf` to `trust`, which would expose the owner's unrelated databases to any local process during the window, or (b) asking the owner for the superuser password.
+- Chosen: a separate cluster from the **same PG16 binaries** (no new installation): service `portfolio-crm-postgres`, `127.0.0.1:5433`, data under `C:\srv\portfolio\crm\pgdata`, runs as NetworkService, `shared_buffers=64MB`, `max_connections=30`. Measured cost: ~50–80 MB RAM idle, ~45 MB disk empty.
+- Benefits: the CRM can be reset/restored without touching other data; credentials are fully owned by this project.
+- Reversible: if the owner later provides the main cluster's superuser password, `pg_dump`/`pg_restore` into it takes minutes and the dedicated service can be removed.
+- Roles: `crm_owner` (NOLOGIN, owns schema), `crm_app` (LOGIN, DML only, used by API + simulator), `crm_superuser` (cluster admin, used only for bootstrap/migrations). Databases `crm` and `crm_test`.
+- Status: accepted.
