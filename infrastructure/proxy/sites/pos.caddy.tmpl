@@ -1,0 +1,40 @@
+# Elite Business Systems Portfolio — POS (NexoPOS v6.3.0 on native PHP 8.3).
+# STAGE: loopback-only listener while the retail data engine and visitor mode are built (M6).
+# Becomes `pos.__PUBLIC_IP__.sslip.io` (HTTPS) at the M6 public rollout.
+
+http://127.0.0.1:8820 {
+	bind 127.0.0.1
+	encode zstd gzip
+
+	header {
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		X-Robots-Tag "noindex, nofollow"
+		-Server
+		-X-Powered-By
+	}
+
+	root * C:/srv/portfolio/pos/app/public
+
+	# Never serve dotfiles or PHP sources outside the front controller.
+	@hidden path /.* */.*
+	respond @hidden 404
+
+	@build path /build/*
+	header @build Cache-Control "public, max-age=31536000, immutable"
+
+	# Two php-cgi workers (Windows php-cgi is single-request); least busy first.
+	php_fastcgi 127.0.0.1:9071 127.0.0.1:9072 {
+		lb_policy least_conn
+		lb_try_duration 5s
+	}
+	file_server
+
+	log {
+		output file C:/srv/portfolio/logs/caddy-pos-access.log {
+			roll_size 10MiB
+			roll_keep 5
+		}
+	}
+}

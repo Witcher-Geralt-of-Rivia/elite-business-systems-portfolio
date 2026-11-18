@@ -1,0 +1,29 @@
+<!-- WinSW 2 service: PHP FastCGI worker 2 for the portfolio POS (NexoPOS) on 127.0.0.1:9072.
+     Windows php-cgi serves one request at a time, so two workers sit behind Caddy's php_fastcgi.
+     Installed by scripts/provisioning/install-pos-php-services.ps1. -->
+<service>
+  <id>portfolio-pos-php-2</id>
+  <name>Portfolio POS PHP worker 2</name>
+  <description>Elite Business Systems Portfolio: php-cgi FastCGI worker for NexoPOS on 127.0.0.1:9072.</description>
+  <executable>C:\srv\portfolio\pos\php\php-cgi.exe</executable>
+  <arguments>-b 127.0.0.1:9072 -c C:\srv\portfolio\pos\php\php.ini</arguments>
+  <workingdirectory>C:\srv\portfolio\pos\app</workingdirectory>
+  <!-- 0 = no request limit: a php-cgi that exits by itself would stop the service under WinSW 2. -->
+  <env name="PHP_FCGI_MAX_REQUESTS" value="0"/>
+  <serviceaccount>
+    <domain>NT AUTHORITY</domain>
+    <user>LocalService</user>
+  </serviceaccount>
+  <startmode>Automatic</startmode>
+  <depend>portfolio-pos-mariadb</depend>
+  <stoptimeout>10 sec</stoptimeout>
+  <onfailure action="restart" delay="2 sec"/>
+  <onfailure action="restart" delay="5 sec"/>
+  <onfailure action="restart" delay="30 sec"/>
+  <resetfailure>10 min</resetfailure>
+  <logpath>C:\srv\portfolio\logs\pos-php</logpath>
+  <log mode="roll-by-size">
+    <sizeThreshold>10240</sizeThreshold>
+    <keepFiles>3</keepFiles>
+  </log>
+</service>
