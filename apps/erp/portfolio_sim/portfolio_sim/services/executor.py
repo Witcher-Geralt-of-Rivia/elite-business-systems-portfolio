@@ -253,6 +253,11 @@ class Executor:
 		pr.allocate_entries(frappe._dict({"payments": [x.as_dict() for x in pr.payments],
 			"invoices": [x.as_dict() for x in pr.invoices]}))
 		allocations = len(pr.allocation)
+		# Journal entries that reconcile credit/debit notes take this allocation date, else today()
+		# (payment_reconciliation.reconcile_dr_cr_note); a user sets it in the desk. CI run 44421664339 found
+		# such journals dated on the runner's current day inside back-dated history.
+		for row in pr.allocation:
+			fill("Payment Reconciliation Allocation", row, {"debit_or_credit_note_posting_date": d})
 		pr.reconcile()
 		return {"outcome": "Done", "reference_doctype": None, "reference_name": None, "second_doctype": None,
 			"second_name": None, "details": {"party": p["party"], "allocations": allocations}}

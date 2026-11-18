@@ -112,7 +112,9 @@ CHECKS: dict[str, str] = {
 	"payment_before_invoice": """select count(*) from `tabPayment Entry Reference` r join `tabPayment Entry` e on e.name = r.parent
 		left join `tabSales Invoice` s on r.reference_doctype = 'Sales Invoice' and s.name = r.reference_name
 		left join `tabPurchase Invoice` p on r.reference_doctype = 'Purchase Invoice' and p.name = r.reference_name
-		where e.docstatus = 1 and e.company = %(company)s and e.posting_date < coalesce(s.posting_date, p.posting_date, e.posting_date)""",
+		where e.docstatus = 1 and e.company = %(company)s and e.posting_date < coalesce(s.posting_date, p.posting_date, e.posting_date)
+		and not exists (select 1 from `tabDistribution Sim Event` l where l.kind = 'customer_advance' and l.reference_name = e.name)""",
+	# (Advances legitimately precede the invoices they are later reconciled against; CI run 44421664339.)
 	# Simulation ledger
 	"ledger_reference_duplicated": """select count(*) from (select reference_doctype, reference_name from `tabDistribution Sim Event`
 		where ifnull(reference_name, '') != '' group by reference_doctype, reference_name having count(*) > 1) x""",
