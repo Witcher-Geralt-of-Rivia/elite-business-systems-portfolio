@@ -36,6 +36,11 @@ function Invoke-Maria([string]$exe, [string[]]$a) {
     & (Join-Path $bin $exe) @a 2>&1 | Where-Object { $_ -notmatch 'ssl-verify-server-cert' } | ForEach-Object { Write-Host "  $_" }
     if ($LASTEXITCODE -ne 0) { throw "$exe failed ($LASTEXITCODE)" }
 }
+# One value from a query; the client's stderr (an SSL notice) is dropped instead of becoming an error.
+function Get-Scalar([string]$query) {
+    $ErrorActionPreference = 'Continue'
+    @(& (Join-Path $bin 'mariadb.exe') @conn --default-character-set=utf8mb4 -N -e $query 2>&1 | Where-Object { $_ -isnot [System.Management.Automation.ErrorRecord] }) -join ''
+}
 
 # 1. Consistent dump of the live database (InnoDB snapshot, no global lock).
 $ErrorActionPreference = 'Continue'
@@ -58,8 +63,8 @@ if ($VerifyRestore) {
     $ErrorActionPreference = 'Stop'
     $diff = @()
     foreach ($t in $tables) {
-        $live = (& (Join-Path $bin 'mariadb.exe') @conn -N -e "select count(*) from $($secret.database).$t" 2>$null)
-        $restored = (& (Join-Path $bin 'mariadb.exe') @conn -N -e "select count(*) from $scratch.$t" 2>$null)
+        $live = Get-Scalar "select count(*) from $($secret.database).$t"
+        $restored = Get-Scalar "select count(*) from $scratch.$t"
         # The live store may have sold something since the dump: the restore must not have MORE rows.
         if ([int]$restored -gt [int]$live -or [int]$restored -eq 0 -and [int]$live -gt 0) { $diff += "$t live=$live restored=$restored" }
         Write-Host "  $t live=$live restored=$restored"
@@ -68,10 +73,10 @@ if ($VerifyRestore) {
     $content = [ordered]@{ nexopos_products = 'name, sku, barcode'; nexopos_products_categories = 'name'; nexopos_registers = 'name'
         nexopos_users = 'username, email, first_name, last_name'; nexopos_orders = 'code' }
     foreach ($t in $content.Keys) {
-        $max = (& (Join-Path $bin 'mariadb.exe') @conn -N -e "select coalesce(max(id),0) from $scratch.$t" 2>$null)
+        $max = Get-Scalar "select coalesce(max(id),0) from $scratch.$t"
         $q = { param($db) "select concat(count(*), ':', coalesce(sum(crc32(concat_ws('|', $($content[$t])))),0)) from $db.$t where id <= $max" }
-        $a = (& (Join-Path $bin 'mariadb.exe') @conn --default-character-set=utf8mb4 -N -e (& $q $secret.database) 2>$null)
-        $b = (& (Join-Path $bin 'mariadb.exe') @conn --default-character-set=utf8mb4 -N -e (& $q $scratch) 2>$null)
+        $a = Get-Scalar (& $q $secret.database)
+        $b = Get-Scalar (& $q $scratch)
         if (-not $b -or $a -ne $b) { $diff += "$t content live=$a restored=$b" }
         Write-Host "  $t content live=$a restored=$b"
     }
