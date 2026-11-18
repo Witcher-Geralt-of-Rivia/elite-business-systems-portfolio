@@ -111,6 +111,7 @@ def replay_check() -> dict:
 	every planned event up to the processed point must be in the ledger with the same kind and date, nothing else
 	may be there, and the persisted planner state must equal the recomputed one."""
 	st = _settings()
+	_scenario(st)  # refuses an un-initialised simulation (an empty comparison would prove nothing)
 	if not st.planned_day:
 		return {"days": 0, "planned": 0, "ledger": 0, "missing": [], "missing_count": 0, "unexpected": [], "unexpected_count": 0,
 			"mismatch": [], "mismatch_count": 0, "state_matches": True}

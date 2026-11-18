@@ -115,6 +115,9 @@ TRACKED = ("Sales Order", "Delivery Note", "Sales Invoice", "Purchase Order", "P
 
 def run(only: list[str] | None = None) -> dict:
 	st = frappe.get_single("Distribution Sim Settings")
+	if not st.seed or not st.scenario_start:
+		# Checks on an empty, un-initialised site would all be 0 and prove nothing.
+		frappe.throw("Simulation not set up: run `bench --site <site> portfolio-sim setup` first")
 	from .setup import get_scenario
 
 	s = get_scenario(int(st.seed), getdate(st.scenario_start))
