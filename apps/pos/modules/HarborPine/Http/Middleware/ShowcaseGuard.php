@@ -30,7 +30,7 @@ class ShowcaseGuard
         $visitor = Showcase::isVisitor( $user );
         if ( $visitor ) {
             $path = ltrim( $request->path(), '/' );
-            if ( ! in_array( $request->method(), [ 'GET', 'HEAD', 'OPTIONS' ], true ) ) {
+            if ( ! in_array( $request->method(), [ 'GET', 'HEAD', 'OPTIONS' ], true ) && ! $this->readOnlyPost( $request, $path ) ) {
                 $preview = $request->isMethod( 'POST' ) && preg_match( '#^api/orders/?$#', $path );
 
                 return $this->refuse( $request, $preview
@@ -47,6 +47,31 @@ class ShowcaseGuard
         $response = $next( $request );
 
         return $this->decorate( $request, $response, $visitor );
+    }
+
+    /**
+     * NexoPOS fetches report data and runs searches with POST. These endpoints only read; anything
+     * else (report recomputation, bulk actions, preloads, creates) stays refused.
+     */
+    private const READ_ONLY_POSTS = [
+        '#^api/reports/(sale-report|sold-stock-report|profit-report|transactions|annual-report|payment-types|products-report|low-stock|stock-report|product-history-combined|customers-statement/\d+)$#',
+        '#^api/(products|customers)/search$#',
+        '#^api/pos/catalog/products/search$#',
+        '#^api/procurements/products/(search-product|search-procurement-product)$#',
+    ];
+
+    private function readOnlyPost( Request $request, string $path ): bool
+    {
+        if ( ! $request->isMethod( 'POST' ) ) {
+            return false;
+        }
+        foreach ( self::READ_ONLY_POSTS as $pattern ) {
+            if ( preg_match( $pattern, $path ) ) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function refuse( Request $request, string $message ): Response

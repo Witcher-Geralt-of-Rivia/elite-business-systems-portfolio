@@ -35,7 +35,7 @@ class Showcase
         'nexopos.reports.sales', 'nexopos.reports.products-report', 'nexopos.reports.best_sales', 'nexopos.reports.yearly',
         'nexopos.reports.customers', 'nexopos.reports.inventory', 'nexopos.reports.low-stock', 'nexopos.reports.stock-history',
         'nexopos.reports.payment-types', 'nexopos.reports.customers-statement', 'nexopos.reports.transactions',
-        'nexopos.pos.access',
+        'nexopos.pos.access', 'nexopos.pos.read-products',
     ];
 
     public static function enabled(): bool
