@@ -1,19 +1,19 @@
 {
   "project": "elite-business-systems-portfolio",
   "repository": "https://github.com/Witcher-Geralt-of-Rivia/elite-business-systems-portfolio",
-  "updated": "2026-11-17",
+  "updated": "2026-11-18",
   "current_milestone": "M6",
-  "current_task": "Security incident response (D-012) — awaiting owner decision",
+  "current_task": "M6 POS: retail data engine module (Harbor & Pine Market)",
   "status": "in_progress",
-  "last_verified_commit": "c92a55f",
+  "last_verified_commit": "550e7e8",
   "milestones": {
     "M0": "done",
     "M1": "done",
     "M2": "done (D-008/D-009 owner decisions; ERP WSL1 reboot pending separate approval)",
-    "M3": "done for CRM: HTTPS routes, service, logs (WinSW rolling), nightly verified backups; ERP/POS parts pending their runtimes",
-    "M4": "in_progress: PoC gate passed (D-011)",
-    "M5": "not_started",
-    "M6": "not_started",
+    "M3": "done for CRM (HTTPS route, WinSW service, rolling logs, nightly verified backups); POS/ERP parts added with their runtimes",
+    "M4": "done 2026-11-17: production deployment + public E2E 10/10 (see TEST_RESULTS); one observation pending (first live lead in a business window)",
+    "M5": "on_hold: ERPNext selected; Windows runtime decision pending (WSL1 needs an unapproved reboot); repository-only work allowed",
+    "M6": "in_progress: runtime installed (PHP 8.3.36, MariaDB 11.8.10, 2 php-cgi workers, loopback Caddy site); NexoPOS v6.3.0 installed; not public",
     "M7": "not_started",
     "M8": "not_started",
     "M9": "not_started"
@@ -37,35 +37,43 @@
     "CRM PoC frontend: upstream snapshot + portfolio providers; deployed at crm.<ip>.sslip.io; Playwright 2/2 live",
     "CRM deploy script + WinSW service (LocalService) + least-privilege secrets split (api vs migrate env)",
     "CRM nightly backup with restore verification (scheduled task, SYSTEM)",
-    "Security investigation: confirmed malware (2026-10-07), evidence preserved, sanitized report committed"
+    "Security investigation: confirmed malware (2026-10-07), evidence preserved, sanitized report committed",
+    "CRM M4: search, team/invitations, password links, merge, attachments, SSE, Supabase removed (2b11d5f)",
+    "CRM M4: data engine (deterministic backfill + live worker, 22 integrity checks)",
+    "CRM M4: read-only visitor access (D-014)",
+    "CRM production rollout with backup/restore check; public E2E 10/10 (c92a55f)",
+    "POS runtime: PHP 8.3.36 + MariaDB 11.8.10 service + NexoPOS v6.3.0 setup + php-cgi workers + loopback Caddy site (550e7e8)"
   ],
   "pending_tasks": [
-    "CRM M4: sign-up, users/invitations, password reset, global search, merge, attachments, SSE, remove supabase deps/UI",
-    "CRM M4: synthetic data generator (history + live simulator) through domain services",
-    "CRM M4: showcase visitor access model (X-ACC-1) + reset",
-    "POS: install PHP 8.3 + MariaDB 11.8 (M6 prep)",
-    "ERP: WSL1 preparation + reboot runbook (await approval)"
+    "M6: Harbor & Pine Market catalog (~500 curated values) + retail data engine as a NexoPOS module (history 12-18 months, live worker, pause/resume)",
+    "M6: report recompute + integrity checks + record-count/reconciliation report",
+    "M6: read-only visitor access + isolated checkout preview",
+    "M6: cold-start/performance work, backend + browser tests on the local install",
+    "M6: deployment-ready public config, deploy + backup scripts (public rollout needs separate owner authorization)",
+    "CRM follow-up: observe a naturally scheduled live lead (record, audit event, browser update)",
+    "CRM follow-up: safe removal of disabled test accounts; stop E2E from accumulating them",
+    "ERP: repository-only preparation (no runtime changes)"
   ],
   "blocked_tasks": [
     {
-      "task": "CRM M4 development, new deployments, new secrets on the VPS",
-      "reason": "Confirmed historical malware execution (R-014); owner must rotate credentials and choose rebuild vs in-place remediation",
+      "task": "ERP runtime (WSL1)",
+      "reason": "Windows reboot not approved by the owner",
       "decision_ids": [
-        "SEC-HOST",
-        "SEC-ROTATE"
+        "REBOOT"
       ]
     },
     {
-      "task": "ERP WSL1 reboot",
-      "reason": "Owner not approving reboot yet; prerequisites include completed security remediation",
+      "task": "POS public rollout",
+      "reason": "Owner authorizes the public exposure separately",
       "decision_ids": [
-        "REBOOT"
+        "POS-PUBLIC"
       ]
     }
   ],
   "owner_decisions_needed": [
-    "SEC-ROTATE",
-    "REBOOT"
+    "REBOOT",
+    "POS-PUBLIC",
+    "SEC-ROTATE"
   ],
   "host_facts": {
     "os": "Windows Server 2025 Standard 26100",
@@ -88,16 +96,17 @@
     "cpu_load_pct": "73-97 (interactive tooling)"
   },
   "last_test_results": {
-    "M0": "pass",
-    "M2_inspection": "see docs/TEST_RESULTS.md#m2"
+    "crm_backend": "42/42 (poc + m4 + simulation)",
+    "crm_public_e2e": "10/10",
+    "crm_production_integrity": "22 checks, 0 failing"
   },
   "deployment_status": {
-    "crm": "PoC live: login + CRUD verified over HTTPS; empty dataset",
-    "erp": "not_started",
-    "pos": "not_started",
+    "crm": "production at crm.<ip>.sslip.io: M4 build, 13-month synthetic history, live simulation (intensity 3), read-only visitor access; public E2E 10/10",
+    "pos": "installed locally (loopback 127.0.0.1:8820 only); not public",
+    "erp": "not deployed (on hold)",
     "portal": "placeholder live (healthz verified)"
   },
-  "next_action": "M6 POS: php-cgi FastCGI service + Caddy site pos.<ip>.sslip.io; Harbor & Pine Market catalog; retail data engine as a NexoPOS module using OrdersService/ProcurementService; report recompute; integrity tests; E2E.",
+  "next_action": "M6: build the Harbor & Pine Market retail engine as a NexoPOS module (catalog, procurement, sales, refunds, registers) using NexoPOS services; then reports, integrity, visitor mode, tests.",
   "completed_milestones": [
     "M0",
     "M1",
@@ -106,6 +115,11 @@
     "M4"
   ],
   "pending_observations": [
-    "CRM: first live lead in a production business window (14:00-24:00 UTC); check with `simulate status` and the activity feed"
-  ]
+    "CRM: first naturally scheduled live lead in a production business window (14:00-24:00 UTC): verify record, audit event and browser update"
+  ],
+  "security": {
+    "incident": "R-014 confirmed historical malware execution (2026-10-07); documented in docs/SECURITY_INVESTIGATION.md",
+    "status": "open (credential rotation and host remediation are owner actions); does not block repository development (D-013)",
+    "constraints": "no unnecessary new secrets; no public exposure without authorization; host not declared clean"
+  }
 }
