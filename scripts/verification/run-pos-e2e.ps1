@@ -16,11 +16,13 @@
 param(
     [ValidateSet('isolated', 'visitor')] [string]$Mode = 'isolated',
     [string[]]$Spec,
-    [switch]$KeepDatabase
+    [switch]$KeepDatabase,
+    # Application tree to serve (e.g. a staging copy with an undeployed module build).
+    [string]$AppRoot = 'C:\srv\portfolio\pos\app'
 )
 $ErrorActionPreference = 'Stop'
 $repo = Resolve-Path (Join-Path $PSScriptRoot '..\..')
-$app = 'C:\srv\portfolio\pos\app'
+$app = $AppRoot
 $php = 'C:\srv\portfolio\pos\php\php.exe'
 $bin = 'C:\srv\portfolio\pos\mariadb\bin'
 $secret = Get-Content 'C:\srv\portfolio\secrets\pos-mariadb.json' -Raw | ConvertFrom-Json
@@ -58,14 +60,14 @@ try {
     $env:APP_DEBUG = 'false'
     $env:DB_DATABASE = $db
     $env:SESSION_DRIVER = 'cookie'
-    $env:SESSION_DOMAIN = ''
+    $env:SESSION_DOMAIN = 'null'   # '' would delete the variable (PowerShell) and fall back to the public domain in .env
     $env:SESSION_SECURE_COOKIE = 'false'
     $env:SANCTUM_STATEFUL_DOMAINS = "127.0.0.1:$port"
     $env:CACHE_DRIVER = 'array'
     $env:CACHE_STORE = 'array'
     $router = Join-Path $app 'vendor\laravel\framework\src\Illuminate\Foundation\resources\server.php'
-    $server = Start-Process $php -ArgumentList '-d', 'opcache.enable_cli=1', '-d', 'memory_limit=512M', '-S', "127.0.0.1:$port", '-t', 'public', $router `
-        -WorkingDirectory $app -PassThru -WindowStyle Hidden -RedirectStandardOutput (Join-Path $work 'server.out') -RedirectStandardError (Join-Path $work 'server.err')
+    $server = Start-Process $php -ArgumentList '-d', 'opcache.enable_cli=1', '-d', 'memory_limit=512M', '-S', "127.0.0.1:$port", '-t', '.', $router `
+        -WorkingDirectory (Join-Path $app 'public') -PassThru -WindowStyle Hidden -RedirectStandardOutput (Join-Path $work 'server.out') -RedirectStandardError (Join-Path $work 'server.err')
     try {
         $ready = $false
         for ($i = 0; $i -lt 90 -and -not $ready; $i++) {
@@ -79,21 +81,31 @@ try {
         $env:POS_E2E_ADMIN_USER = $admin.username
         $env:POS_E2E_ADMIN_PASSWORD = $admin.password
         $env:POS_E2E_MODE = $Mode
-        $specs = if ($Spec) { $Spec } elseif ($Mode -eq 'isolated') { @('pos-admin.spec.ts') } else { @('pos-visitor.spec.ts') }
+        $specs = @(if ($Spec) { $Spec } elseif ($Mode -eq 'isolated') { @('pos-admin.spec.ts') } else { @('pos-visitor.spec.ts') })
         Push-Location (Join-Path $repo 'apps\pos\e2e')
         $ErrorActionPreference = 'Continue'
-        npx playwright test @specs 2>&1 | ForEach-Object { "$_" } | Where-Object { $_ -notmatch '^\s+at ' }
+        npx playwright test $specs 2>&1 | ForEach-Object { "$_" } | Where-Object { $_ -notmatch '^\s+at ' }
         $code = $LASTEXITCODE
         $ErrorActionPreference = 'Stop'
         Pop-Location
         Write-Host "playwright exit=$code"
+        if ($Mode -eq 'visitor') {
+            # Database-level proof that the visitor session persisted nothing.
+            $sql = "SELECT (SELECT COUNT(*) FROM nexopos_orders WHERE author_id = u.id) + (SELECT COUNT(*) FROM nexopos_registers_history WHERE author_id = u.id) + (SELECT COUNT(*) FROM nexopos_products_histories WHERE author_id = u.id) + (SELECT COUNT(*) FROM nexopos_products WHERE author_id = u.id) FROM nexopos_users u WHERE u.email = 'visitor@showcase.harborandpine.example';"
+            $ErrorActionPreference = 'Continue'
+            $written = (& (Join-Path $bin 'mariadb.exe') @conn -N -B $db -e $sql 2>&1 | Where-Object { "$_" -notmatch 'ssl' } | Select-Object -First 1)
+            $ErrorActionPreference = 'Stop'
+            Write-Host "records authored by the visitor: $written"
+            if ("$written".Trim() -ne '0') { $code = 1; Write-Host 'FAIL: the visitor persisted records' }
+        }
+        $global:LASTEXITCODE = $code
     } finally {
         taskkill /T /F /PID $server.Id 2>&1 | Out-Null
         Remove-Item Env:POS_E2E_ADMIN_PASSWORD -ErrorAction SilentlyContinue
     }
 } finally {
     if ($Mode -eq 'isolated' -and -not $KeepDatabase) {
-        try { Invoke-Maria ($conn + @('-e', "DROP DATABASE IF EXISTS $db;")) } catch { Write-Host "could not drop $db: $_" }
+        try { Invoke-Maria ($conn + @('-e', "DROP DATABASE IF EXISTS $db;")) } catch { Write-Host "could not drop ${db}: $_" }
     }
     Remove-Item Env:MYSQL_PWD -ErrorAction SilentlyContinue
 }

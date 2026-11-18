@@ -1,6 +1,7 @@
 <?php
 namespace Modules\HarborPine\Http\Middleware;
 
+use App\Models\Register;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -42,6 +43,9 @@ class ShowcaseGuard
                     return $this->refuse( $request, 'This area is not part of the read-only demo.' );
                 }
             }
+            if ( $request->isMethod( 'GET' ) && $path === 'api/cash-registers/used' ) {
+                return $this->previewRegister();
+            }
         }
 
         $response = $next( $request );
@@ -72,6 +76,24 @@ class ShowcaseGuard
         }
 
         return false;
+    }
+
+    /**
+     * The POS screen asks which register the signed-in user has opened; visitors cannot open one (that is a
+     * write), so they get the store's first register as a read-only preview. Nothing is stored: every
+     * register action and the order submission stay refused.
+     */
+    private function previewRegister(): Response
+    {
+        $register = Register::orderBy( 'id' )->first();
+        if ( ! $register instanceof Register ) {
+            return response()->json( [ 'status' => 'error', 'message' => 'No register available for the preview.' ], 403 );
+        }
+        $data = $register->toArray();
+        $data['status'] = Register::STATUS_OPENED;
+        $data['name'] = $register->name . ' (preview)';
+
+        return response()->json( [ 'status' => 'success', 'message' => 'Checkout preview register (read-only).', 'data' => [ 'register' => $data ] ] );
     }
 
     private function refuse( Request $request, string $message ): Response
@@ -107,7 +129,9 @@ class ShowcaseGuard
 
     private function banner(): string
     {
-        return '<div id="hp-showcase-banner" role="status" style="position:fixed;left:50%;bottom:12px;transform:translateX(-50%);z-index:99999;max-width:calc(100vw - 24px);padding:6px 14px;border-radius:999px;background:rgba(17,24,39,.92);color:#fff;font:12px/1.4 system-ui,sans-serif;box-shadow:0 4px 14px rgba(0,0,0,.25);text-align:center">'
+        // NexoPOS notices (#snack-wrapper) also sit at the bottom centre: keep them above and clear of the banner.
+        return '<style>#snack-wrapper{z-index:100000!important;padding-bottom:44px!important}</style>'
+            . '<div id="hp-showcase-banner" role="status" style="position:fixed;left:50%;bottom:12px;transform:translateX(-50%);z-index:99999;max-width:calc(100vw - 24px);padding:6px 14px;border-radius:999px;background:rgba(17,24,39,.92);color:#fff;font:12px/1.4 system-ui,sans-serif;box-shadow:0 4px 14px rgba(0,0,0,.25);text-align:center">'
             . 'Read-only demo &middot; Harbor &amp; Pine Market (fictional) &middot; live simulated activity &middot; changes are disabled &middot; <a href="/sign-out" style="color:#9ae6b4">Leave</a></div>';
     }
 

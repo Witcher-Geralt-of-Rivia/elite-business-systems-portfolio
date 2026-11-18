@@ -99,6 +99,7 @@ class Catalog
                         'barcode' => self::ean13( 7300000 + $n * 17 ),
                         'name' => count( $sizes ) > 1 || ! in_array( $size, [ 'each', '1 loaf' ] ) ? "$base — $size" : $base,
                         'category' => $catKey,
+                        'base' => $base,
                         'brand' => $brand,
                         'form' => $form,
                         'description' => "$brand. $description",

@@ -97,6 +97,19 @@ class StoreBuilder
         $o->set( 'ns_orders_allow_partial', 'no' );
         $o->set( 'ns_orders_allow_incomplete', 'no' );
         $o->set( 'ns_pos_order_types', [ 'takeaway' ] );
+        self::presentation();
+    }
+
+    /** Display-only preferences (safe to re-apply on a populated store). */
+    public static function presentation(): void
+    {
+        $o = app( Options::class );
+        $o->set( 'ns_currency_prefered', 'symbol' ); // "$12.49" rather than "USD12.49"
+        // Like a real counter: a new cart starts on the walk-in customer (members are picked when they show a card).
+        $walkIn = User::where( 'email', 'walk-in@harborandpine.example' )->value( 'id' );
+        if ( $walkIn ) {
+            $o->set( 'ns_customers_default', $walkIn );
+        }
     }
 
     private function paymentTypes(): void
@@ -259,6 +272,7 @@ class StoreBuilder
                 $users->setUserRole( $user, [ Role::namespace( $roleNs )->id ] );
                 Cache::forget( 'ns-all-permissions-' . $user->id );
             }
+            $users->createAttribute( $user ); // theme/language row every NexoPOS layout reads (no-op if present)
             $out[ $s['username'] ] = $user;
         }
 

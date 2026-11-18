@@ -1,0 +1,206 @@
+{
+  "_about": "Curated source values for the Harbor & Pine Market retail engine. Fictional single-store specialty retailer (pantry, coffee & tea, bakery, cheese, home goods) in a fictional Pacific Northwest harbour town. All brands, suppliers, people, addresses (.example) and phone numbers (555-01xx) are invented. Independent from the CRM dataset.",
+  "store": {
+    "name": "Harbor & Pine Market",
+    "address": "214 Wharf Street, Port Alder, WA 98999",
+    "phone": "+1 360-555-0148",
+    "email": "hello@harborandpine.example",
+    "timezone": "America/Los_Angeles",
+    "currency": "USD",
+    "registers": ["Front Counter", "Café Counter"],
+    "hours": { "1": [8, 20], "2": [8, 20], "3": [8, 20], "4": [8, 20], "5": [8, 21], "6": [8, 21], "0": [9, 18] },
+    "closedDates": ["01-01", "07-04", "11-26", "12-25"]
+  },
+  "taxGroups": [
+    { "key": "food", "name": "Grocery (exempt)", "rate": 0 },
+    { "key": "general", "name": "General merchandise", "rate": 8.9 }
+  ],
+  "demand": {
+    "baseOrdersPerDay": 64,
+    "weekday": { "0": 0.85, "1": 0.72, "2": 0.78, "3": 0.85, "4": 0.95, "5": 1.25, "6": 1.45 },
+    "month": { "1": 0.72, "2": 0.76, "3": 0.88, "4": 0.94, "5": 1.02, "6": 1.12, "7": 1.24, "8": 1.2, "9": 0.98, "10": 0.96, "11": 1.18, "12": 1.48 },
+    "hour": { "8": 0.6, "9": 0.9, "10": 1.0, "11": 1.15, "12": 1.4, "13": 1.3, "14": 1.0, "15": 0.95, "16": 1.1, "17": 1.25, "18": 1.05, "19": 0.7, "20": 0.4 },
+    "basketItems": [ [1, 30], [2, 26], [3, 18], [4, 11], [5, 7], [6, 4], [8, 3], [12, 1] ],
+    "paymentMix": [ ["card", 0.78], ["cash", 0.22] ],
+    "registeredCustomerShare": 0.38,
+    "returnRate": 0.012,
+    "growthPerYear": 0.08
+  },
+  "categories": [
+    { "key": "coffee", "name": "Coffee & Tea", "tax": "food", "markup": [1.7, 2.1], "popularity": 9 },
+    { "key": "bakery", "name": "Bakery", "tax": "food", "markup": [2.0, 2.6], "popularity": 10, "perishable": true },
+    { "key": "cheese", "name": "Cheese & Charcuterie", "tax": "food", "markup": [1.6, 1.9], "popularity": 6, "perishable": true },
+    { "key": "pantry", "name": "Pantry", "tax": "food", "markup": [1.5, 1.8], "popularity": 8 },
+    { "key": "sauces", "name": "Sauces & Preserves", "tax": "food", "markup": [1.6, 1.9], "popularity": 6 },
+    { "key": "snacks", "name": "Snacks & Confections", "tax": "food", "markup": [1.7, 2.0], "popularity": 9 },
+    { "key": "drinks", "name": "Beverages", "tax": "food", "markup": [1.8, 2.2], "popularity": 8 },
+    { "key": "kitchen", "name": "Kitchenware", "tax": "general", "markup": [1.9, 2.3], "popularity": 3 },
+    { "key": "table", "name": "Tableware & Linens", "tax": "general", "markup": [2.0, 2.4], "popularity": 2 },
+    { "key": "candles", "name": "Candles & Home Fragrance", "tax": "general", "markup": [2.1, 2.5], "popularity": 3 },
+    { "key": "gifts", "name": "Gifts & Cards", "tax": "general", "markup": [2.0, 2.5], "popularity": 4 },
+    { "key": "body", "name": "Bath & Body", "tax": "general", "markup": [2.0, 2.4], "popularity": 3 }
+  ],
+  "brands": {
+    "coffee": ["Tidepool Roasting Co.", "Driftwood Tea House", "North Jetty Coffee"],
+    "bakery": ["Harbor & Pine Bakehouse", "Old Ferry Bread Co."],
+    "cheese": ["Cedar Hollow Creamery", "Bluff Road Dairy", "Smokehouse Point"],
+    "pantry": ["Salt Spray Provisions", "Fernwood Mill", "Harbor & Pine Pantry"],
+    "sauces": ["Bramble & Brine", "Three Sisters Kitchen", "Kelp Coast Condiments"],
+    "snacks": ["Puget Sweet Shop", "Rockpool Snacks", "Lantern Chocolate Works"],
+    "drinks": ["Fogline Sodas", "Orchard Ridge Cider Mill", "Clearwater Springs"],
+    "kitchen": ["Anchor & Ash", "Timberline Kitchen Goods"],
+    "table": ["Weatherby Linen", "Pebble Shore Ceramics"],
+    "candles": ["Sound & Spruce Candle Co.", "Low Tide Apothecary"],
+    "gifts": ["Port Alder Paper Co.", "Harbor & Pine Gifts"],
+    "body": ["Low Tide Apothecary", "Seaglass Soapworks"]
+  },
+  "products": {
+    "coffee": [
+      ["Morning Tide Blend", "Whole bean", ["12 oz", "2 lb"], [8.5, 21], "Medium roast with notes of cocoa and toasted hazelnut."],
+      ["Lighthouse Espresso", "Whole bean", ["12 oz", "2 lb"], [9.5, 23], "Dark, syrupy espresso blend roasted for milk drinks."],
+      ["Single Origin Huila", "Whole bean", ["10 oz"], [11], "Bright Colombian lot with red apple and panela sweetness."],
+      ["Decaf Harbor Fog", "Ground", ["12 oz"], [9], "Swiss Water decaf with a smooth caramel finish."],
+      ["Cold Brew Coarse Grind", "Ground", ["1 lb"], [10.5], "Coarse grind built for overnight cold brew."],
+      ["Earl Grey Cream", "Loose leaf", ["3 oz", "8 oz"], [5.5, 12], "Black tea with bergamot and vanilla."],
+      ["Spruce Tip Green", "Loose leaf", ["3 oz"], [6.5], "Sencha blended with foraged spruce tips."],
+      ["Chamomile Driftwood", "Tea bags", ["20 ct"], [5], "Caffeine-free chamomile with lemon balm."],
+      ["Masala Chai Concentrate", "Bottle", ["32 fl oz"], [7.5], "Spiced black tea concentrate, just add milk."]
+    ],
+    "bakery": [
+      ["Country Sourdough", "Loaf", ["1 loaf"], [3.6], "Naturally leavened loaf with a crackling crust."],
+      ["Seeded Rye", "Loaf", ["1 loaf"], [3.9], "Dense rye with caraway, flax and sunflower seeds."],
+      ["Butter Croissant", "Pastry", ["each", "box of 4"], [1.4, 5.2], "Laminated with cultured butter, baked every morning."],
+      ["Marionberry Scone", "Pastry", ["each"], [1.3], "Tender scone with local marionberries."],
+      ["Cardamom Bun", "Pastry", ["each"], [1.5], "Twisted bun with cardamom sugar."],
+      ["Olive Fougasse", "Loaf", ["1 loaf"], [3.4], "Leaf-shaped bread with Castelvetrano olives."],
+      ["Brown Butter Cookies", "Box", ["box of 6"], [3.8], "Chewy cookies with brown butter and flaky salt."]
+    ],
+    "cheese": [
+      ["Coastal Cheddar", "Aged 12 months", ["8 oz"], [5.2], "Sharp, crumbly cheddar with savoury crystals."],
+      ["Fog Bank Brie", "Soft-ripened", ["7 oz"], [5.8], "Buttery bloomy-rind cheese."],
+      ["Smoked Gouda", "Wedge", ["8 oz"], [5], "Applewood-smoked gouda."],
+      ["Goat Chèvre with Herbs", "Fresh", ["4 oz"], [3.6], "Fresh goat cheese rolled in garden herbs."],
+      ["Fennel Salami", "Cured", ["5 oz"], [5.4], "Dry-cured pork salami with fennel pollen."],
+      ["Smoked Salmon Lox", "Cold-smoked", ["4 oz"], [6.8], "Alder-smoked salmon, thinly sliced."],
+      ["Charcuterie Board Kit", "Kit", ["serves 4"], [13.5], "Two cheeses, salami, crackers and fig spread."]
+    ],
+    "pantry": [
+      ["Stone-Ground Polenta", "Bag", ["2 lb"], [3.4], "Coarse heirloom cornmeal."],
+      ["Bronze-Cut Rigatoni", "Bag", ["1 lb"], [2.6], "Slow-dried pasta with a rough texture."],
+      ["Wildflower Honey", "Jar", ["12 oz", "24 oz"], [5.2, 9.4], "Raw honey from coastal hives."],
+      ["Extra Virgin Olive Oil", "Bottle", ["500 ml"], [8.9], "Early harvest, peppery finish."],
+      ["Flaky Sea Salt", "Tin", ["4 oz"], [3.1], "Hand-harvested salt flakes."],
+      ["Steel-Cut Oats", "Bag", ["2 lb"], [3], "Hearty oats for slow porridge."],
+      ["Smoked Paprika", "Jar", ["2 oz"], [2.7], "Sweet smoked paprika."],
+      ["Maple Granola", "Bag", ["12 oz"], [4.2], "Clustered oat granola with pecans."]
+    ],
+    "sauces": [
+      ["Marionberry Jam", "Jar", ["10 oz"], [3.5], "Small-batch jam with whole berries."],
+      ["Smoked Chili Crisp", "Jar", ["6 oz"], [4.6], "Crunchy chili oil with garlic and sesame."],
+      ["Stone Fruit Chutney", "Jar", ["8 oz"], [3.9], "Peach and apricot chutney for cheese boards."],
+      ["Whole Grain Mustard", "Jar", ["7 oz"], [2.9], "Coarse mustard with local cider vinegar."],
+      ["Roasted Tomato Sauce", "Jar", ["24 oz"], [4.4], "Slow-roasted tomatoes and garlic."],
+      ["Salted Caramel Sauce", "Jar", ["8 oz"], [4.1], "Cooked in copper with sea salt."],
+      ["Kelp Hot Sauce", "Bottle", ["5 fl oz"], [3.3], "Fermented pepper sauce with kelp."]
+    ],
+    "snacks": [
+      ["Sea Salt Kettle Chips", "Bag", ["5 oz"], [1.9], "Thick-cut chips fried in small batches."],
+      ["Rosemary Crackers", "Box", ["5 oz"], [2.4], "Thin crackers for cheese."],
+      ["Dark Chocolate Bar 72%", "Bar", ["2.5 oz"], [2.3], "Single-origin dark chocolate."],
+      ["Sea Salt Caramels", "Box", ["6 pc", "12 pc"], [3.6, 6.8], "Soft caramels wrapped by hand."],
+      ["Smoked Almonds", "Bag", ["6 oz"], [3.3], "Almonds smoked over alder wood."],
+      ["Huckleberry Gummies", "Bag", ["4 oz"], [2.1], "Chewy gummies with real huckleberry."],
+      ["Toffee Brittle", "Bag", ["6 oz"], [3.4], "Buttery brittle with roasted hazelnuts."]
+    ],
+    "drinks": [
+      ["Ginger Fogline Soda", "Bottle", ["12 fl oz", "4-pack"], [1.2, 4.4], "Spicy ginger soda made with cane sugar."],
+      ["Lavender Lemonade", "Bottle", ["12 fl oz"], [1.3], "Lemonade with a hint of lavender."],
+      ["Sparkling Apple Juice", "Bottle", ["750 ml"], [3.2], "Non-alcoholic sparkling juice."],
+      ["Spring Water", "Bottle", ["1 L", "6-pack"], [0.6, 3.1], "Still water from a coastal spring."],
+      ["Oat Milk Barista", "Carton", ["32 fl oz"], [2.2], "Oat milk that steams and foams."],
+      ["Cold Brew Can", "Can", ["8 fl oz", "4-pack"], [1.5, 5.6], "Ready-to-drink cold brew."]
+    ],
+    "kitchen": [
+      ["Cast Iron Skillet", "10 inch", ["each"], [17.5], "Pre-seasoned skillet for stove and campfire."],
+      ["Maple Cutting Board", "Medium", ["each"], [15], "End-grain maple board."],
+      ["Enamel Dutch Oven", "4 qt", ["each"], [39], "Enamelled cast iron, oven safe."],
+      ["Linen Apron", "Adjustable", ["each"], [11], "Stonewashed linen apron with pockets."],
+      ["Pour-Over Dripper", "Ceramic", ["each"], [9.5], "Ceramic cone dripper for one cup."],
+      ["Olive Wood Spoon Set", "Set of 3", ["each"], [8.5], "Hand-carved olive wood spoons."]
+    ],
+    "table": [
+      ["Stoneware Mug", "12 oz", ["each", "set of 4"], [6.2, 22], "Speckled stoneware mug, glazed by hand."],
+      ["Linen Napkins", "Set of 4", ["each"], [11.5], "Washed linen napkins in harbour blue."],
+      ["Serving Platter", "Large", ["each"], [16], "Oval stoneware platter."],
+      ["Tea Towel Set", "Set of 2", ["each"], [7], "Cotton waffle tea towels."],
+      ["Ceramic Pinch Bowls", "Set of 4", ["each"], [8.5], "Tiny bowls for salt and spices."]
+    ],
+    "candles": [
+      ["Cedar & Sea Salt Candle", "Soy wax", ["8 oz", "16 oz"], [8, 14], "Woody, salty, calm."],
+      ["Wild Fig Candle", "Soy wax", ["8 oz"], [8], "Green fig leaves and cream."],
+      ["Fir Forest Candle", "Soy wax", ["8 oz"], [8], "Balsam fir and woodsmoke."],
+      ["Reed Diffuser Driftwood", "Diffuser", ["100 ml"], [10.5], "Long-lasting reed diffuser."],
+      ["Beeswax Taper Pair", "Beeswax", ["pair"], [5.5], "Hand-dipped beeswax tapers."]
+    ],
+    "gifts": [
+      ["Port Alder Postcard Set", "Set of 6", ["each"], [3.6], "Illustrated postcards of the harbour."],
+      ["Greeting Card", "Letterpress", ["each"], [1.9], "Blank letterpress card."],
+      ["Pantry Gift Box", "Curated", ["small", "large"], [17, 34], "Jam, honey, crackers and chocolate in a pine box."],
+      ["Harbor Map Print", "8x10", ["each"], [9.5], "Risograph print of the old harbour map."],
+      ["Gift Wrap Roll", "Kraft", ["each"], [2.8], "Recycled kraft wrap with pine print."]
+    ],
+    "body": [
+      ["Seaglass Bar Soap", "Cold process", ["4 oz"], [2.9], "Sea salt and eucalyptus soap."],
+      ["Hand Salve", "Tin", ["2 oz"], [4.4], "Beeswax and calendula salve."],
+      ["Lip Balm Trio", "Set of 3", ["each"], [3.6], "Peppermint, honey and unscented."],
+      ["Bath Salts Kelp & Lavender", "Jar", ["16 oz"], [6.8], "Mineral salts with dried kelp."]
+    ]
+  },
+  "suppliers": [
+    { "name": "Tidepool Roasting Co.", "categories": ["coffee"], "leadDays": [2, 4], "cadenceDays": 7, "terms": "net 15", "email": "orders@tidepool.example" },
+    { "name": "Driftwood Tea House", "categories": ["coffee"], "leadDays": [5, 9], "cadenceDays": 28, "terms": "net 30", "email": "wholesale@driftwoodtea.example" },
+    { "name": "Old Ferry Bread Co.", "categories": ["bakery"], "leadDays": [1, 1], "cadenceDays": 1, "terms": "net 7", "email": "dispatch@oldferry.example" },
+    { "name": "Cedar Hollow Creamery", "categories": ["cheese"], "leadDays": [2, 3], "cadenceDays": 7, "terms": "net 15", "email": "sales@cedarhollow.example" },
+    { "name": "Coastline Fine Foods Distribution", "categories": ["pantry", "sauces", "snacks"], "leadDays": [3, 6], "cadenceDays": 14, "terms": "net 30", "email": "accounts@coastlinefoods.example" },
+    { "name": "Puget Sweet Shop", "categories": ["snacks"], "leadDays": [3, 5], "cadenceDays": 21, "terms": "net 30", "email": "hello@pugetsweets.example" },
+    { "name": "Fogline Beverage Works", "categories": ["drinks"], "leadDays": [2, 4], "cadenceDays": 10, "terms": "net 15", "email": "orders@fogline.example" },
+    { "name": "Anchor & Ash Housewares", "categories": ["kitchen", "table"], "leadDays": [7, 14], "cadenceDays": 45, "terms": "net 45", "email": "trade@anchorandash.example" },
+    { "name": "Sound & Spruce Candle Co.", "categories": ["candles"], "leadDays": [6, 10], "cadenceDays": 35, "terms": "net 30", "email": "wholesale@soundspruce.example" },
+    { "name": "Port Alder Paper Co.", "categories": ["gifts"], "leadDays": [5, 8], "cadenceDays": 30, "terms": "net 30", "email": "studio@portalderpaper.example" },
+    { "name": "Seaglass Soapworks", "categories": ["body"], "leadDays": [5, 8], "cadenceDays": 30, "terms": "net 30", "email": "orders@seaglasssoap.example" }
+  ],
+  "staff": [
+    { "username": "maren.oakes", "first": "Maren", "last": "Oakes", "role": "store manager", "register": "Front Counter", "shiftShare": 0.18, "speed": 1.15 },
+    { "username": "theo.vance", "first": "Theo", "last": "Vance", "role": "cashier", "register": "Front Counter", "shiftShare": 0.24, "speed": 1.05 },
+    { "username": "lina.morrow", "first": "Lina", "last": "Morrow", "role": "cashier", "register": "Front Counter", "shiftShare": 0.22, "speed": 1.0 },
+    { "username": "jules.ferreira", "first": "Jules", "last": "Ferreira", "role": "cashier", "register": "Café Counter", "shiftShare": 0.2, "speed": 0.95 },
+    { "username": "sam.whitlock", "first": "Sam", "last": "Whitlock", "role": "weekend cashier", "register": "Café Counter", "shiftShare": 0.16, "speed": 0.9 }
+  ],
+  "customers": {
+    "firstNames": ["Abigail", "Arlo", "Beatrix", "Bodhi", "Cecilia", "Desmond", "Eleanor", "Ezra", "Freya", "Gideon", "Hazel", "Idris", "Imogen", "Jasper", "Juniper", "Keanu", "Lorelei", "Malcolm", "Marisol", "Nolan", "Odessa", "Osman", "Penelope", "Quincy", "Rosalind", "Rowan", "Saoirse", "Silas", "Talia", "Tobias", "Ursula", "Vivian", "Wesley", "Willa", "Xiomara", "Yusuf", "Zelda", "Anouk", "Benedikt", "Callum"],
+    "lastNames": ["Ashby", "Bellweather", "Calloway", "Delacroix", "Eriksen", "Fairbanks", "Galloway", "Hollister", "Ingram", "Jessup", "Kingsley", "Lindell", "Marchbanks", "Northcott", "Oyelaran", "Pemberton", "Quayle", "Rasmussen", "Sorensen", "Thackeray", "Underhill", "Valverde", "Winslow", "Yarrow", "Zimmerman", "Abernethy", "Blackwood", "Carrow", "Dunmore", "Ellery"],
+    "groups": [
+      { "name": "Walk-in", "share": 0.62 },
+      { "name": "Harbor Club members", "share": 0.33, "discountPercent": 5 },
+      { "name": "Café & restaurant accounts", "share": 0.05, "discountPercent": 10 }
+    ],
+    "registeredCount": 420,
+    "visitsPerMonth": [0.4, 3.5]
+  },
+  "promotions": [
+    { "code": "HARBORCLUB5", "type": "percentage", "value": 5, "rule": "Harbor Club members, every visit", "months": [] },
+    { "code": "SPRINGPANTRY", "type": "percentage", "value": 10, "rule": "Pantry & sauces", "months": [4] },
+    { "code": "SUMMERFEST", "type": "flat", "value": 3, "rule": "Baskets over $30 during the harbour festival", "months": [7] },
+    { "code": "HOLIDAY10", "type": "percentage", "value": 10, "rule": "Gift boxes and candles", "months": [11, 12] }
+  ],
+  "returns": {
+    "reasons": ["Damaged in transit home", "Wrong size", "Duplicate gift", "Changed mind", "Quality issue"],
+    "windowDays": 30,
+    "restockShare": 0.7
+  },
+  "adjustments": {
+    "shrinkPerMonth": [0.002, 0.006],
+    "perishableWastePerWeek": [0.02, 0.06],
+    "reasons": ["Breakage", "Expired", "Count correction", "Damaged packaging"]
+  }
+}

@@ -17,6 +17,10 @@ function Invoke-Artisan([string[]]$a) {
 robocopy (Join-Path $repo 'apps\pos\modules\HarborPine') (Join-Path $App 'modules\HarborPine') /MIR /NFL /NDL /NJH /NJS /NP | Out-Null
 if ($LASTEXITCODE -ge 8) { throw "robocopy failed ($LASTEXITCODE)" }
 icacls (Join-Path $App 'modules') /grant 'NT AUTHORITY\LOCAL SERVICE:(OI)(CI)(RX)' | Out-Null
+# Static assets (catalog artwork) are published as a plain directory instead of NexoPOS's junction, so the
+# web server reads them with the permissions it already has on public\ (NexoPOS skips linking when it exists).
+robocopy (Join-Path $repo 'apps\pos\modules\HarborPine\Public') (Join-Path $App 'public\modules\harborpine') /MIR /NFL /NDL /NJH /NJS /NP | Out-Null
+if ($LASTEXITCODE -ge 8) { throw "robocopy (public assets) failed ($LASTEXITCODE)" }
 Invoke-Artisan @('optimize:clear')
 Invoke-Artisan @('modules:enable', 'HarborPine')
 Invoke-Artisan @('modules:migrate', 'HarborPine')

@@ -3,7 +3,11 @@ import { expect, type APIRequestContext, type Page } from "@playwright/test";
 /** NexoPOS (Laravel + Sanctum) requires the XSRF token cookie echoed in a header on state-changing calls. */
 export async function xsrf(page: Page): Promise<Record<string, string>> {
   const cookie = (await page.context().cookies()).find((c) => c.name === "XSRF-TOKEN");
+  // Sanctum treats a request as a first-party (session) call only when Origin/Referer match a stateful domain.
+  const origin = new URL(page.url()).origin;
   return {
+    Origin: origin,
+    Referer: `${origin}/dashboard`,
     "X-XSRF-TOKEN": cookie ? decodeURIComponent(cookie.value) : "",
     "X-Requested-With": "XMLHttpRequest",
     Accept: "application/json",
@@ -15,7 +19,8 @@ export async function apiPost(page: Page, url: string, data: unknown) {
 }
 
 export async function apiGet(request: APIRequestContext, url: string) {
-  return request.get(url, { headers: { Accept: "application/json", "X-Requested-With": "XMLHttpRequest" } });
+  const origin = process.env.POS_E2E_BASE_URL ?? "http://127.0.0.1:8831";
+  return request.get(url, { headers: { Accept: "application/json", "X-Requested-With": "XMLHttpRequest", Origin: origin, Referer: `${origin}/dashboard` } });
 }
 
 export async function signIn(page: Page, user: string, password: string) {

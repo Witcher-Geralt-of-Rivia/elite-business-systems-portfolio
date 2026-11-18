@@ -6,6 +6,7 @@ use App\Models\Role;
 use App\Models\User;
 use App\Services\Options;
 use App\Services\UsersService;
+use App\Services\WidgetService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -67,18 +68,22 @@ class Showcase
         $user = self::user();
         if ( ! $user ) {
             $user = new User;
-            $user->username = 'portfolio-visitor';
             $user->email = self::EMAIL;
             $user->first_name = 'Guest';
             $user->last_name = 'Visitor';
             $user->active = true;
             $user->author_id = StoreBuilder::admin()->id;
         }
+        $user->username = 'guest'; // shown in the header ("Howdy, guest")
         // Rotated on every configure and never stored: entry is only via /showcase/enter.
         $user->password = Hash::make( Str::random( 64 ) );
         $user->save();
         app( UsersService::class )->setUserRole( $user, [ $role->id ] );
         Cache::forget( 'ns-all-permissions-' . $user->id );
+        $user = $user->fresh();
+        app( UsersService::class )->createAttribute( $user ); // theme/language row the layouts require
+        // NexoPOS seeds dashboard widgets on account activation, which the visitor never goes through.
+        app( WidgetService::class )->addDefaultWidgetsToAreas( $user );
         app( Options::class )->set( self::OPTION, $enable ? 'yes' : 'no' );
 
         return [ 'enabled' => $enable, 'permissions' => count( $existing ), 'missing' => array_values( array_diff( self::PERMISSIONS, $existing ) ), 'user_id' => $user->id ];

@@ -23,12 +23,19 @@ test.describe("desktop", () => {
     await page.screenshot({ path: `${SHOTS}/dashboard.png` });
 
     await page.goto("/dashboard/products");
-    await expect(page.getByText(/Morning Tide Blend/).first()).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByText(/^[A-Z]{3}-[A-Z]{3}-\d{4}$/).first()).toBeVisible({ timeout: 30_000 }); // catalog SKUs
     await page.screenshot({ path: `${SHOTS}/products.png` });
 
     await page.goto("/dashboard/orders");
-    await expect(page.locator("table tbody tr").first()).toBeVisible({ timeout: 30_000 });
+    // Real rows (order codes look like 260820-048), not the "nothing to display" placeholder row.
+    await expect(page.getByText(/^\d{6}-\d{3}$/).first()).toBeVisible({ timeout: 60_000 });
+    await page.waitForTimeout(1000);
     await page.screenshot({ path: `${SHOTS}/orders.png` });
+
+    await page.goto("/dashboard/customers");
+    await expect(page.getByText(/@mail\.example/).first()).toBeVisible({ timeout: 60_000 });
+    await page.waitForTimeout(1000);
+    await page.screenshot({ path: `${SHOTS}/customers.png` });
 
     await page.goto("/dashboard/cash-registers");
     await expect(page.getByText("Front Counter").first()).toBeVisible({ timeout: 30_000 });
@@ -37,6 +44,31 @@ test.describe("desktop", () => {
     await page.goto("/dashboard/reports/sales");
     await page.waitForTimeout(4000);
     await page.screenshot({ path: `${SHOTS}/report-sales.png` });
+    await expectNoPageErrors(errors);
+  });
+
+  test("checkout preview: a full sale on the POS screen is refused with an explicit message", async ({ page }) => {
+    const errors = trackPageErrors(page);
+    await enterDemo(page);
+    await page.goto("/dashboard/pos");
+    // Visitors get the first register as a read-only preview instead of the "open a register" prompt,
+    // so the product grid is usable straight away.
+    await expect(page.getByText("Open The Cash Register")).toHaveCount(0);
+    await page.locator("#grid-items .cell-item", { hasText: "Coffee & Tea" }).click({ timeout: 60_000 });
+    await page.locator("#grid-items .cell-item", { hasText: "Morning Tide Blend — 12 oz" }).click();
+    await page.getByText("Enter", { exact: true }).click(); // quantity 1
+    await expect(page.getByText(/Morning Tide Blend — 12 oz — Each/)).toBeVisible();
+    await page.screenshot({ path: `${SHOTS}/pos-cart.png` });
+
+    await page.getByText("Pay", { exact: true }).first().click();
+    await page.getByText("Full Payment", { exact: true }).click();
+    const submitted = page.waitForResponse((r) => r.request().method() === "POST" && /\/api\/orders$/.test(r.url()));
+    await page.getByRole("button", { name: "Yes", exact: true }).click(); // NexoPOS submits on full payment
+    const res = await submitted;
+    expect(res.status()).toBe(403);
+    await expect(page.getByText(/Checkout preview: in the read-only demo this order was not saved/)).toBeVisible();
+    await page.screenshot({ path: `${SHOTS}/pos-checkout-preview.png` });
+    // run-pos-e2e.ps1 additionally asserts in the database that the visitor authored no orders/register entries.
     await expectNoPageErrors(errors);
   });
 
@@ -78,8 +110,11 @@ test.describe("mobile", () => {
     await page.waitForTimeout(4000);
     await page.screenshot({ path: `${SHOTS}/mobile-dashboard.png` });
     await page.goto("/dashboard/orders");
-    await page.waitForTimeout(4000);
+    await expect(page.getByText(/^\d{6}-\d{3}$/).first()).toBeVisible({ timeout: 60_000 });
     await page.screenshot({ path: `${SHOTS}/mobile-orders.png` });
+    await page.goto("/dashboard/pos");
+    await page.waitForTimeout(8000);
+    await page.screenshot({ path: `${SHOTS}/mobile-pos.png` });
     await expectNoPageErrors(errors);
   });
 });
