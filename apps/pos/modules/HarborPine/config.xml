@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<module>
+  <namespace>HarborPine</namespace>
+  <version>1.0.0</version>
+  <author>Elite Business Systems Portfolio</author>
+  <name>Harbor &amp; Pine Market — retail operations engine</name>
+  <description>
+    <locale lang="en">Deterministic retail history and live store activity for the fictional Harbor &amp; Pine Market, generated through NexoPOS services; read-only showcase access.</locale>
+  </description>
+  <core min-version="6.3.0"/>
+</module>

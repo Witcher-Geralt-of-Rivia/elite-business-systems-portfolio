@@ -25,9 +25,11 @@ deleted. Defender scans were run in **detect-only** mode (`MpCmdRun -DisableReme
 | F10 | Defender hardening gaps | Tamper Protection **off**; one path exclusion for a third-party browser application's folder (no logged change event); last full scan 30 days ago | High |
 | F11 | A self-developed repository-management tool in Downloads (unsigned PyInstaller build) | **Closed 2026-11-17: the owner confirmed it is software they developed and use.** Unrelated to the incident. | — |
 
-Pending: a broad detect-only Defender scan of the user profile, ProgramData and the workspace was
-started 2026-11-17 and is still running (slow on this loaded 3-CPU host); its result will be appended
-here. A clean result would not change the verdict, because Defender already missed this payload.
+Broad detect-only Defender scan (user profile, ProgramData, workspace), started 2026-11-17: **stopped
+incomplete on 2026-11-18** after ~12 hours without finishing the first folder, because it held two of the
+host's three CPU cores (the host sat at 100 %). No result was produced; nothing is claimed from it.
+Real-time protection stayed enabled. A clean result would not have changed the verdict anyway, because
+Defender already missed this payload; an offline scan remains part of the remediation options in §5.
 
 Event-log limits: the Security log only reaches back to 2026-11-03 and the Task Scheduler operational
 log is disabled, so the task-creation events themselves are no longer available.
