@@ -16,6 +16,14 @@ export type Actor = SessionUser & { kind?: "user" | "simulator" };
 
 const MAX_PAGE = 1000;
 
+/** Internal columns never returned to clients (search vectors are an index detail). */
+const HIDDEN_COLUMNS = ["fts"];
+export function publicRow<T extends Record<string, unknown> | undefined>(row: T): T {
+  if (!row) return row;
+  for (const c of HIDDEN_COLUMNS) delete (row as Record<string, unknown>)[c];
+  return row;
+}
+
 export class ResourceService {
   private db: Db;
   private schema: SchemaInfo;
@@ -52,14 +60,14 @@ export class ResourceService {
       this.db.query(sql, p.values),
       this.db.query(`select count(*)::int as total from ${rel} ${whereSql}`, countValues),
     ]);
-    return { data: data.rows, total: count.rows[0].total as number };
+    return { data: data.rows.map(publicRow), total: count.rows[0].total as number };
   }
 
   async getOne(resource: string, id: string | number) {
     const def = this.def(resource);
     const { rows } = await this.db.query(`select * from ${quoteIdent(def.readRelation)} where id = $1`, [id]);
     if (!rows[0]) throw new NotFound(`${resource} ${id} not found`);
-    return rows[0];
+    return publicRow(rows[0]);
   }
 
   private writableData(def: ResourceDef, actor: Actor, data: Record<string, unknown>) {
@@ -151,7 +159,7 @@ export class ResourceService {
 
   private async readInTx(c: DbClient, def: ResourceDef, id: unknown) {
     const { rows } = await c.query(`select * from ${quoteIdent(def.readRelation)} where id = $1`, [id]);
-    return rows[0];
+    return publicRow(rows[0]);
   }
 }
 

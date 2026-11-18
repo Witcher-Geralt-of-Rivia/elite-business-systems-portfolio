@@ -72,3 +72,12 @@ Format: ID · date · decision · alternatives rejected · status.
 - Evidence left untouched (task disabled, payload in place) for the owner's decision. No containment action that deletes or moves evidence was taken.
 - Recommended path: owner rotates credentials from a trusted device, then rebuilds the VPS from a clean image and the agent redeploys from GitHub. Alternative: in-place remediation with documented residual risk.
 - Status: **active blocker** until the owner decides.
+
+## D-013 — Resume development without a host rebuild (2026-11-17, owner)
+
+- **Decision (owner):** the VPS is **not** rebuilt. Development resumes: CRM M4 features and the CRM data engine first, then
+  POS (M6) preparation and non-disruptive ERP (M5) research. GitHubRepoManager.exe is the owner's own software (F11 closed).
+- **Constraints kept:** no new secrets and no expansion of public deployment on this host without separate authorization;
+  WSL1 reboot still unapproved; the security incident stays open in RISKS (R-014) — it is not declared resolved.
+- **Supersedes:** the development pause in D-012 (D-012's deployment/secret restrictions continue as stated above).
+

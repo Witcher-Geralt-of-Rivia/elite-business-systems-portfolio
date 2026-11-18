@@ -63,7 +63,7 @@ const listUrl = (resource: string, filter: object, extra = "") =>
 
 before(async () => {
   db = createPool(config.databaseUrl, 4);
-  await db.query(`delete from audit_log; delete from sessions; delete from tasks; delete from contact_notes;
+  await db.query(`delete from audit_log; delete from sessions; delete from password_reset_tokens; delete from attachments; delete from tasks; delete from contact_notes;
                   delete from deal_notes; delete from deals; delete from contacts; delete from companies;
                   delete from tags; delete from sales; delete from users;`);
   ids.admin = await seedUser("ada.lindqvist@example.com", "Ada", "Lindqvist", "admin");

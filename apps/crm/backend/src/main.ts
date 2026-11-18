@@ -1,4 +1,5 @@
 import { buildApp } from "./app.ts";
+import { purgeOrphanAttachments } from "./attachments/routes.ts";
 import { purgeExpiredSessions } from "./auth/sessions.ts";
 import { loadConfig } from "./config.ts";
 import { createPool } from "./db.ts";
@@ -9,6 +10,7 @@ const app = await buildApp(config, db);
 
 const purge = setInterval(() => {
   purgeExpiredSessions(db).catch((err) => app.log.warn({ err }, "session purge failed"));
+  purgeOrphanAttachments(db, config.attachmentsDir).catch((err) => app.log.warn({ err }, "attachment purge failed"));
 }, 3600_000);
 
 async function shutdown(signal: string) {

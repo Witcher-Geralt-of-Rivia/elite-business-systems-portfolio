@@ -23,7 +23,7 @@ deleted. Defender scans were run in **detect-only** mode (`MpCmdRun -DisableReme
 | F8 | No other persistence found | Run/RunOnce keys, startup folders, services, WMI subscriptions (only the Windows default `SCM Event Log Filter`), Winlogon, IFEO debuggers, other hidden tasks: nothing unexplained | Medium (fileless/kernel persistence cannot be excluded by this method) |
 | F9 | No active malicious process or connection observed | No process runs from user-writable paths; all established outbound connections belong to recognised applications (editor, AI clients, browser, remote-access tools, Windows) | Medium (point-in-time snapshot) |
 | F10 | Defender hardening gaps | Tamper Protection **off**; one path exclusion for a third-party browser application's folder (no logged change event); last full scan 30 days ago | High |
-| F11 | Unrelated unsigned tool, origin unverified | A 45 MB unsigned PyInstaller executable in Downloads (downloaded 2026-10-08, last run 2026-11-13). Its name and the account's GitHub activity one minute after it ran are consistent with a legitimate repository tool; Defender: no threats. **Owner must confirm its origin.** | Low suspicion |
+| F11 | A self-developed repository-management tool in Downloads (unsigned PyInstaller build) | **Closed 2026-11-17: the owner confirmed it is software they developed and use.** Unrelated to the incident. | — |
 
 Pending: a broad detect-only Defender scan of the user profile, ProgramData and the workspace was
 started 2026-11-17 and is still running (slow on this loaded 3-CPU host); its result will be appended
@@ -81,6 +81,11 @@ inconsistent with the owner's own work. This does not rule out silent token use.
 - **Remediate in place (accepts residual risk):** after evidence is archived, delete the task and the payload/staging folders; enable Defender Tamper Protection; review the path exclusion; enable Task Scheduler operational logging and process-creation auditing; run a Defender **offline** scan (needs a reboot) plus a second-opinion scanner; rotate the portfolio's DB and admin passwords afterwards.
 
 ## 6. Impact on the project
+
+**Owner decision 2026-11-17 (D-013):** no rebuild authorized; development resumes in the repository and the existing
+deployment. New secrets and any expansion of public deployment on this host need separate authorization. The
+incident remains **open** (credential rotation and host remediation are the owner's actions).
+
 
 - Public deployment of new components and further secret creation on this host are **paused** pending the owner's choice in §5.
 - Repository work is unaffected; GitHub remains the source of truth. After credential rotation the agent needs a fresh `gh` login.

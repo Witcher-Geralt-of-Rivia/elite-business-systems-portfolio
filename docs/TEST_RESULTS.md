@@ -76,3 +76,21 @@ Stack under test: Atomic CRM UI (upstream snapshot + portfolio providers) → Ca
 | Backup | `backup-crm.ps1 -VerifyRestore`, scheduled task as SYSTEM | dump + sha256 written; restore into scratch DB, row counts identical; task result 0x0 |
 
 Failures encountered on the way (all fixed, none were product defects in the final state): missing `CHANGELOG.md` in the snapshot broke the Vite build; three deploy scripts aborted on harmless native stderr under Windows PowerShell 5.1; the browser test first used path URLs although the app uses hash routing with relative assets, then guessed the wrong button label.
+
+## CRM M4 — backend features (2026-11-17)
+
+Command: `node --env-file=<crm-test.env> --test --test-concurrency=1 test/m4.test.ts test/poc.test.ts` against `crm_test`
+(migration 0002 applied). **31/31 pass** (15 PoC + 16 M4).
+
+| Area | Verified behaviour |
+|---|---|
+| First run | empty instance accepts exactly one sign-up → admin; second sign-up 403; weak password 400 |
+| Invitations | admin-only; account created without password; one-time link (72 h) sets password once; raw token never stored; duplicate email → 409 `email_taken` |
+| Team rules | reps can edit only their own profile, cannot change roles/disable; last active admin cannot be demoted/disabled; disabling ends sessions immediately |
+| Password links | newest link only; set-password resets lockout and revokes all sessions |
+| Global search | accent-insensitive prefix search across 6 resources (ported `global_search`), resource filter, blank query → `[]`, 401 when signed out; `fts` never leaked |
+| Merge | one transaction: tasks/notes/deal links moved, fields merged per upstream rules, duplicate deleted, audited; self-merge 400, unknown 404, non-owner rep 403 with no side effects |
+| Attachments | private storage under server-generated names; path components stripped; download requires session; non-images forced to download with `sandbox` CSP + nosniff; CSRF enforced; orphan purge keeps referenced files |
+| Live updates | SSE stream 401 when signed out; committed deal update delivered as `change` event |
+
+Bug found and fixed by these tests: `bigint[]` columns (`deals.contact_ids`, `contacts.tags`) were returned as strings; now numbers.
