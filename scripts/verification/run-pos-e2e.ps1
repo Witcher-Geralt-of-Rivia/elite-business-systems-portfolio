@@ -18,9 +18,12 @@ param(
     [string[]]$Spec,
     [switch]$KeepDatabase,
     # Application tree to serve (e.g. a staging copy with an undeployed module build).
+    # Visitor mode against an already running site (e.g. the public URL after approval); no test instance.
+    [string]$BaseUrl,
     [string]$AppRoot = 'C:\srv\portfolio\pos\app'
 )
 $ErrorActionPreference = 'Stop'
+if ($BaseUrl -and $Mode -ne 'visitor') { throw '-BaseUrl is only allowed with -Mode visitor (destructive specs never run against a live site).' }
 $repo = Resolve-Path (Join-Path $PSScriptRoot '..\..')
 $app = $AppRoot
 $php = 'C:\srv\portfolio\pos\php\php.exe'
@@ -65,19 +68,22 @@ try {
     $env:SANCTUM_STATEFUL_DOMAINS = "127.0.0.1:$port"
     $env:CACHE_DRIVER = 'array'
     $env:CACHE_STORE = 'array'
+    $server = $null
+    if (-not $BaseUrl) {
     $router = Join-Path $app 'vendor\laravel\framework\src\Illuminate\Foundation\resources\server.php'
     $server = Start-Process $php -ArgumentList '-d', 'opcache.enable_cli=1', '-d', 'memory_limit=512M', '-S', "127.0.0.1:$port", '-t', '.', $router `
         -WorkingDirectory (Join-Path $app 'public') -PassThru -WindowStyle Hidden -RedirectStandardOutput (Join-Path $work 'server.out') -RedirectStandardError (Join-Path $work 'server.err')
+    }
     try {
-        $ready = $false
+        $ready = [bool]$BaseUrl
         for ($i = 0; $i -lt 90 -and -not $ready; $i++) {
             Start-Sleep -Seconds 2
             try { $ready = (Invoke-WebRequest -UseBasicParsing "http://127.0.0.1:$port/sign-in" -TimeoutSec 60).StatusCode -eq 200 } catch { }
         }
         if (-not $ready) { Get-Content (Join-Path $work 'server.err') -Tail 20; throw 'test instance did not start' }
-        Write-Host "test instance ready on 127.0.0.1:$port ($db)"
+        if (-not $BaseUrl) { $BaseUrl = "http://127.0.0.1:$port"; Write-Host "test instance ready on $BaseUrl ($db)" }
 
-        $env:POS_E2E_BASE_URL = "http://127.0.0.1:$port"
+        $env:POS_E2E_BASE_URL = $BaseUrl
         $env:POS_E2E_ADMIN_USER = $admin.username
         $env:POS_E2E_ADMIN_PASSWORD = $admin.password
         $env:POS_E2E_MODE = $Mode
@@ -100,7 +106,7 @@ try {
         }
         $global:LASTEXITCODE = $code
     } finally {
-        taskkill /T /F /PID $server.Id 2>&1 | Out-Null
+        if ($server) { taskkill /T /F /PID $server.Id 2>&1 | Out-Null }
         Remove-Item Env:POS_E2E_ADMIN_PASSWORD -ErrorAction SilentlyContinue
     }
 } finally {

@@ -1,6 +1,8 @@
 # Elite Business Systems Portfolio — POS public site (PREPARED, NOT ACTIVE).
 # Activation requires separate owner authorization (checkpoint decision POS-PUBLIC):
-#   rename to pos.caddy.tmpl (replacing the loopback-only stage file) and run render-caddy-sites.ps1.
+#   scripts/provisioning/activate-pos-public.ps1 -OwnerApproved  (preflight, backup, host-side approval flag,
+#   render + validate + graceful reload, public smoke + browser tests, automatic rollback on failure).
+#   render-caddy-sites.ps1 uses this file instead of pos.caddy.tmpl only while that flag exists.
 # __PUBLIC_IP__ is substituted by scripts/provisioning/render-caddy-sites.ps1.
 
 pos.__PUBLIC_IP__.sslip.io {

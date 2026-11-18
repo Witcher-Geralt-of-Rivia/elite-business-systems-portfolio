@@ -94,6 +94,9 @@ class Integrity
             'payment_before_order' => "select count(*) from nexopos_orders_payments p join nexopos_orders o on o.id = p.order_id where p.created_at < o.created_at - interval 5 second",
             'refund_before_sale' => "select count(*) from nexopos_orders_refunds r join nexopos_orders o on o.id = r.order_id where r.created_at <= o.created_at",
             'sale_outside_ledger_time' => "select count(*) from harborpine_sim_ledger l join nexopos_orders o on o.id = l.entity_id where l.entity = 'order' and abs(timestampdiff(second, l.occurred_at, o.created_at)) > 5",
+            // Setup records and customers are dated before the trading activity that uses them (Chronology).
+            'product_created_after_first_sale' => "select count(*) from nexopos_products p where p.created_at > (select min(op.created_at) from nexopos_orders_products op where op.product_id = p.id)",
+            'customer_created_after_first_order' => "select count(*) from nexopos_users u where u.created_at > (select min(o.created_at) from nexopos_orders o where o.customer_id = u.id)",
             'sold_before_stocked' => "select count(*) from nexopos_products_histories s where s.operation_type = 'sold'
                 and not exists (select 1 from nexopos_products_histories p where p.product_id = s.product_id and p.operation_type = 'procured' and p.id < s.id)",
             // ---- foreign keys (application-level references)

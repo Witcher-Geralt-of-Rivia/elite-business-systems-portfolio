@@ -38,7 +38,16 @@ Get-ChildItem $OutDir -Filter '*.caddy' -ErrorAction SilentlyContinue | Copy-Ite
 
 foreach ($t in $templates) {
     $name = $t.Name -replace '\.tmpl$', ''
-    $content = (Get-Content $t.FullName -Raw) -replace '__PUBLIC_IP__', $PublicIp
+    $base = $name -replace '\.caddy$', ''
+    # A prepared public variant (<site>-public.caddy.disabled) is used only while the host-side approval flag
+    # <OutDir>\<site>.public-enabled exists (written by activate-pos-public.ps1 after owner approval).
+    $source = $t.FullName
+    $publicVariant = Join-Path $t.DirectoryName "$base-public.caddy.disabled"
+    if ((Test-Path $publicVariant) -and (Test-Path (Join-Path $OutDir "$base.public-enabled"))) {
+        $source = $publicVariant
+        Write-Host "  ${base}: public site (approval flag present)"
+    }
+    $content = (Get-Content $source -Raw) -replace '__PUBLIC_IP__', $PublicIp
     [IO.File]::WriteAllText((Join-Path $OutDir $name), $content, (New-Object Text.UTF8Encoding $false))
     Write-Host "rendered $name"
 }
