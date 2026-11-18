@@ -5,7 +5,7 @@
   "current_milestone": "M9",
   "current_task": "M9 final delivery for the deployed applications (CRM, POS, portal): claims vs evidence review, README/portal status; ERP on hold (REBOOT)",
   "status": "in_progress",
-  "last_verified_commit": "db5fe48",
+  "last_verified_commit": "186f2de",
   "milestones": {
     "M0": "done",
     "M1": "done",
