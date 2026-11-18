@@ -44,3 +44,19 @@ pos.__PUBLIC_IP__.sslip.io {
 		}
 	}
 }
+
+# Loopback listener kept after activation for local checks (portal /status/pos, monitoring): health only.
+http://127.0.0.1:8820 {
+	bind 127.0.0.1
+	root * C:/srv/portfolio/pos/app/public
+	@health path /harborpine/health
+	handle @health {
+		php_fastcgi 127.0.0.1:9071 127.0.0.1:9072 {
+			lb_policy least_conn
+			lb_try_duration 5s
+		}
+	}
+	handle {
+		respond 404
+	}
+}

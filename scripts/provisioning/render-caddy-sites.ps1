@@ -47,7 +47,11 @@ foreach ($t in $templates) {
         $source = $publicVariant
         Write-Host "  ${base}: public site (approval flag present)"
     }
-    $content = (Get-Content $source -Raw) -replace '__PUBLIC_IP__', $PublicIp
+    $content = (Get-Content $source -Raw -Encoding UTF8) -replace '__PUBLIC_IP__', $PublicIp
+    # Conditional blocks: lines between "# @if-flag <file>" and "# @end-if" are kept only while
+    # <OutDir>\<file> exists (e.g. the portal's POS status route once the POS is approved for public access).
+    $content = [regex]::Replace($content, '(?ms)^[ \t]*# @if-flag (\S+)[ \t]*\r?\n(.*?)^[ \t]*# @end-if[ \t]*\r?\n', {
+            param($m) if (Test-Path (Join-Path $OutDir $m.Groups[1].Value)) { $m.Groups[2].Value } else { '' } })
     [IO.File]::WriteAllText((Join-Path $OutDir $name), $content, (New-Object Text.UTF8Encoding $false))
     Write-Host "rendered $name"
 }

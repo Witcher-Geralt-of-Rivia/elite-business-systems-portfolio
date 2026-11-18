@@ -55,3 +55,16 @@ _TBD (M3–M6), per application._
 ## Recovery
 
 _TBD (M3)._
+
+## Portfolio portal (M7)
+
+`scripts/provisioning/deploy-portal.ps1` stages `portal/site`, writes `config.js` from the host state (CRM
+`live` while its API service runs; POS `live` only while the owner-approval flag
+`C:\srv\portfolio\caddy\pos.public-enabled` exists; ERP `planned`), swaps it into `C:\srv\portfolio\portal\www`
+(previous copies kept as `www.prev-*`, last 3), re-renders the portfolio Caddy site files (whole host Caddyfile
+validated, graceful `caddy reload`) and smoke-tests the public site; any failure restores the previous site.
+
+Same-origin status routes on the portal host: `/status/crm` → CRM `/api/health`; `/status/pos` → POS
+`/harborpine/health` exists only while the POS approval flag exists (template block `# @if-flag pos.public-enabled`).
+`activate-pos-public.ps1` refreshes the portal after activation and after a rollback.
+

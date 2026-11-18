@@ -2,6 +2,17 @@
 
 Newest first. Every entry states what was **verified**, not just what was written.
 
+## 2026-11-18 — M7: portfolio portal deployed
+
+- Portal live on the portfolio host: three applications with real screenshots, live status (same-origin
+  `/status/crm`), data and architecture sections, credits. CRM linked; POS shown as "being finalised" (no link,
+  no status route) until the owner approves its public activation; ERP "in preparation".
+- `deploy-portal.ps1`: config from host state, atomic swap with rollback, graceful Caddy reload only, smoke tests.
+  Host Caddyfile untouched; CRM, Práctica and POS loopback verified after the reload.
+- Browser check desktop + phone: 0 errors, no horizontal scroll, strict CSP.
+- POS activation now also switches the portal (and back on rollback); the POS public site keeps a loopback
+  health listener for the portal status route.
+
 ## 2026-11-18 — M6 local acceptance: full POS dataset verified, live simulation running (still private)
 
 - **12-month history complete** (not regenerated): 24,313 orders, 280 returns, 573 deliveries, 724 register

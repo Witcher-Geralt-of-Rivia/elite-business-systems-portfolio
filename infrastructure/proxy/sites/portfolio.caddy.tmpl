@@ -11,6 +11,8 @@ portfolio.__PUBLIC_IP__.sslip.io {
 		X-Frame-Options "DENY"
 		Referrer-Policy "strict-origin-when-cross-origin"
 		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'none'; object-src 'none'"
+		X-Robots-Tag "noindex, nofollow"
 		-Server
 	}
 
@@ -18,6 +20,34 @@ portfolio.__PUBLIC_IP__.sslip.io {
 		header Cache-Control "no-store"
 		respond "ok" 200
 	}
+
+	# Live status for the portal, same origin (no CORS): only the applications' public health answers.
+	handle /status/crm {
+		header Cache-Control "no-store"
+		rewrite * /api/health
+		reverse_proxy 127.0.0.1:8810 {
+			header_down -Set-Cookie
+		}
+	}
+	# @if-flag pos.public-enabled
+	handle /status/pos {
+		header Cache-Control "no-store"
+		rewrite * /harborpine/health
+		reverse_proxy 127.0.0.1:8820 {
+			header_up Host 127.0.0.1
+			header_down -Set-Cookie
+		}
+	}
+	# @end-if
+	handle /status/* {
+		header Cache-Control "no-store"
+		respond 404
+	}
+
+	@static path /assets/*
+	header @static Cache-Control "public, max-age=3600"
+	@runtime path / /index.html /config.js
+	header @runtime Cache-Control "no-cache"
 
 	handle {
 		root * C:/srv/portfolio/portal/www

@@ -2,8 +2,8 @@
   "project": "elite-business-systems-portfolio",
   "repository": "https://github.com/Witcher-Geralt-of-Rivia/elite-business-systems-portfolio",
   "updated": "2026-11-18",
-  "current_milestone": "M7",
-  "current_task": "M7: portfolio portal (screenshots, status routes, deploy script, deployment); M6 locally accepted, POS public activation awaiting owner",
+  "current_milestone": "M8",
+  "current_task": "M8 preparation: security/integration/performance review of deployed CRM + POS (local) + portal; POS public activation awaits owner (POS-PUBLIC); ERP on hold (REBOOT)",
   "status": "in_progress",
   "last_verified_commit": "3a98749",
   "milestones": {
@@ -14,7 +14,7 @@
     "M4": "done 2026-11-17: production deployment + public E2E 10/10 (see TEST_RESULTS); one observation pending (first live lead in a business window)",
     "M5": "on_hold: ERPNext selected; Windows runtime decision pending (WSL1 needs an unapproved reboot); repository-only work allowed",
     "M6": "locally_accepted 2026-11-18: 12-month dataset, 43/43 integrity, replay 366 days, live worker (recycle/pause/restart verified), E2E admin 8/8 (clone) + visitor 4/4 (real data), backup/restore verified, resources measured; NOT public (POS-PUBLIC pending)",
-    "M7": "in_progress: portal source in portal/site (not deployed); next: screenshots, /status/crm route, deploy-portal.ps1, deployment (reload only)",
+    "M7": "deployed 2026-11-18: portal live (CRM live link + status; POS \"being finalised\" until POS-PUBLIC; ERP \"in preparation\"); deploy-portal.ps1 with rollback; browser check desktop+phone 0 errors",
     "M8": "not_started",
     "M9": "not_started"
   },
@@ -43,10 +43,10 @@
     "CRM M4: read-only visitor access (D-014)",
     "CRM production rollout with backup/restore check; public E2E 10/10 (c92a55f)",
     "POS runtime: PHP 8.3.36 + MariaDB 11.8.10 service + NexoPOS v6.3.0 setup + php-cgi workers + loopback Caddy site (550e7e8)",
-    "M6 local acceptance (2026-11-18): see docs/TEST_RESULTS.md POS M6 section"
+    "M6 local acceptance (2026-11-18): see docs/TEST_RESULTS.md POS M6 section",
+    "M7 portal deployed (2026-11-18): see docs/TEST_RESULTS.md M7 section"
   ],
   "pending_tasks": [
-    "M7: portal screenshots, status routes, deploy script, deployment and browser tests",
     "M6: public rollout only after owner authorization (POS-PUBLIC): scripts/provisioning/activate-pos-public.ps1 -OwnerApproved",
     "CRM follow-up: read C:/srv/portfolio/logs/crm-live-observation-20261118.json after 2026-11-18 13:05 local (window ends) and record evidence",
     "ERP: repository-only preparation (no runtime changes)"
@@ -101,15 +101,16 @@
     "pos_recovery_suite": "passed (clone)",
     "pos_e2e_admin_isolated": "8/8",
     "pos_e2e_visitor": "4/4, 0 visitor records",
-    "pos_backup_restore": "verified as SYSTEM (counts + text checksums)"
+    "pos_backup_restore": "verified as SYSTEM (counts + text checksums)",
+    "portal": "deployed; smoke tests pass; browser desktop+phone 0 errors"
   },
   "deployment_status": {
     "crm": "production at crm.<ip>.sslip.io: M4 build, 13-month synthetic history, live simulation (intensity 3), read-only visitor access; public E2E 10/10",
     "pos": "installed locally (loopback 127.0.0.1:8820 only), HarborPine module deployed, 12-month dataset, live worker running, visitor showcase enabled; not public",
     "erp": "not deployed (on hold)",
-    "portal": "placeholder live (healthz verified)"
+    "portal": "deployed: portal/site via deploy-portal.ps1 (crm=live, pos=preparing, erp=planned); /status/crm; strict CSP"
   },
-  "next_action": "M7: capture CRM/POS screenshots for the portal, add the /status/crm proxy route, write deploy-portal.ps1 (config.js from flags), validate the whole host Caddyfile, deploy with caddy reload, browser-test desktop + phone.",
+  "next_action": "Record the CRM live-lead observation after 13:05 local; then M8 review items that need no owner decision (security headers audit, dependency/licence review, backup schedule overview, monitoring of the POS worker).",
   "completed_milestones": [
     "M0",
     "M1",

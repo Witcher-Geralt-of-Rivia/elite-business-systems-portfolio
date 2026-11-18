@@ -239,3 +239,26 @@ catches such corruption. The same fix applied to the recovery suite and the E2E 
 Working-set figures are as reported by Windows (trimmed pages excluded).
 
 **Not done (owner decision):** public HTTPS activation of the POS (`activate-pos-public.ps1 -OwnerApproved`).
+
+## M7 — Portfolio portal deployment (2026-11-18)
+
+**Deployment** (`deploy-portal.ps1`, graceful `caddy reload`, host Caddyfile unchanged — SHA-256 identical before
+and after): staged with `crm=live, pos=preparing`; smoke tests passed (home 200 with CSP, `config.js` as written,
+`/status/crm` → `{"status":"ok"}`, `/status/pos` → 404 while the POS is private, CSS/JS/screenshots 200).
+Re-rendered CRM/POS site files differ from the previous ones only by a comment character (renderer now reads
+templates as UTF-8; the em dash had been written as `â€”`).
+
+**Neighbours after the reload:** CRM `/api/health` and `/` 200, Práctica `/acceder/` 200, POS loopback health 200,
+no public POS site.
+
+**Browser check** (Chromium, desktop 1366 px and phone 390 px, public URL): 0 page/console/request errors,
+no horizontal scroll (scrollWidth = viewport), CRM links point to the CRM public host, POS links disabled with
+"soon", live status `crm: operational`, `pos: being finalised`, `erp: in preparation`, both screenshots loaded.
+Headers: CSP `default-src 'self'` (no external resources), HSTS, `X-Robots-Tag: noindex, nofollow`.
+
+Screenshots: CRM from the public read-only showcase; POS from the read-only visitor session on the real dataset
+(`apps/pos/e2e/portal-shots.spec.ts`, cart in the browser only, nothing submitted).
+
+Prepared for the POS approval and validated offline (`caddy adapt`): portfolio site with `/status/pos`, and the
+POS public site keeping a loopback listener that serves only `/harborpine/health`.
+

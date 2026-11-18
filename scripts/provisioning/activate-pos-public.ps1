@@ -33,6 +33,8 @@ function Disable-Public([string]$why) {
     Write-Warning "rolling back: $why"
     Remove-Item $flag -ErrorAction SilentlyContinue
     & $render -PublicIp $PublicIp
+    # Portal back to "being finalised" (config.js, no /status/pos route).
+    try { & (Join-Path $PSScriptRoot 'deploy-portal.ps1') -PublicIp $PublicIp } catch { Write-Warning "portal refresh failed: $_" }
     Write-Host 'POS is loopback-only again.'
 }
 
@@ -102,4 +104,6 @@ try {
     Disable-Public "$_"
     throw
 }
+# Portal: POS marked live (config.js) and its same-origin /status/pos route enabled (template @if-flag).
+try { & (Join-Path $PSScriptRoot 'deploy-portal.ps1') -PublicIp $PublicIp } catch { Write-Warning "portal refresh failed (POS stays public): $_" }
 Write-Host "POS is public at https://$hostName (visitor entry: /showcase/enter)."
