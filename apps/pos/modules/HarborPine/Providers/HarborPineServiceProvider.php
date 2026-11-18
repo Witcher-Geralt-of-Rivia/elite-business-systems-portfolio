@@ -2,6 +2,7 @@
 namespace Modules\HarborPine\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Modules\HarborPine\Http\Middleware\ShowcaseGuard;
 use Modules\HarborPine\Services\Catalog;
 
 class HarborPineServiceProvider extends ServiceProvider
@@ -13,5 +14,9 @@ class HarborPineServiceProvider extends ServiceProvider
 
     public function boot()
     {
+        // Read-only visitor enforcement on every web and API request.
+        $router = $this->app['router'];
+        $router->pushMiddlewareToGroup( 'web', ShowcaseGuard::class );
+        $router->pushMiddlewareToGroup( 'api', ShowcaseGuard::class );
     }
 }

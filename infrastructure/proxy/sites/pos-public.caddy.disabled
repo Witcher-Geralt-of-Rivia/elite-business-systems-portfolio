@@ -1,0 +1,44 @@
+# Elite Business Systems Portfolio — POS public site (PREPARED, NOT ACTIVE).
+# Activation requires separate owner authorization (checkpoint decision POS-PUBLIC):
+#   rename to pos.caddy.tmpl (replacing the loopback-only stage file) and run render-caddy-sites.ps1.
+# __PUBLIC_IP__ is substituted by scripts/provisioning/render-caddy-sites.ps1.
+
+pos.__PUBLIC_IP__.sslip.io {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		X-Robots-Tag "noindex, nofollow"
+		-Server
+		-X-Powered-By
+	}
+
+	root * C:/srv/portfolio/pos/app/public
+
+	@hidden path /.* */.*
+	respond @hidden 404
+
+	request_body {
+		max_size 10MB
+	}
+
+	@build path /build/*
+	header @build Cache-Control "public, max-age=31536000, immutable"
+
+	php_fastcgi 127.0.0.1:9071 127.0.0.1:9072 {
+		lb_policy least_conn
+		lb_try_duration 5s
+	}
+	file_server
+
+	log {
+		output file C:/srv/portfolio/logs/caddy-pos-access.log {
+			roll_size 10MiB
+			roll_keep 5
+		}
+	}
+}

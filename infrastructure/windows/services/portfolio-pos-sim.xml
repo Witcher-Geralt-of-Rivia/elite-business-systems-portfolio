@@ -1,0 +1,28 @@
+<!-- WinSW 2 service: Harbor & Pine Market live retail simulation (hp:worker).
+     The worker exits after max-minutes or when memory grows; WinSW restarts it (bounded resources).
+     A MariaDB named lock guarantees a single active worker. Pause/resume: `php artisan hp:sim pause|resume`.
+     Installed by scripts/provisioning/install-pos-sim-service.ps1. -->
+<service>
+  <id>portfolio-pos-sim</id>
+  <name>Portfolio POS live simulation</name>
+  <description>Elite Business Systems Portfolio: Harbor &amp; Pine Market live store activity through NexoPOS services.</description>
+  <executable>C:\srv\portfolio\pos\php\php.exe</executable>
+  <arguments>-d memory_limit=512M artisan hp:worker --tick=60 --intensity=1 --max-minutes=120 --max-memory=192</arguments>
+  <workingdirectory>C:\srv\portfolio\pos\app</workingdirectory>
+  <serviceaccount>
+    <domain>NT AUTHORITY</domain>
+    <user>LocalService</user>
+  </serviceaccount>
+  <startmode>Automatic</startmode>
+  <depend>portfolio-pos-mariadb</depend>
+  <stoptimeout>30 sec</stoptimeout>
+  <onfailure action="restart" delay="30 sec"/>
+  <onfailure action="restart" delay="60 sec"/>
+  <onfailure action="restart" delay="5 min"/>
+  <resetfailure>1 hour</resetfailure>
+  <logpath>C:\srv\portfolio\logs\pos-sim</logpath>
+  <log mode="roll-by-size">
+    <sizeThreshold>10240</sizeThreshold>
+    <keepFiles>5</keepFiles>
+  </log>
+</service>
