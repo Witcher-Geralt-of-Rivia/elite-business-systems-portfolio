@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="description" content="Three working business applications — CRM, POS and ERP — on open-source foundations, each with its own database, a year of synthetic history and live simulated activity.">
+<title>Elite Business Systems — portfolio</title>
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/portal.css">
+<script src="config.js" defer></script>
+<script src="assets/portal.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="nav" id="top">
+  <div class="wrap nav-inner">
+    <a class="brand" href="#top" aria-label="Elite Business Systems, home">
+      <svg viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#0f766e"/><path d="M9 10h14M9 16h10M9 22h14" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg>
+      <span>Elite Business Systems</span>
+    </a>
+    <nav aria-label="Sections">
+      <a href="#apps">Applications</a>
+      <a href="#data">How the data works</a>
+      <a href="#architecture">Architecture</a>
+      <a href="#credits">Credits</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+  <section class="hero">
+    <div class="wrap hero-inner">
+      <p class="eyebrow">Portfolio · open-source foundations · live demos</p>
+      <h1>Three business systems that are actually running.</h1>
+      <p class="lead">A CRM, a point of sale and an ERP, each deployed with its own database, a year of coherent
+        synthetic history and a simulation that keeps doing business while you watch. Explore them read-only,
+        no sign-up needed.</p>
+      <div class="cta">
+        <a class="btn primary" data-app-link="crm" href="#apps">Explore the CRM</a>
+        <a class="btn ghost" data-app-link="pos" href="#apps">Explore the POS</a>
+      </div>
+      <ul class="status-strip" aria-label="Live status">
+        <li data-status="crm"><span class="dot" aria-hidden="true"></span><b>CRM</b> <span class="status-text">checking…</span></li>
+        <li data-status="pos"><span class="dot" aria-hidden="true"></span><b>POS</b> <span class="status-text">checking…</span></li>
+        <li data-status="erp"><span class="dot" aria-hidden="true"></span><b>ERP</b> <span class="status-text">in preparation</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="apps" class="section">
+    <div class="wrap">
+      <h2>The applications</h2>
+      <p class="section-lead">Every company, person and transaction is fictional. The software underneath is real.</p>
+
+      <article class="app" data-app="crm">
+        <div class="app-text">
+          <p class="tag">CRM · built on Atomic CRM</p>
+          <h3>Meridian Advisory</h3>
+          <p>A B2B firm selling operations-analytics software and services to mid-market companies. Six simulated
+            team members work about five hundred accounts: leads arrive in business hours, deals move through the
+            pipeline with notes, tasks and follow-ups, and won customers come back for expansions.</p>
+          <ul class="facts">
+            <li>Own API and PostgreSQL database, real-time updates in the browser</li>
+            <li>Search, team invitations, password management, record merge, attachments</li>
+            <li>22 integrity checks on the generated data</li>
+          </ul>
+          <a class="btn primary small" data-app-link="crm" href="#">Open the read-only demo</a>
+          <span class="avail" data-avail="crm"></span>
+        </div>
+        <figure class="shot"><img src="assets/shots/crm.jpg" alt="CRM dashboard with pipeline chart, hot contacts and upcoming tasks" width="1280" height="800" loading="lazy"><figcaption>CRM dashboard</figcaption></figure>
+      </article>
+
+      <article class="app reverse" data-app="pos">
+        <div class="app-text">
+          <p class="tag">Point of sale · built on NexoPOS</p>
+          <h3>Harbor &amp; Pine Market</h3>
+          <p>A coastal specialty food and home store: 88 products in 12 categories, two registers, five staff and
+            around four hundred registered customers. Deliveries arrive on supplier schedules, registers open
+            and close, sales follow the hour, weekday and season, and returns refer to real earlier purchases.</p>
+          <ul class="facts">
+            <li>Cash and simulated card payments, discounts, promotions, refunds, stock counts</li>
+            <li>Native NexoPOS reports and dashboards, recomputed from the generated sales</li>
+            <li>Try the checkout screen: the demo shows the sale and refuses to save it</li>
+          </ul>
+          <a class="btn primary small" data-app-link="pos" href="#">Open the read-only demo</a>
+          <span class="avail" data-avail="pos"></span>
+        </div>
+        <figure class="shot"><img src="assets/shots/pos.jpg" alt="NexoPOS checkout screen with Coffee &amp; Tea products and a cart" width="1280" height="800" loading="lazy"><figcaption>POS checkout screen</figcaption></figure>
+      </article>
+
+      <article class="app" data-app="erp">
+        <div class="app-text">
+          <p class="tag">ERP · built on ERPNext</p>
+          <h3>Wholesale electronics distributor</h3>
+          <p>Multi-warehouse purchasing, inventory, sales orders and accounting for a fictional distributor. This
+            application is being prepared and will appear here when it runs with the same standard as the others.</p>
+          <span class="avail" data-avail="erp"></span>
+        </div>
+        <figure class="shot placeholder" aria-hidden="true"><div>ERP · in preparation</div></figure>
+      </article>
+    </div>
+  </section>
+
+  <section id="data" class="section alt">
+    <div class="wrap">
+      <h2>How the data works</h2>
+      <div class="grid3">
+        <div class="card"><h3>Simulated, not seeded</h3><p>Records are the consequence of business events — a delivery, a
+          sale, a follow-up call — written through each application's own services, with its validation and audit
+          trail. Nothing is inserted behind the application's back.</p></div>
+        <div class="card"><h3>Deterministic and exactly-once</h3><p>Each day's plan comes from a fixed seed. Every event has a
+          stable key recorded in the same database transaction as its effects, so restarts, crashes and catch-up never
+          duplicate a sale, and a replay check proves the history matches the plan.</p></div>
+        <div class="card"><h3>Checked continuously</h3><p>Integrity suites compare stock with its movement history,
+          payments with orders, registers with their cash, dashboards with raw records and much more — 22 checks for
+          the CRM, 43 for the POS. Every one must be zero.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="architecture" class="section">
+    <div class="wrap">
+      <h2>Architecture</h2>
+      <p class="section-lead">One Windows server, independent stacks, nothing shared between applications except the TLS front door.</p>
+      <figure class="diagram">
+        <svg viewBox="0 0 960 330" role="img" aria-labelledby="arch-title">
+          <title id="arch-title">Caddy terminates HTTPS and routes to three independent stacks, each with its own database and simulation worker</title>
+          <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
+          <g class="d-box"><rect x="380" y="16" width="200" height="50" rx="10"/><text x="480" y="46">Caddy · HTTPS (sslip.io)</text></g>
+          <g class="d-line"><path d="M430 66L160 120" marker-end="url(#arr)"/><path d="M480 66V120" marker-end="url(#arr)"/><path d="M530 66L800 120" marker-end="url(#arr)"/></g>
+          <g class="d-box app-crm"><rect x="40" y="120" width="240" height="64" rx="10"/><text x="160" y="148">CRM · React + Fastify API</text><text class="sub" x="160" y="168">Atomic CRM UI, own API</text></g>
+          <g class="d-box app-pos"><rect x="360" y="120" width="240" height="64" rx="10"/><text x="480" y="148">POS · NexoPOS (PHP)</text><text class="sub" x="480" y="168">2 FastCGI workers</text></g>
+          <g class="d-box app-erp"><rect x="680" y="120" width="240" height="64" rx="10"/><text x="800" y="148">ERP · ERPNext</text><text class="sub" x="800" y="168">in preparation</text></g>
+          <g class="d-line"><path d="M160 184V232" marker-end="url(#arr)"/><path d="M480 184V232" marker-end="url(#arr)"/><path d="M800 184V232" marker-end="url(#arr)"/></g>
+          <g class="d-db"><rect x="60" y="232" width="200" height="44" rx="22"/><text x="160" y="259">PostgreSQL 16</text></g>
+          <g class="d-db"><rect x="380" y="232" width="200" height="44" rx="22"/><text x="480" y="259">MariaDB 11</text></g>
+          <g class="d-db"><rect x="700" y="232" width="200" height="44" rx="22"/><text x="800" y="259">MariaDB</text></g>
+          <g class="d-sim"><text x="160" y="310">live simulation worker</text><text x="480" y="310">live simulation worker</text><text x="800" y="310">planned</text></g>
+        </svg>
+      </figure>
+      <ul class="pills" aria-label="Operational practices">
+        <li>Loopback-only databases and services</li><li>Nightly backups with restore checks</li>
+        <li>Read-only visitor roles enforced server-side</li><li>Browser end-to-end tests on desktop and phone</li>
+        <li>Single-worker locks and bounded memory</li><li>No real customer data, no real payments</li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="credits" class="section alt">
+    <div class="wrap">
+      <h2>Credits and honesty</h2>
+      <div class="grid3">
+        <div class="card"><h3>Atomic CRM</h3><p>by Marmelab, MIT licence. The CRM's interface is Atomic CRM; its API, data
+          engine and portfolio features were built for this project.</p></div>
+        <div class="card"><h3>NexoPOS</h3><p>by Blair Jersyer, GPL-3.0. Unmodified core; the store, simulation and visitor
+          mode are a separate NexoPOS module under GPL-3.0.</p></div>
+        <div class="card"><h3>ERPNext &amp; Frappe</h3><p>by Frappe Technologies, GPL-3.0. Customisations will be delivered as
+          a separate Frappe app.</p></div>
+      </div>
+      <p class="note">These products were created by their authors, not by this portfolio's owner. The businesses, people
+        and figures in the demos are synthetic. This is a demonstration environment, not a commercial service.</p>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="wrap footer-inner">
+    <span>Elite Business Systems portfolio</span>
+    <a data-repo-link href="#">Source code and test evidence</a>
+  </div>
+</footer>
+</body>
+</html>
