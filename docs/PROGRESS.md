@@ -2,6 +2,13 @@
 
 Newest first. Every entry states what was **verified**, not just what was written.
 
+## 2026-11-17 — Security investigation: confirmed malware (project paused on host)
+
+- The suspicious task traced back to an executed information-stealer loader (2026-10-07) delivered via a password-protected "setup package" archive; payload is an obfuscated Python script disguised as `app.asar`; hidden logon persistence. Defender never detected it.
+- No current malicious process, connection or other persistence found; task disabled, second stage gone.
+- Sanitized report: [SECURITY_INVESTIGATION.md](SECURITY_INVESTIGATION.md); raw evidence kept locally (restricted).
+- **Paused:** new deployments and CRM M4 work on this host (D-012) until the owner rotates credentials and chooses rebuild vs. in-place remediation.
+
 ## 2026-11-17 — CRM PoC passed: Atomic CRM running on our own API + PostgreSQL (M4 started)
 
 - **Backend:** Fastify API with app-managed auth, CSRF/origin checks, rate limiting, lockout, server-side filter translation, record-level rules and an audit log, over a dedicated PG16 cluster (D-010). 15/15 tests.

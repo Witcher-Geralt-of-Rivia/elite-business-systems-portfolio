@@ -3,9 +3,9 @@
   "repository": "https://github.com/Witcher-Geralt-of-Rivia/elite-business-systems-portfolio",
   "updated": "2026-11-17",
   "current_milestone": "M4",
-  "current_task": "CRM: complete Supabase removal (M4 feature parity list in D-011)",
-  "status": "in_progress",
-  "last_verified_commit": "60c629c",
+  "current_task": "Security incident response (D-012) \u2014 awaiting owner decision",
+  "status": "blocked_on_security_decision",
+  "last_verified_commit": "ce77381",
   "milestones": {
     "M0": "done",
     "M1": "done",
@@ -36,7 +36,8 @@
     "CRM PoC backend: Fastify API + dedicated PG16 cluster (D-010) + session auth + RBAC + audit; 14/14 tests pass",
     "CRM PoC frontend: upstream snapshot + portfolio providers; deployed at crm.<ip>.sslip.io; Playwright 2/2 live",
     "CRM deploy script + WinSW service (LocalService) + least-privilege secrets split (api vs migrate env)",
-    "CRM nightly backup with restore verification (scheduled task, SYSTEM)"
+    "CRM nightly backup with restore verification (scheduled task, SYSTEM)",
+    "Security investigation: confirmed malware (2026-10-07), evidence preserved, sanitized report committed"
   ],
   "pending_tasks": [
     "CRM M4: sign-up, users/invitations, password reset, global search, merge, attachments, SSE, remove supabase deps/UI",
@@ -47,15 +48,26 @@
   ],
   "blocked_tasks": [
     {
-      "task": "ERP WSL1 feature enable",
-      "reason": "requires reboot; owner wants separate approval",
+      "task": "CRM M4 development, new deployments, new secrets on the VPS",
+      "reason": "Confirmed historical malware execution (R-014); owner must rotate credentials and choose rebuild vs in-place remediation",
+      "decision_ids": [
+        "SEC-HOST",
+        "SEC-ROTATE"
+      ]
+    },
+    {
+      "task": "ERP WSL1 reboot",
+      "reason": "Owner not approving reboot yet; prerequisites include completed security remediation",
       "decision_ids": [
         "REBOOT"
       ]
     }
   ],
   "owner_decisions_needed": {
-    "REBOOT": "Approve one host reboot to enable WSL1 (runbook: docs/runbooks/ERP_WSL1_REBOOT.md). Confirm VPS provider console access first."
+    "SEC-HOST": "Rebuild VPS from clean image (recommended) or remediate in place",
+    "SEC-ROTATE": "Confirm credential rotation (incl. GitHub CLI token) done from a trusted device",
+    "SEC-TOOL": "Confirm origin of the unsigned repository tool in Downloads",
+    "REBOOT": "Deferred by owner"
   },
   "host_facts": {
     "os": "Windows Server 2025 Standard 26100",
@@ -87,5 +99,5 @@
     "pos": "not_started",
     "portal": "placeholder live (healthz verified)"
   },
-  "next_action": "CRM M4: port remaining Supabase-coupled features, starting with global search and team-member management"
+  "next_action": "Await owner decision on SEC-HOST/SEC-ROTATE; on rebuild: redeploy from GitHub; on in-place: archive evidence, remove task/payload, harden Defender, rotate portfolio secrets, then resume CRM M4 (global search, team management)"
 }

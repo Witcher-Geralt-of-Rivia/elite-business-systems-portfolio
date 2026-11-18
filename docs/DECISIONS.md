@@ -65,3 +65,10 @@ Format: ID · date · decision · alternatives rejected · status.
 - Inventory size (CRM_SUPABASE_MIGRATION.md) is proportionate (~32 endpoints), so no alternative CRM is proposed.
 - Remaining Supabase-coupled features scheduled for M4: first-run sign-up, team-member management/invitations, password change/reset, global search (port of `global_search` SQL), contact merge, attachments (local storage), SSE live updates, removal of `@supabase/*` / `ra-supabase-core` dependencies and of the MCP/SSO UI.
 - Status: accepted.
+
+## D-012 · 2026-11-17 · Pause new deployment on the VPS after confirmed malware (security blocker)
+- Investigation (docs/SECURITY_INVESTIGATION.md) confirmed an executed information-stealer loader from 2026-10-07 with full admin rights. No current activity observed, but the second stage is unknown.
+- Per the owner directive ("never bypass a security blocker"), the agent pauses: new deployments, creation of new secrets on the host, and CRM M4 development work that would run on it. Existing services (portal placeholder, empty CRM) remain up; they hold no real data.
+- Evidence left untouched (task disabled, payload in place) for the owner's decision. No containment action that deletes or moves evidence was taken.
+- Recommended path: owner rotates credentials from a trusted device, then rebuilds the VPS from a clean image and the agent redeploys from GitHub. Alternative: in-place remediation with documented residual risk.
+- Status: **active blocker** until the owner decides.
