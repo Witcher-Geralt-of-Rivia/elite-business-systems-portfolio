@@ -171,8 +171,13 @@ class Executor:
 			"taxes_and_charges": self.tax_template if cu.taxable else "",
 			"taxes": [{"charge_type": "On Net Total", "account_head": self.tax_account, "rate": self.s.catalog["tax"]["rate"],
 				"description": self.s.catalog["tax"]["description"]}] if cu.taxable else [],
+			# price_list_rate must be given: server-side, ERPNext only fills item fields that are None, and new rows
+			# default to 0, so the Standard Selling price was never fetched and every order priced at 0 (CI run
+			# 44417258442). With it set and rate 0, ERPNext computes rate = list price - discount
+			# (taxes_and_totals.calculate_item_rate).
 			"items": [{"item_code": code, "qty": qty, "delivery_date": p["delivery_date"], "warehouse": wh,
-				"discount_percentage": cu.discount} for code, qty in p["lines"]]}))
+				"price_list_rate": self.s.item(code).list_price, "discount_percentage": cu.discount}
+				for code, qty in p["lines"]]}))
 		if p.get("remarks"):
 			so.add_comment("Comment", p["remarks"])
 		return self._done(so, lines=len(p["lines"]))

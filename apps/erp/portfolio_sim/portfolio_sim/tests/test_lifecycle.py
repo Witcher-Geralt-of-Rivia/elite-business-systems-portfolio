@@ -109,10 +109,17 @@ class TestDistributionLifecycle(IntegrationTestCase):
 		# (The first supplier receipt is planned for 2025-08-18: opening stock covers the first weeks.)
 		for kind in ("sales_order", "delivery_note", "sales_invoice", "purchase_order", "stock_transfer", "customer_payment"):
 			self.assertGreater(p[kind], 0, kind)
-		# Sales order lines are priced from the Standard Selling list with the customer's discount.
-		row = frappe.db.sql("""select soi.price_list_rate, soi.discount_percentage, soi.rate from `tabSales Order Item` soi
-			join `tabSales Order` so on so.name = soi.parent where so.docstatus = 1 limit 1""", as_dict=True)[0]
-		self.assertAlmostEqual(flt(row.rate), flt(row.price_list_rate) * (1 - flt(row.discount_percentage) / 100), places=2)
+		# Every sales order line is priced from ERPNext's Standard Selling Item Price, less the customer's discount
+		# (run 44417258442 passed a weaker version of this check with every rate at 0).
+		rows = frappe.db.sql("""select soi.item_code, soi.price_list_rate, soi.discount_percentage, soi.rate, ip.price_list_rate list_price
+			from `tabSales Order Item` soi join `tabSales Order` so on so.name = soi.parent
+			join `tabItem Price` ip on ip.item_code = soi.item_code and ip.price_list = 'Standard Selling'
+			where so.docstatus = 1""", as_dict=True)
+		self.assertGreater(len(rows), 100)
+		for row in rows:
+			self.assertGreater(flt(row.rate), 0, row)
+			self.assertAlmostEqual(flt(row.price_list_rate), flt(row.list_price), places=2)
+			self.assertAlmostEqual(flt(row.rate), flt(row.list_price) * (1 - flt(row.discount_percentage) / 100), places=2)
 
 	def test_04_returns_payments_reconciliation_and_counts(self):
 		# Five weeks: August month end (cycle count, advance settlement), Net 15/30 payments, the first supplier
@@ -124,6 +131,11 @@ class TestDistributionLifecycle(IntegrationTestCase):
 			self.assertGreater(p[kind], 0, kind)
 		self.assertGreater(frappe.db.count("Sales Invoice", {"docstatus": 1, "is_return": 1}), 0)
 		self.assertGreater(frappe.db.count("Stock Reconciliation", {"docstatus": 1, "purpose": "Stock Reconciliation"}), 0)
+		# Customer payments really pay invoices ("Nothing Due" only when credits or advances already settled them).
+		self.assertGreaterEqual(self._done("customer_payment"), 0.9 * p["customer_payment"],
+			(self._done("customer_payment"), p["customer_payment"]))
+		self.assertGreater(frappe.db.sql("""select count(*) from `tabGL Entry` where voucher_type = 'Sales Invoice'
+			and is_cancelled = 0""")[0][0], 0)
 		# Partial deliveries: some sales orders were delivered in more than one Delivery Note.
 		multi = frappe.db.sql("""select count(*) from (select dni.against_sales_order from `tabDelivery Note Item` dni
 			join `tabDelivery Note` dn on dn.name = dni.parent where dn.docstatus = 1 and dn.is_return = 0

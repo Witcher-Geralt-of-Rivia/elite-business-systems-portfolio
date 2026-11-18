@@ -56,6 +56,15 @@ CHECKS: dict[str, str] = {
 		and ifnull(taxes_and_charges, '') != '' and abs(total_taxes_and_charges - round(net_total * %(tax_rate)s / 100, 2)) > 0.02""",
 	"untaxed_invoice_for_taxable_customer": """select count(*) from `tabSales Invoice` where docstatus = 1 and company = %(company)s
 		and is_return = 0 and customer in %(taxable_customers)s and ifnull(taxes_and_charges, '') = ''""",
+	# Values (a zero-priced business is internally consistent, so the checks above cannot see it; CI run 44417258442)
+	"zero_rate_order_lines": """select count(*) from `tabSales Order Item` i join `tabSales Order` o on o.name = i.parent
+		where o.docstatus = 1 and o.company = %(company)s and i.rate <= 0""",
+	"zero_rate_purchase_lines": """select count(*) from `tabPurchase Order Item` i join `tabPurchase Order` o on o.name = i.parent
+		where o.docstatus = 1 and o.company = %(company)s and i.rate <= 0""",
+	"zero_value_invoices": """select count(*) from `tabSales Invoice` where docstatus = 1 and company = %(company)s
+		and is_return = 0 and grand_total <= 0""",
+	"zero_value_bills": """select count(*) from `tabPurchase Invoice` where docstatus = 1 and company = %(company)s
+		and is_return = 0 and grand_total <= 0""",
 	# Inventory
 	# Bin = quantity after the latest stock ledger entry. (Summing actual_qty is wrong: Stock Reconciliation
 	# entries often carry actual_qty 0 and set qty_after_transaction; found in CI run 44414165205.)
