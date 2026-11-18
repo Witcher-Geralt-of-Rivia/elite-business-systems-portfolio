@@ -13,7 +13,7 @@ $env:CRM_E2E_BASE_URL = "https://crm.$PublicIp.sslip.io"
 $env:CRM_E2E_EMAIL = $admin.email
 $env:CRM_E2E_PASSWORD = $admin.password
 $env:CRM_E2E_REUSE_INVITEE = '1'
-Push-Location "c:\Workstation\CRM, ERP, POS\elite-business-systems-portfolio\apps\crm\frontend"
+Push-Location (Join-Path $PSScriptRoot '..\..\apps\crm\frontend')
 $args2 = $Spec -split ' '
 npx playwright test -c playwright.portfolio.config.ts @args2 $env:PW_EXTRA 2>&1 | ForEach-Object { "$_" } | Where-Object { $_ -notmatch '^\s+at ' }
 "playwright exit=$LASTEXITCODE"
