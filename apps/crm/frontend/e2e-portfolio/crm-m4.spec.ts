@@ -45,17 +45,34 @@ test("global search finds generated companies and opens the record", async ({ pa
 
 test("admin invites a teammate; the one-time link sets their password; they can sign in", async ({ page, browser }) => {
   await signIn(page);
-  await page.goto("/#/sales/create");
-  const email = `new.rep.${RUN}@meridian-advisory.example`;
-  await page.locator('input[name="first_name"]').fill("Noor");
-  await page.locator('input[name="last_name"]').fill(`Haddad${RUN}`);
-  await page.locator('input[name="email"]').fill(email);
-  const created = page.waitForResponse((r) => r.url().endsWith("/api/users") && r.request().method() === "POST");
-  await page.getByRole("button", { name: /save|create/i }).first().click();
-  expect((await created).status()).toBe(201);
+  // Public runs (CRM_E2E_REUSE_INVITEE=1) reuse ONE test identity instead of inviting a new account
+  // each time: the first run invites it, later runs re-issue a one-time link from the team page.
+  const reuseInvitee = process.env.CRM_E2E_REUSE_INVITEE === "1";
+  const email = reuseInvitee ? "e2e.invitee@meridian-advisory.example" : `new.rep.${RUN}@meridian-advisory.example`;
+  const existing = reuseInvitee
+    ? (await (await page.request.get(`/api/r/sales?filter=${encodeURIComponent(JSON.stringify({ email }))}`)).json()).data[0]
+    : undefined;
+  if (existing) {
+    if (existing.disabled) {
+      const enabled = await page.request.patch(`/api/users/${existing.id}`, { headers: csrf, data: { disabled: false } });
+      expect(enabled.status()).toBe(200);
+    }
+    await page.goto(`/#/sales/${existing.id}`);
+    const linkCall = page.waitForResponse((r) => r.url().endsWith(`/api/users/${existing.id}/password-link`));
+    await page.getByRole("button", { name: "Password link" }).click();
+    expect((await linkCall).status()).toBe(200);
+  } else {
+    await page.goto("/#/sales/create");
+    await page.locator('input[name="first_name"]').fill("Noor");
+    await page.locator('input[name="last_name"]').fill(reuseInvitee ? "Haddad" : `Haddad${RUN}`);
+    await page.locator('input[name="email"]').fill(email);
+    const created = page.waitForResponse((r) => r.url().endsWith("/api/users") && r.request().method() === "POST");
+    await page.getByRole("button", { name: /save|create/i }).first().click();
+    expect((await created).status()).toBe(201);
+  }
 
   const dialog = page.getByRole("dialog");
-  await expect(dialog.getByText("Invitation link")).toBeVisible();
+  await expect(dialog.getByText(/Invitation link|Password reset link/)).toBeVisible();
   const link = await dialog.getByRole("textbox", { name: "one-time link" }).inputValue();
   expect(link).toMatch(/#\/set-password\?token=/);
   await dialog.getByRole("button", { name: "Close" }).last().click();
