@@ -5,7 +5,7 @@
   "current_milestone": "M6",
   "current_task": "Security incident response (D-012) — awaiting owner decision",
   "status": "in_progress",
-  "last_verified_commit": "2b11d5f",
+  "last_verified_commit": "c92a55f",
   "milestones": {
     "M0": "done",
     "M1": "done",
