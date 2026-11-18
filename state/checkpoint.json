@@ -5,7 +5,7 @@
   "current_milestone": "M8",
   "current_task": "M8: integration, performance and operational validation of the public CRM + POS + portal; ERP on hold (REBOOT)",
   "status": "in_progress",
-  "last_verified_commit": "bcce061",
+  "last_verified_commit": "d359c92",
   "milestones": {
     "M0": "done",
     "M1": "done",
