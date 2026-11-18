@@ -1,0 +1,161 @@
+# ERPNext integration tests for apps/erp/portfolio_sim on a temporary GitHub-hosted Ubuntu runner.
+#
+# A real Frappe bench (v16.60.0) with ERPNext v16.60.0, MariaDB 11.8 and Redis; an isolated throwaway site;
+# the app's ERPNext integration tests, then the 32 integrity checks and the replay verifier on the simulated
+# history. No production credentials, no deployment, no access to the Windows VPS.
+#
+# Adapted from ERPNext's own CI (erpnext v16.60.0: .github/workflows/server-tests-mariadb.yml and
+# .github/helper/install.sh), which uses a private CI image; here the same steps run on ubuntu-24.04.
+name: ERP integration (ERPNext v16.60.0)
+
+on:
+  workflow_dispatch:
+    inputs:
+      frappe_ref:
+        description: Frappe tag
+        default: v16.60.0
+        required: true
+      erpnext_ref:
+        description: ERPNext tag
+        default: v16.60.0
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: erp-integration
+  cancel-in-progress: false
+
+env:
+  DEBIAN_FRONTEND: noninteractive
+  PYTHONUNBUFFERED: "1"
+  BENCH: /home/runner/frappe-bench
+
+jobs:
+  integration:
+    name: Frappe bench + ERPNext + portfolio_sim
+    runs-on: ubuntu-24.04
+    timeout-minutes: 150
+
+    services:
+      mariadb:
+        image: mariadb:11.8
+        env:
+          MARIADB_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s --health-timeout=5s --health-retries=30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Python 3.14
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Engine and static tests (no Frappe)
+        run: python -m unittest discover -s apps/erp/tests -v
+
+      - name: System packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends redis-server mariadb-client libmariadb-dev pkg-config libcups2-dev cron
+          sudo systemctl stop redis-server || true
+          npm install -g yarn
+          pip install frappe-bench
+          python --version; node --version; bench --version; redis-server --version; mariadb --version
+
+      - name: MariaDB settings (as in ERPNext CI)
+        run: |
+          mariadb -h 127.0.0.1 -P 3306 -u root -proot -e "SET GLOBAL character_set_server = 'utf8mb4'; SET GLOBAL collation_server = 'utf8mb4_unicode_ci'; SET GLOBAL innodb_flush_log_at_trx_commit = 0; SELECT VERSION();"
+
+      - name: Bench init (Frappe ${{ inputs.frappe_ref }})
+        run: |
+          cd /home/runner
+          bench init --skip-assets --frappe-branch "${{ inputs.frappe_ref }}" --python "$(which python)" frappe-bench
+          cd "$BENCH"
+          sed -i 's/^watch:/# watch:/; s/^schedule:/# schedule:/; s/^socketio:/# socketio:/' Procfile
+          cat Procfile
+          git -C apps/frappe describe --tags
+
+      - name: Get ERPNext ${{ inputs.erpnext_ref }} and portfolio_sim
+        run: |
+          cd "$BENCH"
+          bench get-app --skip-assets --branch "${{ inputs.erpnext_ref }}" erpnext https://github.com/frappe/erpnext
+          git -C apps/erpnext describe --tags
+          # bench get-app clones a git repository: package the app directory as its own throwaway repo.
+          rm -rf /tmp/portfolio_sim && cp -r "$GITHUB_WORKSPACE/apps/erp/portfolio_sim" /tmp/portfolio_sim
+          git -C /tmp/portfolio_sim init -q && git -C /tmp/portfolio_sim add -A
+          git -C /tmp/portfolio_sim -c user.name=ci -c user.email=ci@example.org commit -qm "portfolio_sim @ $GITHUB_SHA"
+          bench get-app --skip-assets /tmp/portfolio_sim
+          cat sites/apps.txt
+
+      - name: Start bench processes (redis, web, workers)
+        run: |
+          cd "$BENCH"
+          nohup bench start > "$BENCH/bench_start.log" 2>&1 &
+          for port in $(python -c "import json,re;c=json.load(open('sites/common_site_config.json'));print(' '.join(re.search(r':(\d+)',c[k]).group(1) for k in ('redis_cache','redis_queue')))"); do
+            for i in $(seq 1 60); do (exec 3<>/dev/tcp/127.0.0.1/$port) 2>/dev/null && break; sleep 1; done
+            (exec 3<>/dev/tcp/127.0.0.1/$port) || { echo "redis on $port did not start"; cat "$BENCH/bench_start.log"; exit 1; }
+          done
+
+      - name: New site with ERPNext and portfolio_sim
+        run: |
+          cd "$BENCH"
+          start=$(date +%s)
+          bench new-site test_site --db-host 127.0.0.1 --db-port 3306 --db-root-username root --db-root-password root \
+            --admin-password admin --mariadb-user-host-login-scope='%' --install-app erpnext
+          bench --site test_site install-app portfolio_sim
+          bench --site test_site set-config allow_tests true
+          bench --site test_site list-apps
+          echo "site setup seconds: $(( $(date +%s) - start ))"
+
+      - name: Integration tests (portfolio_sim.tests.test_lifecycle)
+        id: tests
+        run: |
+          cd "$BENCH"
+          start=$(date +%s)
+          bench --site test_site run-tests --app portfolio_sim --module portfolio_sim.tests.test_lifecycle \
+            --skip-before-tests --skip-test-records --junit-xml-output "$BENCH/junit.xml"
+          echo "test seconds: $(( $(date +%s) - start ))"
+
+      - name: Integrity, replay and status on the simulated history
+        if: always()
+        run: |
+          cd "$BENCH"
+          mkdir -p "$BENCH/evidence"
+          bench --site test_site portfolio-sim status | tee "$BENCH/evidence/status.json" || true
+          bench --site test_site portfolio-sim integrity | tee "$BENCH/evidence/integrity.json"; echo "integrity exit: $?"
+          bench --site test_site portfolio-sim replay-check | tee "$BENCH/evidence/replay.json"; echo "replay exit: $?"
+          bench --site test_site mariadb -e "select kind, outcome, count(*) n from \`tabDistribution Sim Event\` group by kind, outcome order by kind" | tee "$BENCH/evidence/ledger_by_kind.tsv" || true
+          bench --site test_site mariadb -e "select voucher_type, count(distinct voucher_no) vouchers, round(sum(debit),2) debit, round(sum(credit),2) credit from \`tabGL Entry\` where is_cancelled = 0 group by voucher_type" | tee "$BENCH/evidence/gl_by_voucher_type.tsv" || true
+
+      - name: Final checks must pass
+        run: |
+          cd "$BENCH"
+          bench --site test_site portfolio-sim integrity > /dev/null
+          bench --site test_site portfolio-sim replay-check > /dev/null
+
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: erp-integration-evidence
+          path: |
+            ${{ env.BENCH }}/junit.xml
+            ${{ env.BENCH }}/evidence/
+            ${{ env.BENCH }}/bench_start.log
+            ${{ env.BENCH }}/logs/
+            ${{ env.BENCH }}/sites/test_site/logs/
+          if-no-files-found: warn
+          retention-days: 30

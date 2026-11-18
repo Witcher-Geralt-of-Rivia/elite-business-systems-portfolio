@@ -70,7 +70,9 @@ class TestDistributionLifecycle(IntegrationTestCase):
 		self.assertAlmostEqual(flt(row.rate), flt(row.price_list_rate) * (1 - flt(row.discount_percentage) / 100), places=2)
 
 	def test_04_returns_payments_reconciliation_and_counts(self):
-		self._advance("2025-10-31 23:59:59")
+		# Five weeks: August month end (cycle count, advance settlement), Net 15/30 payments, the first supplier
+		# payment runs, returns and Friday reconciliations.
+		self._advance("2025-09-05 23:59:59")
 		result = integrity.run()
 		self._ok(result)
 		self.assertGreater(frappe.db.count("Sales Invoice", {"docstatus": 1, "is_return": 1}), 0)
@@ -86,7 +88,7 @@ class TestDistributionLifecycle(IntegrationTestCase):
 	def test_06_rerun_does_not_duplicate(self):
 		before = frappe.db.count("Distribution Sim Event")
 		gl_before = frappe.db.count("GL Entry")
-		self._advance("2025-10-31 23:59:59")  # already processed
+		self._advance("2025-09-05 23:59:59")  # already processed
 		self.assertEqual(frappe.db.count("Distribution Sim Event"), before)
 		self.assertEqual(frappe.db.count("GL Entry"), gl_before)
 
@@ -107,10 +109,10 @@ class TestDistributionLifecycle(IntegrationTestCase):
 		ex.Executor.run = flaky
 		try:
 			with self.assertRaises(RuntimeError):
-				self._advance("2025-11-14 23:59:59")
+				self._advance("2025-09-12 23:59:59")
 		finally:
 			ex.Executor.run = original
-		self._advance("2025-11-14 23:59:59")
+		self._advance("2025-09-12 23:59:59")
 		self._ok(integrity.run())
 		r = simulator.replay_check()
 		self.assertEqual((r["missing_count"], r["unexpected_count"]), (0, 0), r)
