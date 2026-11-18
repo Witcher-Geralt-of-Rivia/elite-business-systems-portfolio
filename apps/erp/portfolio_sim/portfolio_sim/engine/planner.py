@@ -226,8 +226,12 @@ class Planner:
 
 	def _opening(self) -> None:
 		self._emit("opening_capital", {"amount": self.s.company["opening_capital"]})
-		self._emit("opening_stock", {"warehouses": {w: {c: q for c, q in sorted(self.st["stock"][w].items()) if q > 0}
-			for w in SELLING_WAREHOUSES}, "valuation": "cost"})
+		# One Stock Reconciliation per warehouse: ERPNext queues reconciliations with more than 100 rows as a
+		# background job instead of submitting them (stock_reconciliation.py `submit`), found in CI.
+		for w in SELLING_WAREHOUSES:
+			lines = {c: q for c, q in sorted(self.st["stock"][w].items()) if q > 0}
+			if lines:
+				self._emit("opening_stock", {"warehouse": w, "lines": lines, "valuation": "cost"})
 		self._emit("opening_clearing", {})
 
 	def _receipts(self, rng: Rng) -> None:

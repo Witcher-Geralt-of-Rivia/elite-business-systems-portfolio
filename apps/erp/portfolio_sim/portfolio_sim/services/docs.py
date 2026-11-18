@@ -38,4 +38,8 @@ def submit(doc):
 	if doc.is_new():
 		doc.insert()
 	doc.submit()
+	# Some ERPNext controllers queue large submissions as background jobs (e.g. Stock Reconciliation with more
+	# than 100 rows) and return without submitting; never record such a document as done.
+	if doc.docstatus != 1:
+		raise RuntimeError(f"{doc.doctype} {doc.name} was not submitted synchronously (docstatus {doc.docstatus})")
 	return doc

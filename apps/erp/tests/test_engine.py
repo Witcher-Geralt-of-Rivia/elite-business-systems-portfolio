@@ -63,8 +63,8 @@ class TestRng(unittest.TestCase):
 		# docs/ERP_DATA_ENGINE.md, and never on a site whose history was generated with the old plan.
 		s = build_scenario(load_catalog(), SEED, cal.on_or_after(START))
 		events, _ = plan_range(Planner(s), initial_state(s), s.start, date(2025, 8, 31))
-		self.assertEqual(len(events), 1116)
-		self.assertEqual(events_hash(events), "b16d74671b6bda6bc12e5c0e237defbf38f1c9f471e1f31d8b560c05eaf53082")
+		self.assertEqual(len(events), 1118)
+		self.assertEqual(events_hash(events), "8dc3ae9a99f1fee1b0cc4b4e265d7edad5576a1a57826a0666ca7ef39783691b")
 
 	def test_ranges_and_means(self):
 		r = Rng(7)
@@ -214,8 +214,16 @@ class TestPlanner(unittest.TestCase):
 		for e in self.events:
 			self.assertTrue(cal.is_business_day(date.fromisoformat(e.date)), e.key)
 		opening = [e for e in self.events if e.kind.startswith("opening_")]
-		self.assertEqual([e.kind for e in opening], ["opening_capital", "opening_stock", "opening_clearing"])
+		self.assertEqual([e.kind for e in opening], ["opening_capital"] + ["opening_stock"] * 3 + ["opening_clearing"])
+		self.assertEqual([e.payload["warehouse"] for e in opening if e.kind == "opening_stock"], ["DC", "CLE", "CIN"])
 		self.assertTrue(all(e.date == self.s.start.isoformat() for e in opening))
+
+	def test_stock_reconciliations_stay_below_erpnext_queue_threshold(self):
+		# ERPNext v16 queues Stock Reconciliations with more than 100 rows as background jobs (found in CI);
+		# the executor must always be able to submit them synchronously.
+		for e in self.events:
+			if e.kind in ("opening_stock", "stock_count"):
+				self.assertLessEqual(len(e.payload["lines"]), 100, e.key)
 
 	def _ref(self, e, field):
 		ref = e.payload[field]
@@ -282,9 +290,8 @@ class TestPlanner(unittest.TestCase):
 		for e in self.events:
 			p = e.payload
 			if e.kind == "opening_stock":
-				for w, lines in p["warehouses"].items():
-					for c, q in lines.items():
-						stock[(w, c)] += q
+				for c, q in p["lines"].items():
+					stock[(p["warehouse"], c)] += q
 			elif e.kind == "purchase_receipt":
 				for c, q in p["lines"].items():
 					stock[("DC", c)] += q

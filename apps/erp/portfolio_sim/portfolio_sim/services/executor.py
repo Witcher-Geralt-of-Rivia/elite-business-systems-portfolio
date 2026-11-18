@@ -91,10 +91,8 @@ class Executor:
 		return self._done(submit(je), amount=p["amount"])
 
 	def _opening_stock(self, p: dict, d, t) -> dict:
-		items = []
-		for w, lines in p["warehouses"].items():
-			for code, qty in lines.items():
-				items.append({"item_code": code, "warehouse": self.wh[w], "qty": qty, "valuation_rate": self.s.item(code).cost})
+		items = [{"item_code": code, "warehouse": self.wh[p["warehouse"]], "qty": qty, "valuation_rate": self.s.item(code).cost}
+			for code, qty in p["lines"].items()]
 		sr = new_doc("Stock Reconciliation", {"company": self.company, "purpose": "Opening Stock", "posting_date": d,
 			"posting_time": t, "set_posting_time": 1, "expense_account": account("Temporary Opening", self.abbr),
 			"cost_center": self.cost_center, "items": items})
