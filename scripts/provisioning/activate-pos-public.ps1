@@ -65,8 +65,11 @@ try {
     Remove-Item Env:MYSQL_PWD -ErrorAction SilentlyContinue
     $ErrorActionPreference = 'Stop'
 } finally { Pop-Location }
-$failing = @($integrity.failing.PSObject.Properties).Count
-if ($failing -ne 0) { throw "integrity: $failing failing checks" }
+# PHP encodes "no failures" as [] and failures as {"check": count}; an empty array's PSObject.Properties
+# are the array's own members (Length, Rank, ...), so they must not be counted.
+if (-not $integrity -or $integrity.checks -lt 43) { throw "integrity: no usable result (checks=$($integrity.checks))" }
+$failing = @(if ($integrity.failing -isnot [array]) { $integrity.failing.PSObject.Properties | ForEach-Object { "$($_.Name)=$($_.Value)" } })
+if ($failing.Count -ne 0) { throw "integrity: $($failing.Count) failing checks: $($failing -join ', ')" }
 Write-Host "  integrity: $($integrity.checks) checks pass"
 if ("$showcase".Trim() -ne 'yes') { throw "visitor mode is not enabled (hp:showcase enable)" }
 

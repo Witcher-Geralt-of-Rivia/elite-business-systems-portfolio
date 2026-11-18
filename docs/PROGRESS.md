@@ -2,6 +2,33 @@
 
 Newest first. Every entry states what was **verified**, not just what was written.
 
+## 2026-11-18 — M6 publicly deployed and verified (D-017)
+
+- **Owner approved public access (POS-PUBLIC).** The POS is live at `https://pos.<VPS_IP>.sslip.io` with read-only
+  visitor entry ([evidence](TEST_RESULTS.md#pos-m6--public-activation-2026-11-18-d-017)).
+- **Activation script:**
+  - The first run stopped safely in preflight on a false "8 failing checks": an empty JSON array was miscounted.
+    Nothing had changed. Fixed and re-run.
+  - The re-run passed 43/43 integrity checks and made a fresh backup, restored with matching counts and text
+    checksums.
+  - It validated the Caddyfile, reloaded Caddy gracefully, passed the HTTPS smoke checks and the public visitor
+    suite (4/4, 0 visitor records), and switched the portal POS card to operational automatically.
+- **Independent checks:**
+  - TLS 1.3 with a trusted certificate; HTTP→HTTPS redirect; HSTS.
+  - Secure, HttpOnly session cookie.
+  - Wrong passwords refused; dashboard and API closed without a session; registration disabled; no exposed
+    files.
+  - Worker: no duplicates; a sale after activation was recorded on time.
+  - CRM, Práctica and portal reachable. The host Caddyfile and Caddy process are unchanged (reload only).
+- **Screenshot review:** the phone dashboard capture now waits for the card figures. The checkout message is
+  asserted above the banner. The upstream footer credit is lifted clear of the banner on phones. Public suite
+  re-run 4/4.
+- **CRM live-lead observation:** still running (window ends 13:05 local). So far the live connection is up with
+  routine events and no lead yet. The engine is current (clock = real time) and has exactly one lead
+  scheduled today, at 20:48 UTC, inside the window. Nothing is missing; the dataset was not touched.
+- **Unchanged:** the security incident stays open (public release ≠ host remediation). ERP stays on hold
+  with no reboot.
+
 ## 2026-11-18 — M7: portfolio portal deployed
 
 - Portal live on the portfolio host: three applications with real screenshots, live status (same-origin

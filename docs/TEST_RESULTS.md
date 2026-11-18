@@ -238,7 +238,7 @@ catches such corruption. The same fix applied to the recovery suite and the E2E 
 
 Working-set figures are as reported by Windows (trimmed pages excluded).
 
-**Not done (owner decision):** public HTTPS activation of the POS (`activate-pos-public.ps1 -OwnerApproved`).
+**Not done at local acceptance (owner decision):** public HTTPS activation of the POS (`activate-pos-public.ps1 -OwnerApproved`); done later the same day, see [POS M6 — public activation](#pos-m6--public-activation-2026-11-18-d-017).
 
 ## M7 — Portfolio portal deployment (2026-11-18)
 
@@ -261,4 +261,90 @@ Screenshots: CRM from the public read-only showcase; POS from the read-only visi
 
 Prepared for the POS approval and validated offline (`caddy adapt`): portfolio site with `/status/pos`, and the
 POS public site keeping a loopback listener that serves only `/harborpine/health`.
+
+## POS M6 — public activation (2026-11-18, D-017)
+
+**Before activation** (10:28 local):
+- health `ok` (worker running, lag 1 s);
+- all POS services, Caddy and the CRM running;
+- production `.env` (`APP_ENV=production`, `APP_DEBUG=false`, secure session cookie, session/Sanctum domain = public
+  host);
+- CRM, portal and Práctica public endpoints answering;
+- the POS public hostname not served;
+- host Caddyfile SHA-256 `f606ec68…89b6`.
+
+**First run aborted safely in preflight:**
+- The script reported "integrity: 8 failing checks" although all 43 checks returned 0.
+- Cause: `hp:integrity --json` encodes "no failures" as `[]`. The script counted the PowerShell properties of
+  that empty array (`Length`, `Rank`, …), so it saw 8.
+- The abort happened before any change: no flag, no backup, no reload.
+- Fixed by treating an array as zero failures and naming failing checks otherwise (both shapes unit-checked).
+  The script also now refuses a run with fewer than 43 checks.
+
+**Activation run** (`activate-pos-public.ps1 -OwnerApproved`, 10:30–10:33):
+
+| Step | Result |
+|---|---|
+| Preflight | services, production `.env`, visitor mode, **integrity 43/43** |
+| Backup | `pos-20261118-103036.sql`, 103.4 MB, with SHA-256. Restored into a scratch database: row counts equal for orders 24,325, lines 67,036, payments 24,325, products 88, procurements 586, register history 31,195, stock history 70,598. Text checksums equal for products, categories, registers, users and order codes |
+| Publish | approval flag written; site files rendered; whole host Caddyfile `Valid configuration`; graceful `caddy reload` |
+| Smoke | HTTPS sign-in 200, HSTS, `Secure` session cookie, visitor entry on the sign-in page, hidden files not exposed |
+| Public visitor suite | **4/4** against `https://pos.<VPS_IP>.sslip.io`; **0** records authored by the visitor |
+| Portal | redeployed with `crm=live, pos=live`; `/status/crm` ok; `/status/pos` 200 |
+
+**After activation** (independent checks):
+
+TLS and transport:
+- Let's Encrypt certificate, chain valid, SAN matches the host, TLS 1.3, valid until 2027-02-16.
+- HTTP → HTTPS `308`.
+- Headers: HSTS, `X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN`,
+  `Referrer-Policy: strict-origin-when-cross-origin`.
+- `nexopos_session` cookie is `secure; httponly; samesite=lax` and scoped to the POS host.
+
+Access control:
+- Wrong credentials on `POST /auth/sign-in` → 403 "Invalid username or password."
+- `/dashboard` without a session → 302 to `/sign-in`; `/api/orders` without a session → 401.
+- `/sign-up` → 403 (registration disabled).
+- `/.env`, `/storage/logs/laravel.log` and `/composer.json` → 404.
+
+Visitor write restrictions, from the suite:
+- The order POST is refused with the checkout-preview message, and product create, report recompute,
+  register open and bulk delete are refused with 403 `showcase_read_only`.
+- User management and settings are refused; read-only report queries are allowed.
+- The database shows 0 visitor-authored records after every run.
+
+Worker:
+- 0 duplicate event keys and 0 reused non-register entities. The two cash registers are reused by design: they open
+  and close daily.
+- 13 orders today = 13 sale events.
+- A sale due at 10:39:58, after activation, was recorded at that second.
+- Health lag 36–58 s.
+
+Neighbours:
+- CRM `/` and `/api/health` 200.
+- Práctica 302 to its sign-in.
+- Portal 200; `/status/crm` 200.
+
+Caddy:
+- Host Caddyfile SHA-256 unchanged, last written 02:08 before activation.
+- The Caddy process start time is unchanged (2026-11-09): the service was reloaded, not restarted.
+
+Laravel log since activation: only the probe's own refused sign-up and wrong-password attempt.
+
+**Screenshot review (public):** three capture problems found and fixed.
+
+| Screenshot | Problem | Fix |
+|---|---|---|
+| Phone dashboard | Taken before the summary cards loaded ($0.0) | The spec waits for the six-figure card values, as on desktop |
+| Checkout preview | Taken while the payment popup's spinner showed | A probe measured the snackbar fully above the banner (message bottom y = 659, banner top y = 679) for about 3 s. The spec now asserts that and waits for the spinner |
+| Phone footer | The upstream "You're using NexoPOS 6.3.0" credit sat under the demo banner | Visitor-only CSS lifts it above the banner; the spec asserts no overlap |
+
+After deploying the module change, the suite was re-run against the public URL: **4/4**, 0 visitor records.
+The screenshots were reviewed again: real figures on the phone dashboard, the refusal message visible, and the
+footer credit clear of the banner.
+
+**Portal browser check** (Chromium, 1366 px and 390 px, public URL):
+- 0 page, console or request errors; no horizontal scroll; all images loaded.
+- Status: `crm: operational`, `pos: operational · simulation live`, `erp: in preparation`.
+- The POS buttons ("Explore the POS", "Open the read-only demo") link to `https://pos.<VPS_IP>.sslip.io/sign-in`.
 

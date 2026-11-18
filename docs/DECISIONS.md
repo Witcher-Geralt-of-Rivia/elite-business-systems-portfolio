@@ -130,3 +130,21 @@ Format: ID · date · decision · alternatives rejected · status.
   Caddyfile before a graceful `caddy reload`, never a service restart. Portfolio services must not use
   Práctica's local ports, which are documented on the host, not here.
 
+## D-017 — POS public release (2026-11-18, owner authorization POS-PUBLIC)
+
+- **Decision:** the owner approved public HTTPS access to the Harbor & Pine Market NexoPOS at
+  `https://pos.<VPS_IP>.sslip.io`, through the guarded procedure `activate-pos-public.ps1 -OwnerApproved`.
+- **Conditions kept:**
+  - visitors get read-only showcase sessions only;
+  - registration stays disabled;
+  - administrator credentials are not published;
+  - destructive tests keep running only on isolated database copies;
+  - the shared Caddy service is reloaded, never restarted;
+  - the host Caddyfile, CRM and Práctica are not modified.
+- **Rollback:** `activate-pos-public.ps1 -Rollback` removes the host-side approval flag, re-renders the loopback-only
+  site with a graceful reload, and switches the portal back to "being finalised".
+- **Not implied:** public activation does not establish that the VPS has been remediated. The historical
+  incident (R-014, D-012/D-013) stays open. Credential rotation and host remediation remain owner actions
+  (SEC-ROTATE).
+- **Unchanged:** ERPNext stays on hold, with no WSL installation and no reboot without separate approval.
+

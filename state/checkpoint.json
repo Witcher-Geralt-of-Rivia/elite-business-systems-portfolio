@@ -3,7 +3,7 @@
   "repository": "https://github.com/Witcher-Geralt-of-Rivia/elite-business-systems-portfolio",
   "updated": "2026-11-18",
   "current_milestone": "M8",
-  "current_task": "M8 preparation: security/integration/performance review of deployed CRM + POS (local) + portal; POS public activation awaits owner (POS-PUBLIC); ERP on hold (REBOOT)",
+  "current_task": "M8: integration, performance and operational validation of the public CRM + POS + portal; ERP on hold (REBOOT)",
   "status": "in_progress",
   "last_verified_commit": "bcce061",
   "milestones": {
@@ -13,9 +13,9 @@
     "M3": "done for CRM (HTTPS route, WinSW service, rolling logs, nightly verified backups); POS/ERP parts added with their runtimes",
     "M4": "done 2026-11-17: production deployment + public E2E 10/10 (see TEST_RESULTS); one observation pending (first live lead in a business window)",
     "M5": "on_hold: ERPNext selected; Windows runtime decision pending (WSL1 needs an unapproved reboot); repository-only work allowed",
-    "M6": "locally_accepted 2026-11-18: 12-month dataset, 43/43 integrity, replay 366 days, live worker (recycle/pause/restart verified), E2E admin 8/8 (clone) + visitor 4/4 (real data), backup/restore verified, resources measured; NOT public (POS-PUBLIC pending)",
-    "M7": "deployed 2026-11-18: portal live (CRM live link + status; POS \"being finalised\" until POS-PUBLIC; ERP \"in preparation\"); deploy-portal.ps1 with rollback; browser check desktop+phone 0 errors",
-    "M8": "not_started",
+    "M6": "done 2026-11-18: publicly deployed and verified (D-017). Activation preflight 43/43, backup+restore check, graceful reload, HTTPS/HSTS/secure-cookie smoke, public visitor E2E 4/4 (0 visitor records), portal switched to live; local acceptance evidence (dataset, replay, worker, admin E2E 8/8 on clone) in TEST_RESULTS",
+    "M7": "deployed 2026-11-18: portal live with CRM and POS links + live status (/status/crm, /status/pos); ERP \"in preparation\"; deploy-portal.ps1 with rollback; browser check desktop+phone 0 errors",
+    "M8": "in_progress",
     "M9": "not_started"
   },
   "pins": {
@@ -44,11 +44,12 @@
     "CRM production rollout with backup/restore check; public E2E 10/10 (c92a55f)",
     "POS runtime: PHP 8.3.36 + MariaDB 11.8.10 service + NexoPOS v6.3.0 setup + php-cgi workers + loopback Caddy site (550e7e8)",
     "M6 local acceptance (2026-11-18): see docs/TEST_RESULTS.md POS M6 section",
-    "M7 portal deployed (2026-11-18): see docs/TEST_RESULTS.md M7 section"
+    "M7 portal deployed (2026-11-18): see docs/TEST_RESULTS.md M7 section",
+    "M6 public activation (2026-11-18, D-017): see docs/TEST_RESULTS.md POS M6 public activation section"
   ],
   "pending_tasks": [
-    "M6: public rollout only after owner authorization (POS-PUBLIC): scripts/provisioning/activate-pos-public.ps1 -OwnerApproved",
-    "CRM follow-up: read C:/srv/portfolio/logs/crm-live-observation-20261118.json after 2026-11-18 13:05 local (window ends) and record evidence",
+    "CRM follow-up: read C:/srv/portfolio/logs/crm-live-observation-20261118.json after 2026-11-18 13:05 local (one lead scheduled 20:48 UTC) and record evidence",
+    "M8: integration, performance and operational validation (public latency, cross-app checks, monitoring of the POS worker, backup schedule overview, security headers audit, dependency/licence review, disable NexoPOS telemetry explicitly)",
     "ERP: repository-only preparation (no runtime changes)"
   ],
   "blocked_tasks": [
@@ -58,18 +59,10 @@
       "decision_ids": [
         "REBOOT"
       ]
-    },
-    {
-      "task": "POS public rollout",
-      "reason": "Owner authorizes the public exposure separately",
-      "decision_ids": [
-        "POS-PUBLIC"
-      ]
     }
   ],
   "owner_decisions_needed": [
     "REBOOT",
-    "POS-PUBLIC",
     "SEC-ROTATE"
   ],
   "host_facts": {
@@ -96,27 +89,28 @@
     "crm_backend": "42/42 (poc + m4 + simulation)",
     "crm_public_e2e": "10/10",
     "crm_production_integrity": "22 checks, 0 failing",
-    "pos_integrity": "43/43 (live, 2026-11-18 08:48)",
+    "pos_integrity": "43/43 (live, 2026-11-18 10:30, activation preflight)",
     "pos_replay": "366 days 26754/26754",
     "pos_recovery_suite": "passed (clone)",
     "pos_e2e_admin_isolated": "8/8",
-    "pos_e2e_visitor": "4/4, 0 visitor records",
-    "pos_backup_restore": "verified as SYSTEM (counts + text checksums)",
-    "portal": "deployed; smoke tests pass; browser desktop+phone 0 errors"
+    "pos_e2e_visitor": "4/4 public HTTPS (2026-11-18, run twice), 0 visitor records",
+    "pos_backup_restore": "verified as SYSTEM (counts + text checksums); activation backup 10:30 verified",
+    "portal": "deployed crm=live pos=live; smoke tests pass; browser desktop+phone 0 errors"
   },
   "deployment_status": {
     "crm": "production at crm.<ip>.sslip.io: M4 build, 13-month synthetic history, live simulation (intensity 3), read-only visitor access; public E2E 10/10",
-    "pos": "installed locally (loopback 127.0.0.1:8820 only), HarborPine module deployed, 12-month dataset, live worker running, visitor showcase enabled; not public",
+    "pos": "production at pos.<ip>.sslip.io (D-017): HarborPine module, 12-month dataset, live worker service, read-only visitor showcase; registration disabled; rollback: activate-pos-public.ps1 -Rollback",
     "erp": "not deployed (on hold)",
-    "portal": "deployed: portal/site via deploy-portal.ps1 (crm=live, pos=preparing, erp=planned); /status/crm; strict CSP"
+    "portal": "deployed: portal/site via deploy-portal.ps1 (crm=live, pos=live, erp=planned); /status/crm + /status/pos; strict CSP"
   },
-  "next_action": "Record the CRM live-lead observation after 13:05 local; then M8 review items that need no owner decision (security headers audit, dependency/licence review, backup schedule overview, monitoring of the POS worker).",
+  "next_action": "Record the CRM live-lead observation after 13:05 local; continue M8 integration/performance/operational validation (no owner decision needed).",
   "completed_milestones": [
     "M0",
     "M1",
     "M2",
     "M3",
-    "M4"
+    "M4",
+    "M6"
   ],
   "pending_observations": [
     "CRM: first naturally scheduled live lead in a production business window (14:00-24:00 UTC): verify record, audit event and browser update"
@@ -124,7 +118,7 @@
   "security": {
     "incident": "R-014 confirmed historical malware execution (2026-10-07); documented in docs/SECURITY_INVESTIGATION.md",
     "status": "open (credential rotation and host remediation are owner actions); does not block repository development (D-013)",
-    "constraints": "no unnecessary new secrets; no public exposure without authorization; host not declared clean"
+    "constraints": "no unnecessary new secrets; public exposure only as authorized (CRM D-014, POS D-017); host not declared clean"
   },
   "running_jobs": [
     "POS live simulation: Windows service portfolio-pos-sim (hp:worker; pause with php artisan hp:sim pause)",

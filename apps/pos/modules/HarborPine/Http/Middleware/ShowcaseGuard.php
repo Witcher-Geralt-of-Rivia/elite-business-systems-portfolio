@@ -132,7 +132,9 @@ class ShowcaseGuard
         // NexoPOS notices (#snack-wrapper) also sit at the bottom centre: keep them above and clear of the banner.
         // On phones only the essentials stay, on one line, so the banner does not cover content.
         return '<style>#snack-wrapper{z-index:100000!important;padding-bottom:44px!important}'
-            . '@media (max-width:640px){#hp-showcase-banner .hp-long{display:none}#hp-showcase-banner{white-space:nowrap;bottom:8px!important}}</style>'
+            . '@media (max-width:640px){#hp-showcase-banner .hp-long{display:none}#hp-showcase-banner{white-space:nowrap;bottom:8px!important}'
+            // Upstream footer credit (dashboard layout) is lifted above the banner instead of sitting under it.
+            . '.p-2.text-xs.flex.justify-end.text-gray-500{padding-bottom:48px}}</style>'
             . '<div id="hp-showcase-banner" role="status" style="position:fixed;left:50%;bottom:12px;transform:translateX(-50%);z-index:99999;max-width:calc(100vw - 24px);padding:6px 14px;border-radius:999px;background:rgba(17,24,39,.92);color:#fff;font:12px/1.4 system-ui,sans-serif;box-shadow:0 4px 14px rgba(0,0,0,.25);text-align:center">'
             . 'Read-only demo &middot; <span class="hp-long">Harbor &amp; Pine Market (fictional) &middot; live simulated activity &middot; </span>changes are disabled &middot; <a href="/sign-out" style="color:#9ae6b4">Leave</a></div>';
     }

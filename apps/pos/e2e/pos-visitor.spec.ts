@@ -20,7 +20,8 @@ test.describe("desktop", () => {
     const errors = trackPageErrors(page);
     await enterDemo(page);
     // Widgets load asynchronously: wait for the lifetime figures (e.g. "$880.8k") and the best customers.
-    await expect(page.getByText(/^\$\d+(\.\d)?k$/).nth(1)).toBeVisible({ timeout: 60_000 });
+    // The summary cards render "$0.0" until loaded; the year's expenses/income are hundreds of thousands.
+    await expect(page.getByText(/^\$\d{3}(\.\d)?k$/).nth(1)).toBeVisible({ timeout: 60_000 });
     await expect(page.getByText("Walk-in Customer").first()).toBeVisible({ timeout: 60_000 });
     await page.waitForLoadState("networkidle");
     // Upstream product notices are snoozed for the visitor account.
@@ -71,7 +72,12 @@ test.describe("desktop", () => {
     await page.getByRole("button", { name: "Yes", exact: true }).click(); // NexoPOS submits on full payment
     const res = await submitted;
     expect(res.status()).toBe(403);
-    await expect(page.getByText(/Checkout preview: in the read-only demo this order was not saved/)).toBeVisible();
+    const preview = page.getByText(/Checkout preview: in the read-only demo this order was not saved/);
+    await expect(preview).toBeVisible();
+    // The message is a snackbar above the demo banner (not covered by it); it fades after ~3 s.
+    const [msgBox, bannerBox] = [await preview.boundingBox(), await page.locator("#hp-showcase-banner").boundingBox()];
+    expect(msgBox!.y + msgBox!.height).toBeLessThanOrEqual(bannerBox!.y);
+    await page.waitForTimeout(800); // payment popup spinner settles
     await page.screenshot({ path: `${SHOTS}/pos-checkout-preview.png` });
     // run-pos-e2e.ps1 additionally asserts in the database that the visitor authored no orders/register entries.
     await expectNoPageErrors(errors);
@@ -112,10 +118,13 @@ test.describe("mobile", () => {
   test("visitor experience on a phone", async ({ page }) => {
     const errors = trackPageErrors(page);
     await enterDemo(page);
-    await expect(page.getByText(/^\$\d+(\.\d)?k$/).nth(1)).toBeVisible({ timeout: 60_000 });
-    // The read-only banner stays on one line on a phone and does not cover the page.
+    await expect(page.getByText(/^\$\d{3}(\.\d)?k$/).nth(1)).toBeVisible({ timeout: 60_000 });
+    await page.waitForLoadState("networkidle");
+    // The read-only banner stays on one line on a phone and does not cover the page or the footer credit.
     const box = await page.locator("#hp-showcase-banner").boundingBox();
     expect(box && box.height).toBeLessThan(40);
+    const credit = await page.getByText(/NexoPOS \d+\.\d+/).last().boundingBox();
+    if (credit) expect(credit.y + credit.height).toBeLessThanOrEqual(box!.y);
     await page.screenshot({ path: `${SHOTS}/mobile-dashboard.png` });
     await page.goto("/dashboard/orders");
     await expect(page.getByText(/^\d{6}-\d{3}$/).first()).toBeVisible({ timeout: 60_000 });
