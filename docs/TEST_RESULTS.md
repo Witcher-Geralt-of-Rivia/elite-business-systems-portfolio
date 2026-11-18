@@ -507,3 +507,27 @@ Latency:
 All responses were 200. POS latency is PHP-CGI framework boot (Laravel + NexoPOS modules), the same over
 loopback and public HTTPS.
 
+## M9 — Release 1.0 final acceptance (2026-11-18, CRM + POS + portal)
+
+Release-time verification. Everything here is non-disruptive except the portal text change (atomic swap with
+graceful reload).
+
+| Check | Method | Result |
+|---|---|---|
+| Public availability | `curl` of each URL | CRM `/` 200 and `/api/health` 200 `{"status":"ok"}`; POS `/sign-in` 200 and `/harborpine/health` 200 (`worker_running: true`, lag 1 s); portal `/`, `/status/crm`, `/status/pos` 200; co-hosted application 302 to its sign-in |
+| Services | `Get-Service` | 7 portfolio services and Caddy running, automatic start; co-hosted services running |
+| Scheduled tasks | `Get-ScheduledTaskInfo` | CRM backup, POS backup and health monitor: last result 0. The finished one-time CRM observation task was removed |
+| Monitoring | monitor JSON log, Application log | every run all OK since installation; the only events are the deliberate failure/recovery test |
+| CRM integrity | `node scripts/simulate.ts integrity` (production) | **22 checks, 0 failing**; simulation clock current (21:13 UTC), 185 queued events, 500 companies, 81 won deals ($2,070,500) |
+| POS integrity | `php artisan hp:integrity --json` (production) | **43 checks, 0 failing**; 24,348 orders; paid sales $872,053.27 = dashboard; 26,793 ledger events |
+| CRM backend suites | `node --test` (m4, poc, simulation) against `crm_test` | **42/42 pass**, 12 suites, 54 s |
+| Backups | `C:\srv\portfolio\backups` | CRM 7 files, latest 03:15 (1.3 MB); POS 4 dumps, latest 10:30 (103.4 MB); all with `.sha256`; next nightly runs 03:15 / 03:45 |
+| Portal accuracy | content review | hero corrected: it claimed "three business systems that are actually running" while the ERP is not. Now: CRM and POS running, ERP in preparation; meta description and footer (Release 1.0) updated. Credits name upstream authors and licences |
+| Portal deploy | `deploy-portal.ps1` | validate + graceful reload; smoke tests pass; host Caddyfile SHA-256 unchanged; Caddy process start unchanged (2026-11-09) |
+| Portal browser check | Chromium, 1366 px and 390 px | 0 page, console or request errors; no horizontal scroll; status `crm: operational`, `pos: operational · simulation live`, `erp: in preparation`; CRM/POS buttons link to the public hosts; screenshots loaded |
+| Repository hygiene | scan of tracked files | no IP addresses, no owner e-mail, no secrets. Webmail-style addresses appear only in the upstream Atomic CRM snapshot's own faker test fixtures, and fixed passwords only in tests against the throwaway test database |
+| Documentation accuracy | review | ARCHITECTURE claimed a NexoPOS `schedule:run` task that does not exist; corrected, and recorded as limitation L21. Licence boundary paths, R-003/R-009/R-010 statuses and README status updated |
+
+Delivery package: FINAL_DELIVERY, ACCEPTANCE_MATRIX, OPERATIONS_HANDBOOK, RECOVERY_GUIDE, KNOWN_LIMITATIONS
+(D-018).
+

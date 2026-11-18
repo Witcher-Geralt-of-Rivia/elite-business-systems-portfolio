@@ -1,6 +1,7 @@
 # Architecture
 
-> Status: **initial draft (M0)**. Sections marked _TBD (Mx)_ are filled in when that milestone produces evidence.
+> Status: **Release 1.0 (2026-11-18)**: CRM, POS and portal as deployed. The ERP column describes the planned,
+> not yet implemented runtime (M5 on hold). Release summary: [FINAL_DELIVERY.md](FINAL_DELIVERY.md).
 
 ## 1. System context
 
@@ -47,7 +48,7 @@ unrelated application of the owner (D-016), served by the same host Caddy under 
 
 | App | Runtime | DB |
 |---|---|---|
-| POS | Native Windows: PHP 8.3 (NTS) via Caddy `php_fastcgi` → php-cgi, Task Scheduler for `schedule:run` | MariaDB 11.8 (native, loopback) |
+| POS | Native Windows: PHP 8.3 (NTS) via Caddy `php_fastcgi` → 2 php-cgi services; simulation worker service; `QUEUE_CONNECTION=sync`. NexoPOS's Laravel scheduler (`schedule:run`) is **not** run (KNOWN_LIMITATIONS L21); reports are recomputed by the module | MariaDB 11.8 (native, loopback) |
 | CRM | Atomic CRM SPA (static, served by Caddy) + **own Fastify API** (Node 24, Windows service) + in-process simulation worker. **No Supabase.** | Dedicated PostgreSQL 16 cluster `portfolio-crm-postgres` (loopback, D-010), restricted role |
 | ERP | WSL1 Ubuntu: Frappe bench v16 (gunicorn, socketio, RQ workers, scheduler) — **PoC-gated, reboot needs separate approval** | MariaDB 11.8 (native, loopback) + Redis-compatible server |
 
@@ -74,9 +75,44 @@ The browser never talks to PostgreSQL. Migration inventory: [CRM_SUPABASE_MIGRAT
 
 ## 4. Data engines
 
-- **CRM:** [CRM_DATA_ENGINE.md](CRM_DATA_ENGINE.md) — event-driven B2B sales model, ~500 curated values, deterministic reset/replay, live worker, 21 integrity checks.
-- ERP, POS: _TBD (M5–M6)_.
+- **CRM:** [CRM_DATA_ENGINE.md](CRM_DATA_ENGINE.md): event-driven B2B sales model, ~500 curated values,
+  deterministic reset/replay, live worker, 22 integrity checks in production.
+- **POS:** [POS_DATA_ENGINE.md](POS_DATA_ENGINE.md): NexoPOS module *Harbor & Pine Market*. A retail engine writes
+  through NexoPOS services, with an idempotency ledger and replay check, a live worker service, and 43 integrity
+  checks.
+- **ERP:** not implemented (M5 on hold).
+
+### POS runtime (D-015)
+
+```text
+browser ──HTTPS──► Caddy ──► pos.<ip>.sslip.io ── php_fastcgi (least_conn) ──► php-cgi ×2 (LocalService)
+                                                                              └─ NexoPOS v6.3.0 + HarborPine module
+                   loopback 127.0.0.1:8820 ── /harborpine/health only (portal status, monitoring)
+portfolio-pos-sim (hp:worker, LocalService) ─┐
+php-cgi workers ─────────────────────────────┴─► MariaDB 11.8 `nexopos` (loopback, least-privilege app account)
+```
 
 ## 5. Security model
 
-Showcase visitor access model, secrets management, network exposure: _TBD (M3/M8)_.
+- **Network:** only Caddy listens publicly (80/443). Databases, the CRM API, the PHP workers and health
+  listeners are loopback-only. Per-host Let's Encrypt certificates; HTTP → HTTPS; HSTS.
+- **Visitors:** credential-free, read-only showcase sessions in both apps, enforced server-side.
+  - CRM: HTTP layer plus service layer (D-014).
+  - POS: `ShowcaseGuard` for all web/API requests; the POS screen is a checkout preview.
+  - Public registration is disabled in both apps.
+- **Authentication:**
+  - CRM: opaque sessions in HttpOnly/Secure cookies, scrypt, lockout, CSRF and Origin checks, rate limits,
+    audit log.
+  - POS: NexoPOS/Laravel sessions (Secure, HttpOnly, SameSite=Lax), Sanctum for the SPA API, an 80/min
+    API throttle.
+- **Headers:**
+  - CRM and portal: strict CSP (`script-src 'self'`).
+  - POS: CSP without `script-src` (upstream inline scripts), `X-Frame-Options`, `nosniff`, `Referrer-Policy`,
+    `Permissions-Policy`, `noindex`.
+- **Secrets:** only in `C:\srv\portfolio\secrets` (Administrators/SYSTEM); each service account can read only its
+  own env file; passwords pass through environment variables, never the command line. The repository contains
+  no secrets or host inventory (D-004).
+- **Dependencies:** audited at release (`npm audit`, `composer audit` clean); POS PHP dependencies get security
+  updates through a staged procedure ([DEPLOYMENT.md](DEPLOYMENT.md#pos-dependency-updates)).
+- **Host:** the historical incident R-014 is open. The application controls above do not make the host
+  trustworthy; remediation is an owner action.

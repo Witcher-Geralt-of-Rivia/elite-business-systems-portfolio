@@ -2,9 +2,9 @@
   "project": "elite-business-systems-portfolio",
   "repository": "https://github.com/Witcher-Geralt-of-Rivia/elite-business-systems-portfolio",
   "updated": "2026-11-18",
-  "current_milestone": "M9",
-  "current_task": "M9 final delivery for the deployed applications (CRM, POS, portal): claims vs evidence review, README/portal status; ERP on hold (REBOOT)",
-  "status": "in_progress",
+  "current_milestone": "M5",
+  "current_task": "Release 1.0 delivered (CRM + POS + portal). ERP (M5) outstanding: repository-only, non-disruptive preparation until the owner decides REBOOT",
+  "status": "release_1_0_delivered; erp_outstanding",
   "last_verified_commit": "186f2de",
   "milestones": {
     "M0": "done",
@@ -14,9 +14,9 @@
     "M4": "done 2026-11-17: production deployment + public E2E 10/10; first live lead in a production business window observed 2026-11-18 (TEST_RESULTS M8 item 11)",
     "M5": "on_hold: ERPNext selected; Windows runtime decision pending (WSL1 needs an unapproved reboot); repository-only work allowed",
     "M6": "done 2026-11-18: publicly deployed and verified (D-017). Activation preflight 43/43, backup+restore check, graceful reload, HTTPS/HSTS/secure-cookie smoke, public visitor E2E 4/4 (0 visitor records), portal switched to live; local acceptance evidence (dataset, replay, worker, admin E2E 8/8 on clone) in TEST_RESULTS",
-    "M7": "deployed 2026-11-18: portal live with CRM and POS links + live status (/status/crm, /status/pos); ERP \"in preparation\"; deploy-portal.ps1 with rollback; browser check desktop+phone 0 errors",
+    "M7": "done 2026-11-18: portal live with CRM and POS links + live status; ERP \"in preparation\"; hero corrected in M9; no contact section (KNOWN_LIMITATIONS L13)",
     "M8": "technically_complete 2026-11-18 for CRM + POS + portal (no open deployment/core-workflow failures, audits clean, monitoring live); owner-side R-014 host remediation (SEC-ROTATE) still open",
-    "M9": "not_started"
+    "M9": "done 2026-11-18 for Release 1.0 (CRM + POS + portal): delivery package (FINAL_DELIVERY, ACCEPTANCE_MATRIX, OPERATIONS_HANDBOOK, RECOVERY_GUIDE, KNOWN_LIMITATIONS), final acceptance in TEST_RESULTS M9; ERP delivery remains with M5"
   },
   "pins": {
     "erpnext": "v16.60.0",
@@ -49,11 +49,14 @@
     "M8 part 1 (2026-11-18): see docs/TEST_RESULTS.md M8 section",
     "M8 part 2 (2026-11-18): dependency security update, licence review, health monitor; see TEST_RESULTS M8 items 8-10",
     "CRM live-lead observation closed (2026-11-18): lead 501 at planned time, audited, SSE delivered",
-    "M8 integration regression (2026-11-18): CRM E2E 10/10, CRM integrity 22/22, POS 43/43, POS visitor 4/4"
+    "M8 integration regression (2026-11-18): CRM E2E 10/10, CRM integrity 22/22, POS 43/43, POS visitor 4/4",
+    "M9 Release 1.0 final acceptance and delivery package (2026-11-18)"
   ],
   "pending_tasks": [
-    "M9: final delivery review for CRM + POS + portal (claims vs evidence, README status, handover notes)",
-    "ERP: repository-only preparation (no runtime changes)"
+    "ERP (M5): repository-only preparation (no WSL, no reboot) until owner decision REBOOT",
+    "Owner: SEC-ROTATE (R-014/R-015) credential rotation and host remediation",
+    "Owner (optional): public contact channel for the portal (L13); off-host backup copies (L14)",
+    "Review NexoPOS scheduler jobs on a clone before enabling schedule:run (L21)"
   ],
   "blocked_tasks": [
     {
@@ -89,16 +92,16 @@
     "cpu_load_pct": "73-97 (interactive tooling)"
   },
   "last_test_results": {
-    "crm_backend": "42/42 (poc + m4 + simulation)",
+    "crm_backend": "42/42 (2026-11-18 release run, crm_test)",
     "crm_public_e2e": "10/10 (2026-11-18, cleanup: 0 loginable test accounts)",
-    "crm_production_integrity": "22 checks, 0 failing (2026-11-18)",
-    "pos_integrity": "43/43 (live, 2026-11-18 10:30, activation preflight)",
+    "crm_production_integrity": "22 checks, 0 failing (2026-11-18 release)",
+    "pos_integrity": "43/43 (2026-11-18 release; paid sales 872053.27 = dashboard)",
     "pos_replay": "366 days 26754/26754",
     "pos_recovery_suite": "passed (clone)",
     "pos_e2e_admin_isolated": "9/9 (twice, 2026-11-18 after M8 fixes)",
     "pos_e2e_visitor": "4/4 public HTTPS (twice after M8 fixes), 0 visitor records, 0 failed responses while browsing",
     "pos_backup_restore": "verified as SYSTEM (counts + text checksums); activation backup 10:30 verified",
-    "portal": "deployed crm=live pos=live; smoke tests pass; browser desktop+phone 0 errors",
+    "portal": "release check desktop+phone 0 errors; statuses crm/pos operational, erp in preparation",
     "pos_installed_race": "before: 1/348 parallel API calls redirected to /do-setup; after: 0/623, 0 fallback hits",
     "resources": "2026-11-18 11:40, 10 min: hosted services <1.5% of one core; POS public /sign-in 336 ms median; CRM/portal/Practica 55-70 ms",
     "pos_dependency_audit": "composer audit clean after update (2026-11-18); npm audit clean (CRM backend/frontend, POS e2e)",
@@ -111,7 +114,7 @@
     "erp": "not deployed (on hold)",
     "portal": "deployed: portal/site via deploy-portal.ps1 (crm=live, pos=live, erp=planned); /status/crm + /status/pos; strict CSP"
   },
-  "next_action": "M9 final delivery review for the deployed applications; ERP waits for the REBOOT decision.",
+  "next_action": "Non-disruptive ERP (M5) repository preparation: Frappe custom app skeleton and generator design against the pinned v16.60.0, no runtime changes; ERP runtime waits for REBOOT.",
   "completed_milestones": [
     "M0",
     "M1",
@@ -119,7 +122,8 @@
     "M3",
     "M4",
     "M6",
-    "M7"
+    "M7",
+    "M9 (Release 1.0 scope)"
   ],
   "pending_observations": [],
   "security": {
@@ -128,9 +132,11 @@
     "constraints": "no unnecessary new secrets; public exposure only as authorized (CRM D-014, POS D-017); host not declared clean"
   },
   "running_jobs": [
-    "POS live simulation: Windows service portfolio-pos-sim (hp:worker; pause with php artisan hp:sim pause)",
+    "POS live simulation: Windows service portfolio-pos-sim (hp:worker)",
     "CRM live simulation inside portfolio-crm-api",
-    "Portfolio - health monitor (scheduled task, every 15 min, SYSTEM)"
+    "Portfolio - health monitor (every 15 min, SYSTEM)",
+    "Nightly backups: CRM 03:15, POS 03:45 (SYSTEM)"
   ],
-  "shared_hosting": "Since 2026-11-18 the host Caddy also serves the owner's Práctica app (D-016, owner-authorized). Touch only portfolio site files; validate the whole host Caddyfile; caddy reload only, never restart."
+  "shared_hosting": "Since 2026-11-18 the host Caddy also serves the owner's Práctica app (D-016, owner-authorized). Touch only portfolio site files; validate the whole host Caddyfile; caddy reload only, never restart.",
+  "release": "Elite Business Systems Portfolio - CRM + POS + Portal, Release 1.0 (2026-11-18, D-018); ERP not included"
 }

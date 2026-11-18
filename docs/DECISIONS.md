@@ -148,3 +148,19 @@ Format: ID · date · decision · alternatives rejected · status.
   (SEC-ROTATE).
 - **Unchanged:** ERPNext stays on hold, with no WSL installation and no reboot without separate approval.
 
+## D-018 — Release 1.0 scope: CRM + POS + Portal (2026-11-18, owner directive M9)
+
+- **Decision:** the delivered scope is recorded as **"Elite Business Systems Portfolio — CRM + POS + Portal,
+  Release 1.0"**. The ERP (ERPNext, M5) is an outstanding milestone outside this release. The CRM/ERP/POS project
+  as a whole is not declared finished.
+- **Presentation:**
+  - The CRM and POS are described as customised open-source showcase applications with fictional synthetic data,
+    never as products built from scratch or delivered to clients.
+  - Upstream licences and attribution are preserved.
+  - The portal headline was corrected from "three business systems" to the two running ones, with the ERP
+    "in preparation".
+- **Security status:** recorded separately from application engineering. R-014 stays open; credential rotation
+  and host remediation are owner-controlled (SEC-ROTATE).
+- **Preserved for M5:** ERP pins (v16.60.0), runtime research (R-001, R-002, R-011, D-007), the upstream audit and
+  the WSL1 runbook. No WSL enablement or reboot without the owner's REBOOT decision.
+

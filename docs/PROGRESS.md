@@ -2,6 +2,26 @@
 
 Newest first. Every entry states what was **verified**, not just what was written.
 
+## 2026-11-18 — M9: Release 1.0 (CRM + POS + Portal) delivered; ERP remains outstanding
+
+- **Release scope (D-018):** "Elite Business Systems Portfolio — CRM + POS + Portal, Release 1.0". The ERP is an
+  outstanding milestone (M5 on hold); the project as a whole is not finished.
+- **Final acceptance** ([evidence](TEST_RESULTS.md#m9--release-10-final-acceptance-2026-11-18-crm--pos--portal)):
+  - all public URLs answer;
+  - CRM integrity 22/22, POS 43/43, CRM backend 42/42;
+  - backups current, monitor all OK;
+  - portal checked on desktop and phone;
+  - the co-hosted application is unaffected.
+- **Delivery package:** FINAL_DELIVERY, ACCEPTANCE_MATRIX (every claim mapped to evidence), OPERATIONS_HANDBOOK,
+  RECOVERY_GUIDE, KNOWN_LIMITATIONS. README rewritten for the release (customised open-source showcases,
+  synthetic data, upstream attribution, ERP status, security note).
+- **Corrections found by the review:**
+  - the portal hero claimed three running systems;
+  - ARCHITECTURE claimed a NexoPOS scheduler task that does not exist (now limitation L21);
+  - licence boundary paths and three risk statuses were stale.
+- **Unchanged:** R-014 open (owner: SEC-ROTATE); the ERP waits for REBOOT. Next: non-disruptive ERP preparation
+  in the repository only.
+
 ## 2026-11-18 — M8 technically complete; CRM live-lead observation closed
 
 - **CRM observation (pending since M4):** the day's single scheduled lead arrived at its planned business time
