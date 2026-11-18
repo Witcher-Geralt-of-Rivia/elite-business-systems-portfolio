@@ -109,3 +109,24 @@ Format: ID · date · decision · alternatives rejected · status.
   process is a later, measured option (R-005).
 - NexoPOS v6.3.0 (tag commit `1e9b2e2`) exported from upstream into `C:\srv\portfolio\pos\app`; portfolio code
   is a NexoPOS **module** (GPL-3.0) in `apps/pos/`, never a core patch.
+
+## D-016 — Shared hosting: owner's Práctica application restored (2026-11-18, owner authorization)
+
+- **Context:** the owner explicitly authorized reactivating *Práctica* (their own Django application, retired
+  from this host in the D-008 consolidation) alongside the portfolio. It is not part of this repository:
+  its source, configuration and secrets stay outside it.
+- **State verified on 2026-11-18:** the web service was back on automatic start and running, and its own
+  PostgreSQL service was running. The host Caddyfile carried only Práctica's original site block, restored from
+  the consolidation backup, with a pre-change backup kept. The running Caddy config served the portfolio and
+  Práctica hostnames together after a graceful reload. Both Práctica services listen on loopback only.
+- **Verified:** `manage.py check` 0 issues, no planned migrations, and a database connection; nothing was
+  migrated, reset or deleted. Public HTTPS is served with a trusted certificate, HTTP→HTTPS redirect and
+  HSTS. The sign-in page loads, the CSRF-protected login POST is accepted and wrong credentials are refused with
+  the application's message, static assets are served, and admin pages require sign-in. CRM public health and
+  UI returned 200; the POS stays non-public. The POS backfill kept progressing without interruption. Práctica
+  uses about 220 MB RAM and negligible CPU.
+- **Consequences for the portfolio:** the host is shared again (D-008 is superseded on this point).
+  Portfolio changes touch only the imported portfolio site files and always validate the complete host
+  Caddyfile before a graceful `caddy reload`, never a service restart. Portfolio services must not use
+  Práctica's local ports, which are documented on the host, not here.
+

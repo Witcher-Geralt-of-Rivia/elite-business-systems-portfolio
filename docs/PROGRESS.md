@@ -2,6 +2,30 @@
 
 Newest first. Every entry states what was **verified**, not just what was written.
 
+## 2026-11-18 — Shared hosting: owner's Práctica application verified alongside the portfolio (D-016)
+
+- Owner-authorized reactivation verified end to end:
+  - services on automatic start, running;
+  - database reachable, 0 check issues, no pending migrations;
+  - public HTTPS with a trusted certificate;
+  - sign-in and CSRF working, static assets served, admin protected;
+  - loopback-only bindings.
+  Nothing was reset, migrated or re-credentialed.
+- Portfolio unaffected:
+  - CRM public endpoints 200;
+  - POS still non-public;
+  - the POS 12-month backfill kept running throughout (no restart).
+- POS (in progress, pushed):
+  - visitor checkout preview on the real POS screen;
+  - catalog artwork;
+  - setup-record chronology;
+  - replay determinism check (30 days: 2,602 = 2,602, 0 mismatches);
+  - health endpoint;
+  - deadlock retry;
+  - guarded public-activation script (not run);
+  - nightly backup task.
+- M7: portal source written (not deployed).
+
 ## 2026-11-18 — M6 in progress: Harbor & Pine Market engine built; 12-month history generating
 
 - **Checkpoint reconciled** (M4 done, M6 active, pending/blocked lists corrected).

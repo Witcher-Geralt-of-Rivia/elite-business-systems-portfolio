@@ -42,7 +42,8 @@ Known facts (inspected 2026-11-17, read-only):
 - No WSL installed; no Docker installed. **Confirmed: virtualization extensions are not exposed to the guest** → WSL2/Hyper-V/Docker Linux containers are impossible (R-001).
 - An existing Caddy service already terminates HTTP/HTTPS for other workloads on this host, with working sslip.io certificates; it must be extended, not replaced.
 
-Since 2026-11-17 the VPS is dedicated to this portfolio (D-008). Runtime per app (D-009 supersedes D-007's CRM row):
+Since 2026-11-17 the VPS was dedicated to this portfolio (D-008); since 2026-11-18 it again also hosts one
+unrelated application of the owner (D-016), served by the same host Caddy under its own hostname. Runtime per app (D-009 supersedes D-007's CRM row):
 
 | App | Runtime | DB |
 |---|---|---|

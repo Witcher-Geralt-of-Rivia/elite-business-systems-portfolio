@@ -14,7 +14,7 @@
     "M4": "done 2026-11-17: production deployment + public E2E 10/10 (see TEST_RESULTS); one observation pending (first live lead in a business window)",
     "M5": "on_hold: ERPNext selected; Windows runtime decision pending (WSL1 needs an unapproved reboot); repository-only work allowed",
     "M6": "in_progress: engine + integrity suite verified on an 8-day trial (41/41); 12-month backfill running; visitor mode, worker, backup, E2E built but not yet deployed/run; not public",
-    "M7": "not_started",
+    "M7": "in_progress (prep): portal source in portal/site (not deployed); status routes, screenshots, deploy script after M6 acceptance",
     "M8": "not_started",
     "M9": "not_started"
   },
@@ -123,5 +123,6 @@
   },
   "running_jobs": [
     "POS 12-month backfill: php artisan hp:backfill (log C:/srv/portfolio/pos/logs/backfill-12m.log); resumable from harborpine_sim_state.processed_until"
-  ]
+  ],
+  "shared_hosting": "Since 2026-11-18 the host Caddy also serves the owner's Práctica app (D-016, owner-authorized). Touch only portfolio site files; validate the whole host Caddyfile; caddy reload only, never restart."
 }
