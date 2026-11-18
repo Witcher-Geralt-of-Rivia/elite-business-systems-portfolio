@@ -2,6 +2,20 @@
 
 Newest first. Every entry states what was **verified**, not just what was written.
 
+## 2026-11-17 — CRM M4: features complete in code, Supabase removed, data engine running (not yet deployed)
+
+- **Owner decision D-013:** no rebuild; development resumed. F11 closed (owner's own tool). Incident stays open (R-014).
+- **API:** global search (ported `global_search`), team management with invitations and one-time password links
+  (no email service: links shown to the admin), first-run sign-up, contact merge in one transaction, private
+  attachments, SSE live updates, deal-category search. 38/38 backend tests.
+- **Frontend:** all portfolio provider methods implemented (no "not available" stubs left); Supabase provider,
+  components and packages removed; live updates on every page; honest messages (no "email sent").
+- **Data engine:** ~500 curated values, event-driven B2B sales model, deterministic reset/replay, live worker,
+  21 integrity checks — 13 months generated in 25 s with 0 violations ([CRM_DATA_ENGINE.md](CRM_DATA_ENGINE.md)).
+- **Browser e2e:** 5/5 on a local stack.
+- **Not done:** the live deployment still runs the PoC build — redeploying (migrations 0002–0003, new build,
+  synthetic data, live simulation) awaits owner confirmation; visitor/showcase access model; M4 acceptance on the public URL.
+
 ## 2026-11-17 — Security investigation: confirmed malware (project paused on host)
 
 - The suspicious task traced back to an executed information-stealer loader (2026-10-07) delivered via a password-protected "setup package" archive; payload is an obfuscated Python script disguised as `app.asar`; hidden logon persistence. Defender never detected it.

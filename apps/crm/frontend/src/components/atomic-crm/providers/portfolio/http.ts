@@ -4,7 +4,7 @@ import { HttpError } from "ra-core";
 export const API_BASE = "/api";
 
 /** Must match CSRF_HEADER in apps/crm/backend/src/app.ts. */
-const CSRF_HEADER = "X-CRM-CSRF";
+export const CSRF_HEADER = "X-CRM-CSRF";
 
 const STATE_CHANGING = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 

@@ -25,15 +25,13 @@ describe("i18nProvider", () => {
     expect(i18nProvider.translate("crm.language")).toBe("Language");
   });
 
-  it("uses customized password reset overrides for en and fr", async () => {
+  it("uses the portfolio password messages for en and fr (no email is sent)", async () => {
     await i18nProvider.changeLocale("en");
-    expect(i18nProvider.translate("ra-supabase.auth.password_reset")).toBe(
-      "Check your emails for a Reset Password message.",
-    );
+    expect(i18nProvider.translate("crm.profile.password_reset_sent")).toBe("Choose your new password.");
 
     await i18nProvider.changeLocale("fr");
-    expect(i18nProvider.translate("ra-supabase.auth.password_reset")).toBe(
-      "Consultez vos emails pour trouver le message de reinitialisation du mot de passe.",
+    expect(i18nProvider.translate("crm.profile.password_reset_sent")).toBe(
+      "Choisissez votre nouveau mot de passe.",
     );
   });
 

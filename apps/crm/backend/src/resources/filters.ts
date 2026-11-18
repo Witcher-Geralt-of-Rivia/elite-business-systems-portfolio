@@ -78,6 +78,8 @@ export function buildWhere(
   cols: Columns,
   p: SqlParams,
   searchColumns: readonly string[] = [],
+  /** Extra OR-ed search condition for `q` (e.g. deal categories), given the ilike pattern placeholder. */
+  extraSearch?: (pattern: string) => string | null,
 ): string[] {
   const clauses: string[] = [];
   for (const [key, value] of Object.entries(filter)) {
@@ -85,7 +87,10 @@ export function buildWhere(
     if (key === "q") {
       if (searchColumns.length === 0) throw new BadRequest("This resource does not support search");
       const pattern = p.add(`%${escapeLike(String(value))}%`);
-      clauses.push(`(${searchColumns.map((c) => `${quoteIdent(c)}::text ilike ${pattern}`).join(" or ")})`);
+      const parts = searchColumns.map((c) => `${quoteIdent(c)}::text ilike ${pattern}`);
+      const extra = extraSearch?.(pattern);
+      if (extra) parts.push(extra);
+      clauses.push(`(${parts.join(" or ")})`);
       continue;
     }
     if (key === "@or") {

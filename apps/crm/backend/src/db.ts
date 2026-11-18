@@ -3,8 +3,9 @@ import pg from "pg";
 // bigint (int8) -> JS number. CRM ids/amounts stay far below 2^53.
 pg.types.setTypeParser(20, (v) => Number(v));
 // bigint[] (e.g. deals.contact_ids, contacts.tags) -> number[]; the UI compares ids by value.
-const parseTextArray = pg.types.getTypeParser(1016) as (v: string) => (string | null)[];
-pg.types.setTypeParser(1016, (v) => parseTextArray(v).map((x) => (x === null ? null : Number(x))));
+const INT8_ARRAY = 1016 as unknown as Parameters<typeof pg.types.getTypeParser>[0]; // not in pg's builtin TypeId enum
+const parseTextArray = pg.types.getTypeParser(INT8_ARRAY) as (v: string) => (string | null)[];
+pg.types.setTypeParser(INT8_ARRAY, (v: string) => parseTextArray(v).map((x) => (x === null ? null : Number(x))));
 // date -> keep 'YYYY-MM-DD' string (avoid timezone shifts on date-only columns)
 pg.types.setTypeParser(1082, (v) => v);
 

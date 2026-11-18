@@ -142,7 +142,7 @@ export const LoginPage = (props: { redirectTo?: string }) => {
                 to={"/forgot-password"}
                 className="block text-sm text-center hover:underline"
               >
-                {translate("ra-supabase.auth.forgot_password", {
+                {translate("crm.auth.forgot_password", {
                   _: "Forgot password?",
                 })}
               </Link>

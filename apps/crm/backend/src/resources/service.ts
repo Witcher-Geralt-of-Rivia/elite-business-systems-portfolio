@@ -49,7 +49,8 @@ export class ResourceService {
     const def = this.def(resource);
     const cols = this.cols(def.readRelation);
     const p = new SqlParams();
-    const where = buildWhere(q.filter, cols, p, def.searchColumns);
+    const extra = resource === "deals" && q.filter.q ? await this.dealCategorySearch(String(q.filter.q), p) : undefined;
+    const where = buildWhere(q.filter, cols, p, def.searchColumns, extra);
     const whereSql = where.length ? `where ${where.join(" and ")}` : "";
     const limit = Math.min(Math.max(q.end - q.start, 0), MAX_PAGE);
     const rel = quoteIdent(def.readRelation);
@@ -63,6 +64,23 @@ export class ResourceService {
     return { data: data.rows.map(publicRow), total: count.rows[0].total as number };
   }
 
+  /**
+   * Upstream searchDealCategories(): search words also match deal categories, by value or by the
+   * label configured in Settings (labels are not stored on the deal itself).
+   */
+  private async dealCategorySearch(q: string, p: SqlParams) {
+    const words = q.toLowerCase().trim().split(/\s+/).filter(Boolean);
+    const { rows } = await this.db.query(`select config -> 'dealCategories' as cats from configuration where id = 1`);
+    const cats: { value: string; label: string }[] = Array.isArray(rows[0]?.cats) ? rows[0].cats : [];
+    const labelled = cats
+      .filter((c) => words.some((w) => String(c.label ?? "").toLowerCase().includes(w) || String(c.value ?? "").toLowerCase().includes(w)))
+      .map((c) => String(c.value));
+    return (pattern: string) => {
+      const byValue = `array_to_string(categories, ' ') ilike ${pattern}`;
+      return labelled.length ? `(${byValue} or categories && ${p.add(labelled)}::text[])` : byValue;
+    };
+  }
+
   async getOne(resource: string, id: string | number) {
     const def = this.def(resource);
     const { rows } = await this.db.query(`select * from ${quoteIdent(def.readRelation)} where id = $1`, [id]);
@@ -74,7 +92,10 @@ export class ResourceService {
     const cols = this.cols(def.table);
     const blocked = new Set<string>([...ALWAYS_PROTECTED, ...(def.protectedColumns ?? [])]);
     // Backdated history is written by the simulator through this same service.
-    if (actor.kind === "simulator") blocked.delete("created_at");
+    if (actor.kind === "simulator") {
+      blocked.delete("created_at");
+      blocked.delete("updated_at");
+    }
     const out: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(data)) {
       const col = cols.get(key);

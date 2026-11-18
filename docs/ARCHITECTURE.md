@@ -47,7 +47,7 @@ Since 2026-11-17 the VPS is dedicated to this portfolio (D-008). Runtime per app
 | App | Runtime | DB |
 |---|---|---|
 | POS | Native Windows: PHP 8.3 (NTS) via Caddy `php_fastcgi` → php-cgi, Task Scheduler for `schedule:run` | MariaDB 11.8 (native, loopback) |
-| CRM | Atomic CRM SPA (static, served by Caddy) + **own Fastify API** (Node 24, Windows service) + Node simulation worker. **No Supabase.** | Isolated database + restricted role in the existing PostgreSQL 16 cluster (loopback) |
+| CRM | Atomic CRM SPA (static, served by Caddy) + **own Fastify API** (Node 24, Windows service) + in-process simulation worker. **No Supabase.** | Dedicated PostgreSQL 16 cluster `portfolio-crm-postgres` (loopback, D-010), restricted role |
 | ERP | WSL1 Ubuntu: Frappe bench v16 (gunicorn, socketio, RQ workers, scheduler) — **PoC-gated, reboot needs separate approval** | MariaDB 11.8 (native, loopback) + Redis-compatible server |
 
 ### CRM backend (D-009)
@@ -56,20 +56,25 @@ Since 2026-11-17 the VPS is dedicated to this portfolio (D-008). Runtime per app
 browser ──HTTPS──► Caddy ──► crm.<ip>.sslip.io
                              ├─ /            static Atomic CRM build
                              └─ /api/*  ──►  Fastify API (127.0.0.1)
-                                              ├─ auth: sessions (httpOnly cookie), argon2/scrypt
+                                              ├─ auth: opaque sessions (httpOnly cookie), scrypt, lockout, CSRF
+                                              ├─ team: invitations + one-time password links (no email)
                                               ├─ REST resources (react-admin conventions)
                                               ├─ RBAC + record-level rules (server-enforced)
+                                              ├─ global search (ported global_search(): tsvector + unaccent)
+                                              ├─ contact merge (single transaction)
                                               ├─ attachments → C:\srv\portfolio\crm\files (+ metadata rows)
                                               ├─ SSE /api/events (LISTEN/NOTIFY fan-out)
                                               └─ pg pool ──► PostgreSQL 16 (db: crm, role: crm_app)
-                         Node sim worker ──(same domain services)──► PostgreSQL
+                         simulation worker (in-process, CRM_SIMULATION=live)
+                           └─ writes through the same ResourceService (validated, audited)
 ```
 
 The browser never talks to PostgreSQL. Migration inventory: [CRM_SUPABASE_MIGRATION.md](CRM_SUPABASE_MIGRATION.md).
 
 ## 4. Data engines
 
-Per-app engine design (source-value libraries, distributions, state machines, live scheduler, idempotency keys, event log): _TBD (M4–M6)_.
+- **CRM:** [CRM_DATA_ENGINE.md](CRM_DATA_ENGINE.md) — event-driven B2B sales model, ~500 curated values, deterministic reset/replay, live worker, 21 integrity checks.
+- ERP, POS: _TBD (M5–M6)_.
 
 ## 5. Security model
 

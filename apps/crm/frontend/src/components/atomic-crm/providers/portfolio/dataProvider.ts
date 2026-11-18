@@ -7,8 +7,10 @@
  */
 import type { DataProvider, GetListParams, GetListResult, Identifier, RaRecord } from "ra-core";
 import type { ConfigurationContextValue } from "../../root/ConfigurationContext";
-import type { Deal, Sale, SalesFormData, SearchResourceName, SearchResult, SignUpData } from "../../types";
+import type { Deal, RAFile, Sale, SalesFormData, SearchResourceName, SearchResult, SignUpData } from "../../types";
+import { uploadFile, uploadFiles, uploadLogo } from "./files";
 import { apiFetch } from "./http";
+import { showOneTimeLink } from "./OneTimeLinkDialog";
 
 interface ListResponse {
   data: RaRecord[];
@@ -39,11 +41,29 @@ const mapActivity = (row: RaRecord) => ({
   deal_note: undefined,
 });
 
-class NotAvailableYet extends Error {
-  constructor(feature: string) {
-    super(`${feature} is not available in this build yet.`);
-    this.name = "NotAvailableYet";
+/** Uploads files picked in forms before the record is saved (upstream lifecycle callbacks). */
+async function withStoredFiles(resource: string, data: any) {
+  if (!data) return data;
+  if ((resource === "contact_notes" || resource === "deal_notes") && data.attachments) {
+    return { ...data, attachments: await uploadFiles(data.attachments) };
   }
+  if (resource === "companies" && data.logo?.rawFile instanceof File) {
+    return { ...data, logo: await uploadFile(data.logo) };
+  }
+  if ((resource === "contacts" || resource === "sales") && data.avatar?.rawFile instanceof File) {
+    return { ...data, avatar: await uploadFile(data.avatar) };
+  }
+  return data;
+}
+
+/** Re-throws API errors with the `code`/`email` fields the team UI maps to messages. */
+function withErrorCode(error: any): never {
+  const body = error?.body ?? {};
+  throw Object.assign(new Error(body.error ?? error?.message ?? "Request failed"), {
+    status: error?.status,
+    code: body.code,
+    email: body.email,
+  });
 }
 
 export const getDataProvider = () => {
@@ -69,10 +89,12 @@ export const getDataProvider = () => {
       return result as any;
     },
     async create(resource, params) {
-      return apiFetch<{ data: any }>(resourcePath(resource), { method: "POST", body: params.data });
+      const body = await withStoredFiles(resource, params.data);
+      return apiFetch<{ data: any }>(resourcePath(resource), { method: "POST", body });
     },
     async update(resource, params) {
-      return apiFetch<{ data: any }>(resourcePath(resource, params.id), { method: "PATCH", body: params.data });
+      const body = await withStoredFiles(resource, params.data);
+      return apiFetch<{ data: any }>(resourcePath(resource, params.id), { method: "PATCH", body });
     },
     async updateMany(resource, params) {
       await Promise.all(
@@ -112,9 +134,14 @@ export const getDataProvider = () => {
     },
 
     async updateConfiguration(config: ConfigurationContextValue): Promise<ConfigurationContextValue> {
+      const body = {
+        ...config,
+        lightModeLogo: config.lightModeLogo ? await uploadLogo(config.lightModeLogo) : config.lightModeLogo,
+        darkModeLogo: config.darkModeLogo ? await uploadLogo(config.darkModeLogo) : config.darkModeLogo,
+      };
       const { data } = await apiFetch<{ data: ConfigurationContextValue }>("/configuration", {
         method: "PUT",
-        body: config,
+        body,
       });
       return data;
     },
@@ -137,30 +164,75 @@ export const getDataProvider = () => {
       );
     },
 
-    // ---- Implemented server-side in milestone M4 (see docs/CRM_SUPABASE_MIGRATION.md) ----
-    async signUp(_data: SignUpData): Promise<{ id: string; email: string; password: string }> {
-      throw new NotAvailableYet("First-run sign-up");
+    /** First-run sign-up: accepted by the API only while the instance has no users. */
+    async signUp(data: SignUpData): Promise<{ id: string; email: string; password: string }> {
+      const created = await apiFetch<{ id: string; email: string }>("/auth/signup", { method: "POST", body: data });
+      return { ...created, password: data.password };
     },
-    async salesCreate(_body: SalesFormData): Promise<Sale> {
-      throw new NotAvailableYet("Team member creation");
+
+    /** Invites a team member; the one-time link is shown to the administrator (no email service). */
+    async salesCreate(body: SalesFormData): Promise<Sale> {
+      const payload = { ...body, avatar: body.avatar ? await uploadFile(body.avatar as unknown as RAFile) : undefined };
+      const res = await apiFetch<{ data: Sale; invitation: { url: string; expiresAt: string } }>("/users", {
+        method: "POST",
+        body: payload,
+      }).catch(withErrorCode);
+      showOneTimeLink({ kind: "invite", name: `${res.data.first_name} ${res.data.last_name}`, ...res.invitation });
+      return res.data;
     },
-    async salesUpdate(_id: Identifier, _data: Partial<Omit<SalesFormData, "password">>): Promise<Sale> {
-      throw new NotAvailableYet("Team member editing");
+
+    async salesUpdate(id: Identifier, data: Partial<Omit<SalesFormData, "password">>): Promise<Sale> {
+      const { email, secondary_emails, first_name, last_name, administrator, disabled } = data;
+      const avatar = (data.avatar as any)?.rawFile instanceof File ? await uploadFile(data.avatar as any) : data.avatar;
+      const res = await apiFetch<{ data: Sale }>(`/users/${encodeURIComponent(String(id))}`, {
+        method: "PATCH",
+        body: { email, secondary_emails, first_name, last_name, administrator, disabled, avatar },
+      }).catch(withErrorCode);
+      return res.data;
     },
-    async updatePassword(_id: Identifier): Promise<boolean> {
-      throw new NotAvailableYet("Password change");
+
+    /**
+     * "Change password" on the profile page: issues a one-time link for the signed-in user and
+     * opens it (upstream emailed a reset link instead).
+     */
+    async updatePassword(id: Identifier): Promise<boolean> {
+      const link = await apiFetch<{ url: string }>(`/users/${encodeURIComponent(String(id))}/password-link`, { method: "POST" });
+      window.location.assign(link.url);
+      return true;
     },
+
+    /** Administrators: one-time invitation / reset link for a team member, shown in a dialog. */
+    async salesPasswordLink(id: Identifier, name?: string): Promise<void> {
+      const link = await apiFetch<{ url: string; expiresAt: string; purpose: "invite" | "reset" }>(
+        `/users/${encodeURIComponent(String(id))}/password-link`,
+        { method: "POST" },
+      );
+      showOneTimeLink({ kind: link.purpose, name, url: link.url, expiresAt: link.expiresAt });
+    },
+
     async globalSearch(
-      _query: string,
-      _resources: readonly SearchResourceName[],
-      _maxResults: number,
+      query: string,
+      resources: readonly SearchResourceName[],
+      maxResults: number,
     ): Promise<SearchResult[]> {
-      throw new NotAvailableYet("Global search");
+      // apiFetch throws HttpError(status) so authProvider.checkError can log out an expired session.
+      return apiFetch<SearchResult[]>("/search", {
+        query: { q: query, resources: resources.join(","), max: String(maxResults) },
+      });
     },
-    async mergeContacts(_sourceId: Identifier, _targetId: Identifier): Promise<unknown> {
-      throw new NotAvailableYet("Contact merge");
+
+    /** Merges `sourceId` (deleted) into `targetId` in one server-side transaction. */
+    async mergeContacts(sourceId: Identifier, targetId: Identifier): Promise<unknown> {
+      const { data } = await apiFetch<{ data: unknown }>(`/contacts/${encodeURIComponent(String(sourceId))}/merge`, {
+        method: "POST",
+        body: { winnerId: Number(targetId) },
+      });
+      return data;
     },
   };
 };
 
-export type CrmDataProvider = ReturnType<typeof getDataProvider>;
+type PortfolioDataProvider = ReturnType<typeof getDataProvider>;
+/** Portfolio-only extras are optional so upstream's FakeRest demo provider still satisfies the type. */
+export type CrmDataProvider = Omit<PortfolioDataProvider, "salesPasswordLink"> &
+  Partial<Pick<PortfolioDataProvider, "salesPasswordLink">>;

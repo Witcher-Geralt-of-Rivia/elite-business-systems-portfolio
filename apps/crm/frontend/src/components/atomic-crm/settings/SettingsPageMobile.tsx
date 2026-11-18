@@ -563,6 +563,8 @@ const InboundEmailSection = () => {
 const McpServerSection = () => {
   const translate = useTranslate();
 
+  if (!config.mcpUrl) return null;
+
   return (
     <div>
       <SectionLabel>
@@ -574,7 +576,7 @@ const McpServerSection = () => {
         })}
       </p>
       <SettingsGroup>
-        <CopyPasteRow value={`${config.supabaseUrl}/functions/v1/mcp`} />
+        <CopyPasteRow value={`${config.mcpUrl}`} />
       </SettingsGroup>
     </div>
   );

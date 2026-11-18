@@ -255,23 +255,25 @@ const ProfileForm = ({
           </CardContent>
         </Card>
       )}
-      <Card>
-        <CardContent>
-          <div className="space-y-4 justify-between">
-            <h2 className="text-xl font-semibold text-muted-foreground">
-              {translate("crm.profile.mcp.title", {
-                _: "MCP Server",
-              })}
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              {translate("crm.profile.mcp.description", {
-                _: "Use this URL to connect your AI assistant to your CRM data via the Model Context Protocol (MCP).",
-              })}
-            </p>
-            <CopyPaste value={`${config.supabaseUrl}/functions/v1/mcp`} />
-          </div>
-        </CardContent>
-      </Card>
+      {config.mcpUrl && (
+        <Card>
+          <CardContent>
+            <div className="space-y-4 justify-between">
+              <h2 className="text-xl font-semibold text-muted-foreground">
+                {translate("crm.profile.mcp.title", {
+                  _: "MCP Server",
+                })}
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                {translate("crm.profile.mcp.description", {
+                  _: "Use this URL to connect your AI assistant to your CRM data via the Model Context Protocol (MCP).",
+                })}
+              </p>
+              <CopyPaste value={`${config.mcpUrl}`} />
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

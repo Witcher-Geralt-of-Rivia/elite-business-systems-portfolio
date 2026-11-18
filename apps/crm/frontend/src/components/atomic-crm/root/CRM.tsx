@@ -11,17 +11,17 @@ import { QueryClient } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
 import { Admin } from "@/components/admin/admin";
-import { ForgotPasswordPage } from "@/components/supabase/forgot-password-page";
-import { SetPasswordPage } from "@/components/supabase/set-password-page";
-import { OAuthConsentPage } from "@/components/supabase/oauth-consent-page";
+import { ForgotPasswordPage } from "@/components/auth/forgot-password-page";
+import { SetPasswordPage } from "@/components/auth/set-password-page";
 
 import companies from "../companies";
 import contacts from "../contacts";
 import { Dashboard } from "../dashboard/Dashboard";
 import { MobileDashboard } from "../dashboard/MobileDashboard";
 import deals from "../deals";
-import { Layout } from "../layout/Layout";
-import { MobileLayout } from "../layout/MobileLayout";
+import { Layout as UpstreamLayout } from "../layout/Layout";
+import { MobileLayout as UpstreamMobileLayout } from "../layout/MobileLayout";
+import { withPortfolioServices } from "../providers/portfolio/withPortfolioServices";
 import { SignupPage } from "../login/SignupPage";
 import { ConfirmationRequired } from "../login/ConfirmationRequired";
 import { ImportPage } from "../misc/ImportPage";
@@ -230,6 +230,10 @@ export const CRM = ({
   );
 };
 
+// Portfolio: layouts also host live updates (SSE) and the one-time link dialog.
+const Layout = withPortfolioServices(UpstreamLayout);
+const MobileLayout = withPortfolioServices(UpstreamMobileLayout);
+
 const DesktopAdmin = (
   props: CoreAdminProps & {
     dashboard?: DashboardComponent;
@@ -253,7 +257,6 @@ const DesktopAdmin = (
           path={ForgotPasswordPage.path}
           element={<ForgotPasswordPage />}
         />
-        <Route path={OAuthConsentPage.path} element={<OAuthConsentPage />} />
       </CustomRoutes>
 
       <CustomRoutes>
@@ -328,8 +331,7 @@ const MobileAdmin = (
             path={ForgotPasswordPage.path}
             element={<ForgotPasswordPage />}
           />
-          <Route path={OAuthConsentPage.path} element={<OAuthConsentPage />} />
-        </CustomRoutes>
+          </CustomRoutes>
         <CustomRoutes>
           <Route
             path={SettingsPageMobile.path}

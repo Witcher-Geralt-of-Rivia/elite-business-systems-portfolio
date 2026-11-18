@@ -13,7 +13,8 @@
     "migrate": "node --env-file-if-exists=.env scripts/migrate.ts",
     "create-user": "node --env-file-if-exists=.env scripts/create-user.ts",
     "test": "node --env-file-if-exists=.env.test --test --test-concurrency=1 test/*.test.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "simulate": "node scripts/simulate.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.0.2",

@@ -72,8 +72,6 @@ export default defineConfig({
           exclude: [
             "**/node_modules/**",
             "doc/**",
-            "supabase/**",
-            ".supabase-e2e/**",
             "e2e/**/*.spec.{ts,tsx}",
             // Harness hook tests are Node-only (they import node:fs / node:path
             // and spawn subprocesses); they run under the "claude" project below.
@@ -98,28 +96,6 @@ export default defineConfig({
           // so they need more headroom than the default 5s.
           testTimeout: 30000,
           hookTimeout: 30000,
-        },
-      },
-      {
-        // Map the Deno imports to the installed npm packages so Vitest can run
-        // these Deno-targeted tests in Node without a Deno runtime. These aliases
-        // only apply to this project.
-        resolve: {
-          alias: {
-            "jsr:@supabase/supabase-js@2": path.resolve(
-              __dirname,
-              "node_modules/@supabase/supabase-js",
-            ),
-            "npm:tldts": path.resolve(__dirname, "node_modules/tldts"),
-            "npm:pgsql-ast-parser@^12": "pgsql-ast-parser",
-          },
-        },
-        test: {
-          name: "functions",
-          globals: true,
-          environment: "node",
-          include: ["supabase/functions/**/*.test.ts"],
-          exclude: ["**/node_modules/**", ".supabase-e2e/**"],
         },
       },
       {

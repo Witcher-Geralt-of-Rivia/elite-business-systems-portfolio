@@ -8,6 +8,8 @@ export interface AppConfig {
   attachmentsDir: string;
   logLevel: string;
   loginRateLimitPerMinute: number;
+  /** Live server-side simulation (off unless CRM_SIMULATION=live). */
+  simulation: { live: boolean; tickSeconds: number; intensity: number };
 }
 
 function required(name: string): string {
@@ -28,5 +30,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     attachmentsDir: env.CRM_ATTACHMENTS_DIR ?? "C:/srv/portfolio/crm/files",
     logLevel: env.CRM_LOG_LEVEL ?? "info",
     loginRateLimitPerMinute: Number(env.CRM_LOGIN_RATE_LIMIT_PER_MINUTE ?? 10),
+    simulation: {
+      live: env.CRM_SIMULATION === "live",
+      tickSeconds: Math.max(10, Number(env.CRM_SIM_TICK_SECONDS ?? 60)),
+      intensity: Math.min(20, Math.max(0.1, Number(env.CRM_SIM_INTENSITY ?? 1))),
+    },
   };
 }

@@ -94,3 +94,30 @@ Command: `node --env-file=<crm-test.env> --test --test-concurrency=1 test/m4.tes
 | Live updates | SSE stream 401 when signed out; committed deal update delivered as `change` event |
 
 Bug found and fixed by these tests: `bigint[]` columns (`deals.contact_ids`, `contacts.tags`) were returned as strings; now numbers.
+
+## CRM M4 — frontend integration, Supabase removal, data engine (2026-11-17)
+
+**Backend, all suites** (`test/poc.test.ts test/m4.test.ts test/simulation.test.ts`, crm_test, migrations 0001–0003): **38/38 pass**.
+
+**Data engine** (`test/simulation.test.ts`, 4-month window): 7/7 — catalog size in range; backfill through
+ResourceService with every write audited as `simulator`; 0 integrity violations; plausibility bands;
+same seed + as-of → identical hash, different seed → different hash; 10 live ticks ≡ one uninterrupted
+advance (same hash); live mode skips records deleted by users.
+
+**Full 13-month backfill** (`npm run simulate -- reset --seed 20261117 --months 13 --as-of 2026-11-17T18:00:00Z`, crm_test):
+25 s; 467 companies, 1,193 contacts, 295 deals (18 expansion), 1,799 notes, 1,282 tasks (168 open);
+74 won / 177 lost (win rate 29.5 %), won revenue $2,203,500, median won deal $18,250; leads in every
+month following the seasonal curve; open pipeline spread across all stages at as-of.
+`simulate integrity`: **21 checks, 0 failing**. Data hash `54c76f29…2fed0`.
+
+**Browser end-to-end** (Playwright/Chromium, `e2e-portfolio/crm-m4.spec.ts`) on a local stack: production
+build via `vite preview` + API on loopback against crm_test (seeded by the engine), throwaway admin:
+**5/5 pass** — global search opens the company; admin invites → one-time link dialog → invitee sets
+password → signs in as sales_rep → link reuse refused (400); note attachment uploaded and downloaded
+byte-identical; a teammate's note appears on an open page without reload (SSE); duplicate contact merged
+through the UI dialog (history moved, duplicate gone).
+Two first-run failures were test defects (merge lives on the edit page; search picked a contact whose
+subtitle is the company) — fixed in the spec, not the app.
+
+**Frontend**: `tsc` clean; Vitest `scripts` project 4/4 (runtime config). Supabase packages absent from
+`package.json` and `package-lock.json`.

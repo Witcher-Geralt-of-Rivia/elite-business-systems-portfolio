@@ -65,7 +65,8 @@
   ],
   "owner_decisions_needed": [
     "SEC-ROTATE",
-    "REBOOT"
+    "REBOOT",
+    "CRM-REDEPLOY"
   ],
   "host_facts": {
     "os": "Windows Server 2025 Standard 26100",
@@ -97,5 +98,5 @@
     "pos": "not_started",
     "portal": "placeholder live (healthz verified)"
   },
-  "next_action": "CRM M4: frontend wiring of search/team/password/merge/attachments/SSE, Supabase package removal, then the CRM data engine (P3)."
+  "next_action": "Owner confirmation to redeploy the CRM (migrations 0002-0003, M4 build, synthetic data via simulate reset, CRM_SIMULATION=live); then visitor/showcase access model and M4 acceptance on the public URL; then M6 POS preparation."
 }

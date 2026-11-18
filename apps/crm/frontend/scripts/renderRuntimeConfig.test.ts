@@ -12,15 +12,13 @@ describe("renderRuntimeConfig", () => {
   it("exposes the deployment settings to the app", () => {
     expect(
       loadConfig({
-        VITE_SUPABASE_URL: "https://acme.supabase.co",
-        VITE_SB_PUBLISHABLE_KEY: "sb_publishable_acme",
+        VITE_MCP_URL: "https://crm.example.com/mcp",
         VITE_INBOUND_EMAIL: "crm@inbound.acme.com",
         VITE_ATTACHMENTS_BUCKET: "files",
         VITE_GOOGLE_WORKPLACE_DOMAIN: "acme.com",
       }),
     ).toEqual({
-      supabaseUrl: "https://acme.supabase.co",
-      supabasePublishableKey: "sb_publishable_acme",
+      mcpUrl: "https://crm.example.com/mcp",
       inboundEmail: "crm@inbound.acme.com",
       attachmentsBucket: "files",
       googleWorkplaceDomain: "acme.com",
@@ -29,7 +27,7 @@ describe("renderRuntimeConfig", () => {
 
   it("never writes other environment variables, which may be secrets", () => {
     const script = renderRuntimeConfig({
-      VITE_SUPABASE_URL: "https://acme.supabase.co",
+      VITE_MCP_URL: "https://crm.example.com/mcp",
       SERVICE_ROLE_KEY: "secret-service-role-key",
       SUPABASE_DB_PASSWORD: "secret-db-password",
     });
@@ -40,10 +38,10 @@ describe("renderRuntimeConfig", () => {
   it("leaves out unset and empty settings", () => {
     expect(
       loadConfig({
-        VITE_SUPABASE_URL: "https://acme.supabase.co",
+        VITE_MCP_URL: "https://crm.example.com/mcp",
         VITE_INBOUND_EMAIL: "",
       }),
-    ).toEqual({ supabaseUrl: "https://acme.supabase.co" });
+    ).toEqual({ mcpUrl: "https://crm.example.com/mcp" });
   });
 
   it("turns the flags into booleans", () => {

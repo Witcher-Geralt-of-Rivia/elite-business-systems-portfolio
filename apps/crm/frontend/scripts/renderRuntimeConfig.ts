@@ -13,8 +13,7 @@ type Env = Record<string, string | undefined>;
 
 // Written to config.js, which is public: never add a secret here.
 const ENV_KEYS = {
-  supabaseUrl: "VITE_SUPABASE_URL",
-  supabasePublishableKey: "VITE_SB_PUBLISHABLE_KEY",
+  mcpUrl: "VITE_MCP_URL",
   isDemo: "VITE_IS_DEMO",
   inboundEmail: "VITE_INBOUND_EMAIL",
   attachmentsBucket: "VITE_ATTACHMENTS_BUCKET",

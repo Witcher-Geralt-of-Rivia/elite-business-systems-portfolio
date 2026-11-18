@@ -12,6 +12,7 @@ import { SimpleForm } from "@/components/admin/simple-form";
 import { CancelButton } from "@/components/admin/cancel-button";
 import { SaveButton } from "@/components/admin/form";
 import { Card, CardContent } from "@/components/ui/card";
+import { PasswordLinkButton } from "../providers/portfolio/PasswordLinkButton";
 
 import type { CrmDataProvider } from "../providers/types";
 import type { Sale, SalesFormData } from "../types";
@@ -21,6 +22,7 @@ import { SalesInputs } from "./SalesInputs";
 function EditToolbar() {
   return (
     <div className="flex justify-end gap-4">
+      <PasswordLinkButton />
       <CancelButton />
       <SaveButton />
     </div>
