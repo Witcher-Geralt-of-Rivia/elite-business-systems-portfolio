@@ -121,3 +121,41 @@ subtitle is the company) — fixed in the spec, not the app.
 
 **Frontend**: `tsc` clean; Vitest `scripts` project 4/4 (runtime config). Supabase packages absent from
 `package.json` and `package-lock.json`.
+
+## CRM M4 — production deployment and public acceptance (2026-11-17)
+
+**Rollout:** repo state verified clean and pushed → `pg_dump` backup + restore check into a scratch DB
+(row counts matched) + copy of the previous API/UI folders and env file → migrations 0002/0003 applied →
+build deployed (same hostname, Caddy site, Windows service) → 13-month history generated → integrity → public tests.
+Two deploy-script defects surfaced and were fixed (WinSW wrapper copied while the service ran; WinSW 2.x has no
+`refresh`); the service was restarted within about a minute and the previous version stayed restorable throughout.
+
+**Production dataset** (seed 20261117, 13 months to deploy time, 31 s): 499 companies, 1,265 contacts,
+312 deals, 81 won / 180 lost (win rate 31.0 %), won revenue $2,070,500, 1,851 notes, 1,335 tasks (64 open).
+`simulate integrity` on the production database: **22 checks, 0 failing**; weekend activity share 0.
+
+**Public HTTPS browser tests** (`https://crm.<VPS_IP>.sslip.io`, Chromium): **10/10 pass**:
+PoC 2/2 (login refusal; create, persist, update, delete through the UI), M4 5/5 (search, invitation with
+one-time link, first sign-in, link reuse refused, attachment round trip, SSE live note on an open page, UI merge),
+showcase 3/3 (visitor session without credentials; dashboard chart, hot contacts, tasks and activity rendered;
+pipeline, companies, contacts, contact record; save attempt refused with the read-only message and nothing stored;
+users/config/upload refused 403 `showcase_read_only`; sign-up 403; phone viewport; no uncaught page errors).
+After each run a cleanup step removes test records and verifies no test account can sign in (`loginable_test_accounts = 0`).
+
+**Acceptance walkthrough findings fixed before sign-off** (screenshots reviewed on desktop and phone): visitors hit
+"Access denied" on dashboard/contact pages; contacts dated in the future and on weekends; repetitive company and
+deal names; generic title; empty personal widgets for visitors; banner covering the phone navigation;
+a year of stale overdue tasks; losses dominating the revenue chart. Fixes: 34e0b1c, f4f6cdc, 52f7cbc.
+
+**Operational checks**
+
+| Check | Result |
+|---|---|
+| Restart preserves simulation state | clock continued 02:36:31 → 02:38:24 across a service restart; queue 159 → 159; data hash identical before/after (no duplicate events) |
+| Live worker running | `live simulation enabled` (tick 60 s, intensity 3); clock advances every minute |
+| New leads in production | **pending observation**: business events occur only in US business hours (14:00–24:00 UTC); deployment finished ~03:15 UTC. Live processing is covered by tests (10 ticks = one advance; deleted records skipped) and SSE delivery by the public E2E |
+| Admin records protected | visitor writes refused at HTTP and service layers; the simulator never touches the administrator account |
+| Resources | API 81 MB RAM, 9 CPU-s since start; CRM PostgreSQL ~110 MB; pgdata 166 MB; backups 18 MB; host free RAM 4.0 GB, disk 15.3 GB |
+| API latency (visitor, public URL) | 0.10–0.32 s per list request on an idle host; up to 2.5 s while a test browser saturated the 3-CPU host |
+
+Once, a combined backend run reported 15 cancelled tests (0 failed); not reproduced in three later runs.

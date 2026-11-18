@@ -2,7 +2,7 @@
   "project": "elite-business-systems-portfolio",
   "repository": "https://github.com/Witcher-Geralt-of-Rivia/elite-business-systems-portfolio",
   "updated": "2026-11-17",
-  "current_milestone": "M4",
+  "current_milestone": "M6",
   "current_task": "Security incident response (D-012) — awaiting owner decision",
   "status": "in_progress",
   "last_verified_commit": "2b11d5f",
@@ -65,8 +65,7 @@
   ],
   "owner_decisions_needed": [
     "SEC-ROTATE",
-    "REBOOT",
-    "CRM-REDEPLOY"
+    "REBOOT"
   ],
   "host_facts": {
     "os": "Windows Server 2025 Standard 26100",
@@ -98,5 +97,15 @@
     "pos": "not_started",
     "portal": "placeholder live (healthz verified)"
   },
-  "next_action": "Owner confirmation to redeploy the CRM (migrations 0002-0003, M4 build, synthetic data via simulate reset, CRM_SIMULATION=live); then visitor/showcase access model and M4 acceptance on the public URL; then M6 POS preparation."
+  "next_action": "M6 POS: php-cgi FastCGI service + Caddy site pos.<ip>.sslip.io; Harbor & Pine Market catalog; retail data engine as a NexoPOS module using OrdersService/ProcurementService; report recompute; integrity tests; E2E.",
+  "completed_milestones": [
+    "M0",
+    "M1",
+    "M2",
+    "M3",
+    "M4"
+  ],
+  "pending_observations": [
+    "CRM: first live lead in a production business window (14:00-24:00 UTC); check with `simulate status` and the activity feed"
+  ]
 }

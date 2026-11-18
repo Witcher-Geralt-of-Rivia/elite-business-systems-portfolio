@@ -2,6 +2,16 @@
 
 Newest first. Every entry states what was **verified**, not just what was written.
 
+## 2026-11-17 — M4 done: CRM deployed with live synthetic operations and read-only visitor access
+
+- **Live:** `https://crm.<VPS_IP>.sslip.io` runs the M4 build; 13-month history (499 companies, 312 deals,
+  $2.07 M won) generated in production; 22/22 integrity checks; live simulation worker on (intensity 3).
+- **Visitors:** "Explore the live demo" gives a credential-free, read-only session (D-014), viewing as the busiest rep.
+- **Public E2E 10/10**; acceptance walkthrough defects fixed (see TEST_RESULTS).
+- **Pending observation:** first live lead during a production business window (14:00–24:00 UTC).
+- **M6 started:** PHP 8.3.36 + MariaDB 11.8.10 (`portfolio-pos-mariadb`, 127.0.0.1:3307) installed and verified;
+  NexoPOS v6.3.0 installed against it (not yet routed publicly).
+
 ## 2026-11-17 — CRM M4: features complete in code, Supabase removed, data engine running (not yet deployed)
 
 - **Owner decision D-013:** no rebuild; development resumed. F11 closed (owner's own tool). Incident stays open (R-014).

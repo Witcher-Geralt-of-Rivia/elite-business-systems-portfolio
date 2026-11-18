@@ -81,3 +81,31 @@ Format: ID · date · decision · alternatives rejected · status.
   WSL1 reboot still unapproved; the security incident stays open in RISKS (R-014) — it is not declared resolved.
 - **Supersedes:** the development pause in D-012 (D-012's deployment/secret restrictions continue as stated above).
 
+
+## D-014 — CRM visitor access: credential-free, read-only showcase sessions (2026-11-17)
+
+- **Decision:** visitors click "Explore the live demo" and get a 2-hour session for a dedicated `showcase`
+  account **that has no password** (nothing to publish or leak; it cannot sign in with credentials and no
+  password link can be issued for it). Enabled by `CRM_SHOWCASE=on`.
+- **Enforcement:** showcase sessions are read-only at the HTTP layer (every state-changing request except
+  logout, and every private-file download, returns 403 `showcase_read_only`), and again in the service layer
+  (`write.showcase = none`). The UI does not hide every edit control: ra-core's embedded create/edit
+  controllers turn a UI-level denial into "Access denied" pages, so instead a permanent banner states the
+  mode and refused saves show "This is a read-only demo: changes are disabled."
+- **Presentation:** `/api/auth/me` presents visitors as "Guest · viewing as <busiest active rep>" so personal
+  widgets (hot contacts, upcoming tasks) show real work. Only the identity shown changes; the session stays the
+  showcase account. Never an administrator.
+- **Unchanged:** first-user sign-up stays closed once a real user exists (the showcase account is ignored
+  for that check); no public registration.
+
+## D-015 — POS native runtime (2026-11-17)
+
+- PHP 8.3.36 NTS x64 (official build, SHA-256 verified) under `C:\srv\portfolio\pos\php`, served to Caddy via
+  `php-cgi` FastCGI workers (Windows php-cgi handles one request at a time, so several workers sit behind
+  Caddy's `php_fastcgi` load balancing).
+- MariaDB 11.8.10 (official zip, SHA-256 verified) as its **own** service `portfolio-pos-mariadb`
+  (NETWORK SERVICE, `127.0.0.1:3307` only, 128 MB buffer pool), database `nexopos`, account `nexopos_app`
+  limited to that database. Kept separate from the ERP's future MariaDB (X-DB-1); sharing one server
+  process is a later, measured option (R-005).
+- NexoPOS v6.3.0 (tag commit `1e9b2e2`) exported from upstream into `C:\srv\portfolio\pos\app`; portfolio code
+  is a NexoPOS **module** (GPL-3.0) in `apps/pos/`, never a core patch.
