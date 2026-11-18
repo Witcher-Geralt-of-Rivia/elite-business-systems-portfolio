@@ -104,6 +104,10 @@ class Simulator
                     $engine->execute( $event );
                 }
             }
+            // NexoPOS refreshes the month from a job fired by day-report updates; that refresh was observed
+            // not to land during simulated runs (month total frozen while days kept growing), so the month of
+            // the processed day is recomputed explicitly (one aggregate; a no-op while reports are deferred).
+            app( ReportService::class )->computeDashboardMonth( $day->copy() );
             $watermark = $day->copy()->endOfDay()->min( $to );
             DB::table( 'harborpine_sim_state' )->where( 'id', 1 )->update( [
                 'processed_until' => $watermark->format( 'Y-m-d H:i:s' ),

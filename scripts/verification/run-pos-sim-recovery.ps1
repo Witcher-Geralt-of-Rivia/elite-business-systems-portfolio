@@ -30,9 +30,12 @@ function Invoke-Sql([string]$sql) {
     if ($LASTEXITCODE -ne 0) { throw "sql failed: $out" }
     return $out
 }
+# Arguments must not contain spaces (Start-Process joins them unquoted): times are passed as 2026-11-19T13:00:00.
 function Start-Artisan([string[]]$a, [string]$tag) {
-    Start-Process $php -ArgumentList (@('-d', 'memory_limit=512M', 'artisan') + $a) -WorkingDirectory $app -PassThru -WindowStyle Hidden `
+    $p = Start-Process $php -ArgumentList (@('-d', 'memory_limit=512M', 'artisan') + $a) -WorkingDirectory $app -PassThru -WindowStyle Hidden `
         -RedirectStandardOutput (Join-Path $work "$tag.out") -RedirectStandardError (Join-Path $work "$tag.err")
+    $null = $p.Handle   # PowerShell 5.1 only reports ExitCode if the handle was opened while the process ran
+    return $p
 }
 function Invoke-Artisan([string[]]$a, [string]$tag) {
     $p = Start-Artisan $a $tag; $p.WaitForExit(); $p.Refresh()
@@ -65,26 +68,26 @@ try {
     $report.test_day = $d
 
     # ---- 1. two engines on the same window at once
-    $p1 = Start-Artisan @('hp:advance', "--until=$d 13:00:00") 'conc-1'
-    $p2 = Start-Artisan @('hp:advance', "--until=$d 13:00:00") 'conc-2'
+    $p1 = Start-Artisan @('hp:advance', "--until=${d}T13:00:00") 'conc-1'
+    $p2 = Start-Artisan @('hp:advance', "--until=${d}T13:00:00") 'conc-2'
     $p1.WaitForExit(); $p2.WaitForExit(); $p1.Refresh(); $p2.Refresh()
     $report.concurrent_exit_codes = "$($p1.ExitCode),$($p2.ExitCode)"
     $report.concurrent_errors = @((Get-Content (Join-Path $work 'conc-1.err'), (Join-Path $work 'conc-2.err') -ErrorAction SilentlyContinue) |
         Where-Object { $_ -match 'Duplicate entry|Deadlock|SQLSTATE' } | ForEach-Object { ($_ -replace '\s+', ' ').Trim().Substring(0, [Math]::Min(160, $_.Trim().Length)) } | Select-Object -Unique -First 3)
-    $settle = Invoke-Artisan @('hp:advance', "--until=$d 13:00:00") 'conc-settle'
+    $settle = Invoke-Artisan @('hp:advance', "--until=${d}T13:00:00") 'conc-settle'
     $report.concurrent_settle_exit = $settle.Code
 
     # ---- 2. crash mid-day, then recover
     $before = [int](Invoke-Sql "SELECT COUNT(*) FROM harborpine_sim_ledger" | Select-Object -First 1)
-    $crash = Start-Artisan @('hp:advance', "--until=$d 23:59:59") 'crash'
+    $crash = Start-Artisan @('hp:advance', "--until=${d}T23:59:59") 'crash'
     Start-Sleep -Seconds $KillAfterSeconds
     $killedWhileRunning = -not $crash.HasExited
-    taskkill /T /F /PID $crash.Id 2>&1 | Out-Null
+    $ErrorActionPreference = 'Continue'; taskkill /T /F /PID $crash.Id 2>&1 | Out-Null; $ErrorActionPreference = 'Stop'
     $atKill = [int](Invoke-Sql "SELECT COUNT(*) FROM harborpine_sim_ledger" | Select-Object -First 1)
     $report.crash_killed_while_running = $killedWhileRunning
     $report.crash_events_before_kill = $atKill - $before
     $report.crash_watermark_after_kill = (Invoke-Sql "SELECT processed_until FROM harborpine_sim_state WHERE id = 1" | Select-Object -First 1)
-    $recover = Invoke-Artisan @('hp:advance', "--until=$d 23:59:59") 'recover'
+    $recover = Invoke-Artisan @('hp:advance', "--until=${d}T23:59:59") 'recover'
     $report.recovery_exit = $recover.Code
     $report.events_after_recovery = [int](Invoke-Sql "SELECT COUNT(*) FROM harborpine_sim_ledger" | Select-Object -First 1) - $before
     $report.watermark_after_recovery = (Invoke-Sql "SELECT processed_until FROM harborpine_sim_state WHERE id = 1" | Select-Object -First 1)
@@ -99,10 +102,14 @@ try {
     $integrity = Invoke-Artisan @('hp:integrity', '--json') 'integrity'
     $ij = $integrity.Out | ConvertFrom-Json
     $report.integrity_checks = $ij.checks
-    $report.integrity_failing = @($ij.failing.PSObject.Properties | ForEach-Object { "$($_.Name)=$($_.Value)" })
+    $report.integrity_failing = @(if ($ij.failing -isnot [array]) { $ij.failing.PSObject.Properties | ForEach-Object { "$($_.Name)=$($_.Value)" } })
     $report.passed = ($report.replay_exit -eq 0 -and $integrity.Code -eq 0 -and $report.duplicate_order_entries -eq 0 -and
         $report.recovery_exit -eq 0 -and $report.test_day_orders -eq $report.test_day_sale_events)
+} catch {
+    $report.error = "$($_.Exception.Message) (line $($_.InvocationInfo.ScriptLineNumber))"
+    $report.passed = $false
 } finally {
+    $ErrorActionPreference = 'Continue'
     foreach ($v in 'APP_CONFIG_CACHE', 'DB_DATABASE', 'CACHE_DRIVER', 'CACHE_STORE', 'SESSION_DRIVER') { Remove-Item "Env:$v" -ErrorAction SilentlyContinue }
     if (-not $KeepDatabase) { & (Join-Path $bin 'mariadb.exe') @conn -e "DROP DATABASE IF EXISTS $db;" 2>&1 | Out-Null }
     Remove-Item Env:MYSQL_PWD -ErrorAction SilentlyContinue

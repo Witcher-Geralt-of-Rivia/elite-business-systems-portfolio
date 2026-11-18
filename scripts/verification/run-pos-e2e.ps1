@@ -38,7 +38,9 @@ New-Item -ItemType Directory -Force $work | Out-Null
 
 function Invoke-Maria([string[]]$a, [string]$stdin) {
     $ErrorActionPreference = 'Continue'
-    if ($stdin) { $out = Get-Content $stdin -Raw | & (Join-Path $bin 'mariadb.exe') @a 2>&1 } else { $out = & (Join-Path $bin 'mariadb.exe') @a 2>&1 }
+    # A dump is read by the client itself: piping it through PowerShell 5.1 would re-encode non-ASCII text.
+    if ($stdin) { $a = @('--default-character-set=utf8mb4') + $a + @('-e', "source $($stdin -replace '\\', '/')") }
+    $out = & (Join-Path $bin 'mariadb.exe') @a 2>&1
     $out | Where-Object { "$_" -notmatch 'ssl-verify-server-cert' } | ForEach-Object { Write-Host "  $_" }
     if ($LASTEXITCODE -ne 0) { throw "mariadb failed ($LASTEXITCODE)" }
 }
