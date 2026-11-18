@@ -48,7 +48,16 @@ test("register session: open with a float and record a cash-in", async () => {
   state.balance = balance;
 });
 
+/** Today's sales total from the native sales report (store-local day). */
+async function todaysSales(): Promise<number> {
+  const day = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Los_Angeles" }).format(new Date());
+  const res = await apiPost(page, "/api/reports/sale-report", { startDate: `${day} 00:00:00`, endDate: `${day} 23:59:59`, type: "products_report" });
+  expect(res.status(), await res.text()).toBe(200);
+  return Number((await res.json()).summary?.total ?? 0);
+}
+
 test("checkout with a simulated payment decreases stock and records the payment", async () => {
+  state.salesBefore = await todaysSales();
   const found = await (await apiPost(page, "/api/products/search", { search: "Morning Tide Blend" })).json();
   const product = (Array.isArray(found) ? found : found.data ?? []).find((p: any) => /Morning Tide Blend/.test(p.name));
   expect(product).toBeTruthy();
@@ -77,7 +86,45 @@ test("checkout with a simulated payment decreases stock and records the payment"
   expect(afterQty).toBe(before - 2);
   const reg = await (await apiGet(page.request, `/api/cash-registers/${state.register}`)).json();
   expect(Number((Array.isArray(reg) ? reg[0] : reg).balance)).toBeCloseTo(state.balance + total, 2);
-  Object.assign(state, { order, product, uq, before, price, total });
+  Object.assign(state, { order, product, uq, before, price, total, customer });
+});
+
+test("checkout through the POS screen with the simulated card payment", async () => {
+  await page.goto("/dashboard/pos");
+  await page.locator("#grid-items .cell-item", { hasText: "Coffee & Tea" }).click({ timeout: 60_000 });
+  await page.locator("#grid-items .cell-item", { hasText: "Lighthouse Espresso — 12 oz" }).click();
+  await page.getByText("Enter", { exact: true }).click();
+  await expect(page.getByText(/Lighthouse Espresso — 12 oz — Each/)).toBeVisible();
+  await page.getByText("Pay", { exact: true }).first().click();
+  await page.getByText("Card (simulated)", { exact: true }).click();
+  await page.getByText("Full Payment", { exact: true }).click();
+  const submitted = page.waitForResponse((r) => r.request().method() === "POST" && /\/api\/orders$/.test(r.url()));
+  await page.getByRole("button", { name: "Yes", exact: true }).click();
+  const res = await submitted;
+  expect(res.status(), await res.text()).toBe(200);
+  const order = (await res.json()).data.order;
+  expect(order.payment_status).toBe("paid");
+  const payments = await (await apiGet(page.request, `/api/orders/${order.id}/payments`)).json();
+  expect(JSON.stringify(payments)).toContain("card-payment");
+  state.cardTotal = Number(order.total);
+  await page.waitForTimeout(2000);
+  await page.screenshot({ path: "test-results/pos-admin/pos-card-sale.png" });
+});
+
+test("receipt, customer history and the daily sales report include the sale", async () => {
+  const receipt = await page.goto(`/dashboard/orders/receipt/${state.order.id}`);
+  expect(receipt?.status()).toBe(200);
+  await expect(page.getByText(state.order.code).first()).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText(/Morning Tide Blend/).first()).toBeVisible();
+  await page.screenshot({ path: "test-results/pos-admin/receipt.png" });
+
+  const history = await (await apiGet(page.request, `/api/customers/${state.customer.id}/orders`)).json();
+  const rows = Array.isArray(history) ? history : history.data ?? [];
+  expect(rows.some((o: any) => o.id === state.order.id), "order listed in the customer's history").toBe(true);
+
+  const after = await todaysSales();
+  // Both sales of this run: the API cash sale and the POS-screen card sale.
+  expect(after - state.salesBefore).toBeCloseTo(state.total + state.cardTotal, 2);
 });
 
 test("the dashboard reflects the new sale", async () => {
