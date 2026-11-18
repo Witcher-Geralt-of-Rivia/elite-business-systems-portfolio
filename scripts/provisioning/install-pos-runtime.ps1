@@ -64,7 +64,12 @@ opcache.interned_strings_buffer = 16
 opcache.max_accelerated_files = 20000
 opcache.validate_timestamps = 1
 opcache.revalidate_freq = 60
+; Compiled scripts persist on disk, so a restarted php-cgi worker does not recompile Laravel.
+opcache.file_cache = "$Root\opcache"
+opcache.file_cache_consistency_checks = 1
 "@
+New-Item -ItemType Directory -Force (Join-Path $Root 'opcache') | Out-Null
+icacls (Join-Path $Root 'opcache') /grant 'NT AUTHORITY\LOCAL SERVICE:(OI)(CI)(M)' | Out-Null
 Set-Content "$php\php.ini" $ini -Encoding ascii
 New-Item -ItemType Directory -Force (Join-Path $Root 'logs') | Out-Null
 Invoke-Native 'php modules' { & "$php\php.exe" -m }
