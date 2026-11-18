@@ -3,7 +3,7 @@
   "repository": "https://github.com/Witcher-Geralt-of-Rivia/elite-business-systems-portfolio",
   "updated": "2026-11-18",
   "current_milestone": "M8",
-  "current_task": "M8: integration, performance and operational validation of the public CRM + POS + portal; ERP on hold (REBOOT)",
+  "current_task": "M8: integration, performance and operational validation of the public CRM + POS + portal (in progress); ERP on hold (REBOOT)",
   "status": "in_progress",
   "last_verified_commit": "d359c92",
   "milestones": {
@@ -15,7 +15,7 @@
     "M5": "on_hold: ERPNext selected; Windows runtime decision pending (WSL1 needs an unapproved reboot); repository-only work allowed",
     "M6": "done 2026-11-18: publicly deployed and verified (D-017). Activation preflight 43/43, backup+restore check, graceful reload, HTTPS/HSTS/secure-cookie smoke, public visitor E2E 4/4 (0 visitor records), portal switched to live; local acceptance evidence (dataset, replay, worker, admin E2E 8/8 on clone) in TEST_RESULTS",
     "M7": "deployed 2026-11-18: portal live with CRM and POS links + live status (/status/crm, /status/pos); ERP \"in preparation\"; deploy-portal.ps1 with rollback; browser check desktop+phone 0 errors",
-    "M8": "in_progress",
+    "M8": "in_progress 2026-11-18: installed-state race fixed (module), telemetry opt-out, lang ACL, visitor background calls, POS CSP, E2E helpers; resources/latency re-measured with POS public",
     "M9": "not_started"
   },
   "pins": {
@@ -45,11 +45,12 @@
     "POS runtime: PHP 8.3.36 + MariaDB 11.8.10 service + NexoPOS v6.3.0 setup + php-cgi workers + loopback Caddy site (550e7e8)",
     "M6 local acceptance (2026-11-18): see docs/TEST_RESULTS.md POS M6 section",
     "M7 portal deployed (2026-11-18): see docs/TEST_RESULTS.md M7 section",
-    "M6 public activation (2026-11-18, D-017): see docs/TEST_RESULTS.md POS M6 public activation section"
+    "M6 public activation (2026-11-18, D-017): see docs/TEST_RESULTS.md POS M6 public activation section",
+    "M8 part 1 (2026-11-18): see docs/TEST_RESULTS.md M8 section"
   ],
   "pending_tasks": [
     "CRM follow-up: read C:/srv/portfolio/logs/crm-live-observation-20261118.json after 2026-11-18 13:05 local (one lead scheduled 20:48 UTC) and record evidence",
-    "M8: integration, performance and operational validation (public latency, cross-app checks, monitoring of the POS worker, backup schedule overview, security headers audit, dependency/licence review, disable NexoPOS telemetry explicitly)",
+    "M8 remaining: dependency/licence review, monitoring/alerting for the POS worker and public endpoints, backup schedule overview (CRM + POS), cross-app links check, final M8 acceptance",
     "ERP: repository-only preparation (no runtime changes)"
   ],
   "blocked_tasks": [
@@ -92,10 +93,12 @@
     "pos_integrity": "43/43 (live, 2026-11-18 10:30, activation preflight)",
     "pos_replay": "366 days 26754/26754",
     "pos_recovery_suite": "passed (clone)",
-    "pos_e2e_admin_isolated": "8/8",
-    "pos_e2e_visitor": "4/4 public HTTPS (2026-11-18, run twice), 0 visitor records",
+    "pos_e2e_admin_isolated": "9/9 (twice, 2026-11-18 after M8 fixes)",
+    "pos_e2e_visitor": "4/4 public HTTPS (twice after M8 fixes), 0 visitor records, 0 failed responses while browsing",
     "pos_backup_restore": "verified as SYSTEM (counts + text checksums); activation backup 10:30 verified",
-    "portal": "deployed crm=live pos=live; smoke tests pass; browser desktop+phone 0 errors"
+    "portal": "deployed crm=live pos=live; smoke tests pass; browser desktop+phone 0 errors",
+    "pos_installed_race": "before: 1/348 parallel API calls redirected to /do-setup; after: 0/623, 0 fallback hits",
+    "resources": "2026-11-18 11:40, 10 min: hosted services <1.5% of one core; POS public /sign-in 336 ms median; CRM/portal/Practica 55-70 ms"
   },
   "deployment_status": {
     "crm": "production at crm.<ip>.sslip.io: M4 build, 13-month synthetic history, live simulation (intensity 3), read-only visitor access; public E2E 10/10",
@@ -103,7 +106,7 @@
     "erp": "not deployed (on hold)",
     "portal": "deployed: portal/site via deploy-portal.ps1 (crm=live, pos=live, erp=planned); /status/crm + /status/pos; strict CSP"
   },
-  "next_action": "Record the CRM live-lead observation after 13:05 local; continue M8 integration/performance/operational validation (no owner decision needed).",
+  "next_action": "Record the CRM live-lead observation after 13:05 local; then remaining M8 items (dependency/licence review, monitoring of worker and endpoints, backup overview).",
   "completed_milestones": [
     "M0",
     "M1",

@@ -4,7 +4,7 @@
  * the same orders API the POS screen uses, stock decrease, dashboard update, refund with restock.
  */
 import { expect, test, type Page } from "@playwright/test";
-import { apiGet, apiPost, signIn } from "./helpers";
+import { addToCart, apiGet, apiPost, openPayment, signIn } from "./helpers";
 
 test.describe.configure({ mode: "serial" });
 test.skip(process.env.POS_E2E_MODE !== "isolated", "destructive specs run only against the isolated clone");
@@ -91,11 +91,8 @@ test("checkout with a simulated payment decreases stock and records the payment"
 
 test("checkout through the POS screen with the simulated card payment", async () => {
   await page.goto("/dashboard/pos");
-  await page.locator("#grid-items .cell-item", { hasText: "Coffee & Tea" }).click({ timeout: 60_000 });
-  await page.locator("#grid-items .cell-item", { hasText: "Lighthouse Espresso — 12 oz" }).click();
-  await page.getByText("Enter", { exact: true }).click();
-  await expect(page.getByText(/Lighthouse Espresso — 12 oz — Each/)).toBeVisible();
-  await page.getByText("Pay", { exact: true }).first().click();
+  await addToCart(page, "Coffee & Tea", "Lighthouse Espresso — 12 oz");
+  await openPayment(page);
   await page.getByText("Card (simulated)", { exact: true }).click();
   await page.getByText("Full Payment", { exact: true }).click();
   const submitted = page.waitForResponse((r) => r.request().method() === "POST" && /\/api\/orders$/.test(r.url()));
@@ -158,4 +155,10 @@ test("closing the register at the counted balance reconciles", async () => {
   expect(res.status(), await res.text()).toBe(200);
   const after = await (await apiGet(page.request, `/api/cash-registers/${state.register}`)).json();
   expect((Array.isArray(after) ? after[0] : after).status).toBe("closed");
+});
+
+test("upstream telemetry is answered locally (nothing is sent to the vendor)", async () => {
+  const res = await apiPost(page, "/api/system/telemetry", {});
+  expect(res.status(), await res.text()).toBe(200);
+  expect((await res.json()).message).toMatch(/Telemetry is disabled on this installation/);
 });

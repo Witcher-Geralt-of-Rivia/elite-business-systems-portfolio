@@ -4,7 +4,7 @@
  * admin areas, checkout preview message, desktop + phone layouts, no uncaught page errors.
  */
 import { devices, expect, test } from "@playwright/test";
-import { apiGet, apiPost, expectNoPageErrors, trackPageErrors } from "./helpers";
+import { addToCart, apiGet, apiPost, expectNoPageErrors, openPayment, trackPageErrors } from "./helpers";
 
 const SHOTS = "test-results/pos-visitor";
 
@@ -18,6 +18,9 @@ async function enterDemo(page: import("@playwright/test").Page) {
 test.describe("desktop", () => {
   test("visitor enters without credentials and explores the store", async ({ page }) => {
     const errors = trackPageErrors(page);
+    // Browsing must not hit failing resources (e.g. unreadable translation files, refused background calls).
+    const failed: string[] = [];
+    page.on("response", (r) => { if (r.status() >= 400) failed.push(`${r.status()} ${r.request().method()} ${new URL(r.url()).pathname}`); });
     await enterDemo(page);
     // Widgets load asynchronously: wait for the lifetime figures (e.g. "$880.8k") and the best customers.
     // The summary cards render "$0.0" until loaded; the year's expenses/income are hundreds of thousands.
@@ -51,6 +54,7 @@ test.describe("desktop", () => {
     await page.waitForTimeout(4000);
     await page.screenshot({ path: `${SHOTS}/report-sales.png` });
     await expectNoPageErrors(errors);
+    expect(failed, failed.join("\n")).toEqual([]);
   });
 
   test("checkout preview: a full sale on the POS screen is refused with an explicit message", async ({ page }) => {
@@ -60,13 +64,10 @@ test.describe("desktop", () => {
     // Visitors get the first register as a read-only preview instead of the "open a register" prompt,
     // so the product grid is usable straight away.
     await expect(page.getByText("Open The Cash Register")).toHaveCount(0);
-    await page.locator("#grid-items .cell-item", { hasText: "Coffee & Tea" }).click({ timeout: 60_000 });
-    await page.locator("#grid-items .cell-item", { hasText: "Morning Tide Blend — 12 oz" }).click();
-    await page.getByText("Enter", { exact: true }).click(); // quantity 1
-    await expect(page.getByText(/Morning Tide Blend — 12 oz — Each/)).toBeVisible();
+    await addToCart(page, "Coffee & Tea", "Morning Tide Blend — 12 oz");
     await page.screenshot({ path: `${SHOTS}/pos-cart.png` });
 
-    await page.getByText("Pay", { exact: true }).first().click();
+    await openPayment(page);
     await page.getByText("Full Payment", { exact: true }).click();
     const submitted = page.waitForResponse((r) => r.request().method() === "POST" && /\/api\/orders$/.test(r.url()));
     await page.getByRole("button", { name: "Yes", exact: true }).click(); // NexoPOS submits on full payment

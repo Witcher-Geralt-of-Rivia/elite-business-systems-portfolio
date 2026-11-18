@@ -58,6 +58,9 @@ icacls C:\srv\portfolio\pos /grant "${ServiceAccount}:(RX)" | Out-Null
 icacls $App /grant "${ServiceAccount}:(OI)(CI)(RX)" | Out-Null
 foreach ($w in 'storage', 'bootstrap\cache') { icacls (Join-Path $App $w) /grant "${ServiceAccount}:(OI)(CI)(M)" | Out-Null }
 icacls (Join-Path $App 'public') /grant 'NT SERVICE\caddy:(OI)(CI)(RX)' | Out-Null
+# public\lang is NexoPOS's junction to <app>\lang (translation JSON, public data); Caddy's file server
+# follows it with the target's ACL, so without this grant /lang/<locale>.json falls through to Laravel (404).
+icacls (Join-Path $App 'lang') /grant 'NT SERVICE\caddy:(OI)(CI)(RX)' | Out-Null
 icacls C:\srv\portfolio\pos /grant 'NT SERVICE\caddy:(RX)' | Out-Null
 icacls $App /grant 'NT SERVICE\caddy:(RX)' | Out-Null
 Write-Host "configured $envFile for https://$host_"

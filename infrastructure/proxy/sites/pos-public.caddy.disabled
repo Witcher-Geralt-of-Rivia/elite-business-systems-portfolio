@@ -1,7 +1,7 @@
-# Elite Business Systems Portfolio — POS public site (PREPARED, NOT ACTIVE).
-# Activation requires separate owner authorization (checkpoint decision POS-PUBLIC):
-#   scripts/provisioning/activate-pos-public.ps1 -OwnerApproved  (preflight, backup, host-side approval flag,
-#   render + validate + graceful reload, public smoke + browser tests, automatic rollback on failure).
+# Elite Business Systems Portfolio — POS public site (active since 2026-11-18, owner authorization D-017).
+# Activated with scripts/provisioning/activate-pos-public.ps1 -OwnerApproved (preflight, backup, host-side
+#   approval flag, render + validate + graceful reload, public smoke + browser tests, automatic rollback on
+#   failure); -Rollback returns to the loopback-only pos.caddy.tmpl.
 #   render-caddy-sites.ps1 uses this file instead of pos.caddy.tmpl only while that flag exists.
 # __PUBLIC_IP__ is substituted by scripts/provisioning/render-caddy-sites.ps1.
 
@@ -15,6 +15,8 @@ pos.__PUBLIC_IP__.sslip.io {
 		Referrer-Policy "strict-origin-when-cross-origin"
 		Permissions-Policy "camera=(), microphone=(), geolocation=()"
 		X-Robots-Tag "noindex, nofollow"
+		# NexoPOS needs inline scripts, so no script-src; the non-script directives still harden the site.
+		Content-Security-Policy "frame-ancestors 'self'; object-src 'none'; base-uri 'self'; form-action 'self'"
 		-Server
 		-X-Powered-By
 	}

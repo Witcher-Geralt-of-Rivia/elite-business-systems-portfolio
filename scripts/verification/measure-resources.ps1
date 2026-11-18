@@ -62,14 +62,20 @@ foreach ($p in 'C:\srv\portfolio\pos\app', 'C:\srv\portfolio\pos\mariadb', 'C:\s
 }
 $out.disk_mb = $sizes
 
-$targets = [ordered]@{
-    'pos loopback /sign-in' = 'http://127.0.0.1:8820/sign-in'
-    'pos loopback /harborpine/health' = 'http://127.0.0.1:8820/harborpine/health'
-    'crm public /api/health' = "https://crm.$PublicIp.sslip.io/api/health"
-    'crm public /' = "https://crm.$PublicIp.sslip.io/"
-    'portal public /healthz' = "https://portfolio.$PublicIp.sslip.io/healthz"
-    'practica public /acceder/' = "https://practica.$PublicIp.sslip.io/acceder/"
+$targets = [ordered]@{}
+if (Test-Path 'C:\srv\portfolio\caddy\pos.public-enabled') {
+    # Public POS (D-017): the loopback listener only serves the health route.
+    $targets['pos public /sign-in'] = "https://pos.$PublicIp.sslip.io/sign-in"
+    $targets['pos public /harborpine/health'] = "https://pos.$PublicIp.sslip.io/harborpine/health"
+    $targets['portal public /status/pos'] = "https://portfolio.$PublicIp.sslip.io/status/pos"
+} else {
+    $targets['pos loopback /sign-in'] = 'http://127.0.0.1:8820/sign-in'
 }
+$targets['pos loopback /harborpine/health'] = 'http://127.0.0.1:8820/harborpine/health'
+$targets['crm public /api/health'] = "https://crm.$PublicIp.sslip.io/api/health"
+$targets['crm public /'] = "https://crm.$PublicIp.sslip.io/"
+$targets['portal public /healthz'] = "https://portfolio.$PublicIp.sslip.io/healthz"
+$targets['practica public /acceder/'] = "https://practica.$PublicIp.sslip.io/acceder/"
 $lat = [ordered]@{}
 foreach ($k in $targets.Keys) {
     $times = @(); $codes = @{}

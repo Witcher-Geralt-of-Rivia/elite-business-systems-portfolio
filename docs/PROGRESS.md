@@ -2,6 +2,28 @@
 
 Newest first. Every entry states what was **verified**, not just what was written.
 
+## 2026-11-18 — M8 in progress: public POS hardened, upstream race fixed, performance re-measured
+
+- **Visitor-facing defect found and fixed:** NexoPOS deletes its cached "installed" flag after every response and
+  reads it non-atomically. Under concurrent requests visitors were sometimes sent to the installer, so the POS
+  catalogue showed empty, and app boot occasionally failed with a 500.
+  - Fixed through the module: listener replaced, plus a DB-confirmed middleware fallback.
+  - Before: 1 in 348 parallel calls. After: 0 in 623, with no fallback hits or boot errors.
+  ([evidence](TEST_RESULTS.md#m8--integration-performance-and-operational-validation-2026-11-18-public-pos))
+- **Privacy:** upstream telemetry, which carries the host name with the server address, is answered locally.
+  Marketplace and OAuth pages are refused for visitors.
+- **Polish:**
+  - the translation file is now served (Caddy read access on the `lang` junction target);
+  - visitor onboarding tours suppressed;
+  - POS CSP for the non-script directives.
+- **Tests:**
+  - shared POS-screen helpers absorb two upstream UI timing branches;
+  - admin E2E gained a telemetry test;
+  - visitor E2E fails on any failed response.
+  Results: admin 9/9 twice, public visitor 4/4 twice.
+- **Performance** with everything public: hosted services under 1.5 % of one core. POS about 0.34 s median (PHP
+  boot), CRM, portal and Práctica 55–70 ms. Host RAM growth is interactive tooling, not hosted services.
+
 ## 2026-11-18 — M6 publicly deployed and verified (D-017)
 
 - **Owner approved public access (POS-PUBLIC).** The POS is live at `https://pos.<VPS_IP>.sslip.io` with read-only

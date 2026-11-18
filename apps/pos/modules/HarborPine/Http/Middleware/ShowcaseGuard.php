@@ -20,6 +20,8 @@ class ShowcaseGuard
     private const BLOCKED_PREFIXES = [
         'dashboard/settings', 'dashboard/modules', 'dashboard/users', 'dashboard/profile', 'dashboard/medias', 'dashboard/roles',
         'api/settings', 'api/modules', 'api/medias', 'api/reports/compute', 'api/users',
+        // Vendor marketplace/OAuth (outbound calls carrying the host name); already permission-restricted upstream.
+        'api/marketplace', 'dashboard/oauth',
     ];
 
     public function handle( Request $request, Closure $next ): Response
@@ -31,6 +33,10 @@ class ShowcaseGuard
         $visitor = Showcase::isVisitor( $user );
         if ( $visitor ) {
             $path = ltrim( $request->path(), '/' );
+            // Onboarding tours: visitors could not dismiss them (a write), so none are offered.
+            if ( $request->isMethod( 'POST' ) && $path === 'api/user/guides' ) {
+                return response()->json( [] );
+            }
             if ( ! in_array( $request->method(), [ 'GET', 'HEAD', 'OPTIONS' ], true ) && ! $this->readOnlyPost( $request, $path ) ) {
                 $preview = $request->isMethod( 'POST' ) && preg_match( '#^api/orders/?$#', $path );
 

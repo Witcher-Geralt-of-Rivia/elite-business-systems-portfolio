@@ -115,6 +115,18 @@ settings, modules, users, profile and media are refused; pages carry a read-only
 - **Evidence:** `run-pos-e2e.ps1 -Mode visitor` completes a sale on the POS screen (refused with the preview
   message) and then asserts in the database that the visitor authored no orders, register entries, stock
   movements or products.
+- **Background calls:** onboarding tours (`POST api/user/guides`) are answered with an empty list for visitors.
+  They could not dismiss a tour, since that is a write, so it would reappear on every page. The vendor
+  marketplace API and OAuth pages are also refused for visitors (upstream already restricts them by permission).
+
+## Upstream behaviour adjusted by the module (no core patches)
+
+| Upstream behaviour | Effect on the public demo | Module change |
+|---|---|---|
+| `ResponseReadyEventListener` deletes the cached "installed" flag after every API/dashboard response. `Helper::installed()` then reads it with `has()` followed by `get()` | Under concurrent requests the flag can vanish between the two reads. The request is redirected to `/do-setup`; on the POS screen the catalogue came back empty. App boot can also fail in `ModulesService`, because its options are skipped by the first check and used after the second | The listener is replaced in `app->booted()` with the same permission-cache clearing, minus the deletion. `InstalledState` (container binding for `InstalledStateMiddleware`) confirms a "not installed" answer with the database before redirecting, and logs `installed-state cache race avoided` |
+| Daily telemetry (`POST api/system/telemetry`) sends the version, the enabled modules and the request host name to the vendor | The host name contains the server address | `NoTelemetry` answers signed-in calls locally and records the time, so the footer script stays quiet for a day. Anonymous calls still get 401 |
+| `public/lang` is a junction to `<app>/lang` | Caddy follows it with the target's permissions; `/lang/en.json` fell through to Laravel (404) | `configure-pos-app.ps1` grants the Caddy service read access to `<app>/lang` (translation JSON only) |
+| API rate limit (NexoPOS `ThrottleMiddelware`, 80 requests/min) answers with HTTP 500 "Too Many Attempts" instead of 429 | Normal browsing stays well below the limit; bursts get an error message | Kept: the limit protects the shared demo. The wrong status code is noted, not patched |
 
 ## Presentation (`hp:presentation`, idempotent)
 

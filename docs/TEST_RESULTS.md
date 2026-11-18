@@ -348,3 +348,90 @@ footer credit clear of the banner.
 - Status: `crm: operational`, `pos: operational · simulation live`, `erp: in preparation`.
 - The POS buttons ("Explore the POS", "Open the read-only demo") link to `https://pos.<VPS_IP>.sslip.io/sign-in`.
 
+## M8 — integration, performance and operational validation (2026-11-18, public POS)
+
+Every change below went through the module (`deploy-pos-module.ps1`) or the guarded Caddy render
+(validate, then graceful reload; host Caddyfile SHA-256 unchanged; Caddy process start time unchanged).
+
+**1. Installed-state race (critical for visitors) — fixed.**
+- **Symptom:** a public visitor run failed with an empty POS catalogue ("no products and no categories").
+  The trace showed `GET /api/pos/catalog/categories` → 302 `/do-setup` → 403.
+- **Cause:** upstream deletes the cached "installed" flag after every API/dashboard response, and
+  `Helper::installed()` reads it with `has()` followed by `get()`. The same race made app boot fail 3 times today
+  ("ModulesService::$options must not be accessed before initialization" → 500).
+- **Reproduction before the fix:** 1 redirect in 348 parallel API calls; 2 in about 3,000 test requests
+  (access log).
+- **Fix:** the upstream listener is replaced, keeping the permission-cache clearing (verified: the
+  `ResponseReadyEvent` listener list holds only the module's listener). A middleware fallback asks the database
+  before redirecting and logs `installed-state cache race avoided`.
+- **After the fallback alone:** 0 redirects in 614 calls, and the fallback fired once, on the catalogue endpoint.
+- **After the listener change:** 0 redirects and 0 log entries in 623 calls (6 parallel visitor sessions,
+  150 s). No ModulesService errors since.
+
+**2. Telemetry opt-out.**
+- Upstream posts the version, the enabled modules and the request host name, which contains the server
+  address, to the vendor daily. It was failing only for lack of a CA bundle.
+- Now answered locally for signed-in sessions; anonymous calls get 401.
+- New admin E2E test 9 verifies the local answer. No "Telemetry failed" since deployment.
+
+**3. Translation file.** `/lang/en.json` returned 404 for every page: the `public/lang` junction target lacked
+Caddy read access. Granted read on that folder only, and codified in `configure-pos-app.ps1`; the file is now
+served (200, 250 KB JSON).
+
+**4. Visitor background calls.**
+- Onboarding tours return an empty list for visitors; before, a 403 on every page.
+- The vendor marketplace API and OAuth pages are refused for visitors (defence in depth).
+- The visitor suite now fails on any 4xx/5xx response while browsing. Currently there are none.
+
+**5. Security headers (POS).** Added
+`Content-Security-Policy: frame-ancestors 'self'; object-src 'none'; base-uri 'self'; form-action 'self'`, on top
+of HSTS, nosniff, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy` and `X-Robots-Tag`. NexoPOS needs inline
+scripts, so there is no `script-src`. A browser sign-in attempt under the policy shows the rejection message with no
+CSP violations.
+
+**6. Test robustness.**
+- Two upstream UI timing branches made POS-screen tests flaky: a lost early category click, and a
+  "Select Customer" popup on Pay. Both are handled in the shared helpers `addToCart` and `openPayment`.
+- After the fixes: admin isolated **9/9 twice**, public visitor **4/4 twice**, 0 visitor records. The log holds
+  only the suites' deliberate wrong-password attempts.
+
+**7. Known limitation (kept).** NexoPOS's API rate limit (80 requests/min per client) answers with HTTP 500
+"Too Many Attempts" instead of 429. Normal browsing stays far below it.
+
+**Resources and latency** (`measure-resources.ps1`, 10 min, 30 requests per URL; CRM, Práctica, POS worker and
+public POS all running):
+
+Host:
+
+| Measure | Value |
+|---|---|
+| CPU | average 18.1 %, p95 29.6 % |
+| RAM | 9.3 / 12 GB used. The increase since the morning (6.8 GB) is interactive tooling on the host (editor ~3.3 GB, desktop AI clients), not hosted services |
+| C: free | 14.2 GB |
+
+Services:
+- Caddy 39 MB / 0.2 % of one core.
+- CRM: API 49 MB; PostgreSQL 27 MB / 0.1 %.
+- POS: MariaDB 163 MB / 0.2 %; PHP workers 55 + 56 MB; simulation worker 113 MB / 0.6 %.
+- Práctica: 31 + 59 MB / 0.2 %.
+- All hosted services together: under 1.5 % of one core.
+
+Disk (MB): POS app 97, MariaDB 307, POS backups 413 (4 dumps; 14-day retention, so steady state ≈ 1.5 GB),
+PHP 88, CRM 175.
+
+Latency:
+
+| URL | median | p95 |
+|---|---|---|
+| POS public `/sign-in` | 336 ms | 397 ms |
+| POS public `/harborpine/health` | 354 ms | 442 ms |
+| Portal `/status/pos` | 363 ms | 461 ms |
+| POS loopback health | 319 ms | 393 ms |
+| CRM `/api/health` | 70 ms | 179 ms |
+| CRM `/` | 56 ms | 107 ms |
+| Portal `/healthz` | 55 ms | 90 ms |
+| Práctica `/acceder/` | 62 ms | 110 ms |
+
+All responses were 200. POS latency is PHP-CGI framework boot (Laravel + NexoPOS modules), the same over
+loopback and public HTTPS.
+
