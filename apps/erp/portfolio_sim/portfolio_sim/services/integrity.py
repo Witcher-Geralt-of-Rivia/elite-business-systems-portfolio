@@ -57,9 +57,12 @@ CHECKS: dict[str, str] = {
 	"untaxed_invoice_for_taxable_customer": """select count(*) from `tabSales Invoice` where docstatus = 1 and company = %(company)s
 		and is_return = 0 and customer in %(taxable_customers)s and ifnull(taxes_and_charges, '') = ''""",
 	# Inventory
+	# Bin = quantity after the latest stock ledger entry. (Summing actual_qty is wrong: Stock Reconciliation
+	# entries often carry actual_qty 0 and set qty_after_transaction; found in CI run 44414165205.)
 	"bin_vs_stock_ledger": """select count(*) from `tabBin` b join `tabWarehouse` w on w.name = b.warehouse and w.company = %(company)s
-		left join (select item_code, warehouse, sum(actual_qty) q from `tabStock Ledger Entry` where is_cancelled = 0
-		group by item_code, warehouse) s on s.item_code = b.item_code and s.warehouse = b.warehouse
+		left join (select item_code, warehouse, qty_after_transaction q, row_number() over (partition by item_code, warehouse
+			order by posting_datetime desc, creation desc) rn from `tabStock Ledger Entry` where is_cancelled = 0) s
+			on s.item_code = b.item_code and s.warehouse = b.warehouse and s.rn = 1
 		where abs(b.actual_qty - ifnull(s.q, 0)) > 0.0001""",
 	"negative_stock": """select count(*) from `tabStock Ledger Entry` where is_cancelled = 0 and company = %(company)s
 		and qty_after_transaction < -0.0001""",

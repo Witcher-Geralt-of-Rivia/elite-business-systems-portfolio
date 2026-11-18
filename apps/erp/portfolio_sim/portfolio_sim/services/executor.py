@@ -13,6 +13,8 @@ transaction as the documents (idempotency).
 
 from __future__ import annotations
 
+from datetime import timedelta
+
 import frappe
 from frappe.utils import flt, getdate
 
@@ -126,10 +128,16 @@ class Executor:
 		fill("Purchase Receipt", pr, {"posting_date": d, "posting_time": t, "set_posting_time": 1})
 		return self._done(submit(pr), lines=p["lines"])
 
+	def _terms_days(self, terms: str) -> int:
+		return next(x["days"] for x in self.s.catalog["payment_terms"] if x["name"] == terms)
+
 	def _purchase_invoice(self, p: dict, d, t) -> dict:
 		pi = resolve("make_purchase_invoice_from_receipt")(self.ref(p["pr"]))
+		# Mappers compute the due date from today's date; back-dated documents need it from their posting date
+		# (CI: "Due Date cannot be after ...").
+		due = d + timedelta(days=self._terms_days(self.s.supplier(pi.supplier)["terms"]))
 		fill("Purchase Invoice", pi, {"posting_date": d, "posting_time": t, "set_posting_time": 1, "bill_no": p["bill_no"],
-			"bill_date": p["bill_date"], "payment_schedule": []})
+			"bill_date": p["bill_date"], "due_date": due, "payment_schedule": []})
 		return self._done(submit(pi), bill_no=p["bill_no"])
 
 	def _purchase_return(self, p: dict, d, t) -> dict:
@@ -139,7 +147,8 @@ class Executor:
 		submit(ret)
 		debit = resolve("make_debit_note")(self.ref(p["pi"]))
 		self._keep_rows(debit, "items", p["lines"], sign=-1)
-		fill("Purchase Invoice", debit, {"posting_date": d, "posting_time": t, "set_posting_time": 1, "payment_schedule": [],
+		fill("Purchase Invoice", debit, {"posting_date": d, "posting_time": t, "set_posting_time": 1, "due_date": d,
+			"payment_schedule": [],
 			"update_outstanding_for_self": 1 if p["standalone"] else 0, "remarks": p["reason"]})
 		return self._done(ret, submit(debit), reason=p["reason"], standalone=p["standalone"])
 
@@ -176,7 +185,9 @@ class Executor:
 
 	def _sales_invoice(self, p: dict, d, t) -> dict:
 		si = resolve("make_sales_invoice_from_delivery")(self.ref(p["dn"]))
-		fill("Sales Invoice", si, {"posting_date": d, "posting_time": t, "set_posting_time": 1, "payment_schedule": []})
+		due = d + timedelta(days=self.s.customer(si.customer).terms_days)
+		fill("Sales Invoice", si, {"posting_date": d, "posting_time": t, "set_posting_time": 1, "due_date": due,
+			"payment_schedule": []})
 		return self._done(submit(si))
 
 	def _pay_invoices(self, customer: str, invoices: list[str], d, reference_no: str, mode_of_payment: str,
@@ -222,7 +233,7 @@ class Executor:
 		submit(ret)
 		cn = resolve("make_credit_note")(self.ref(p["si"]))
 		self._keep_rows(cn, "items", p["lines"], sign=-1)
-		fill("Sales Invoice", cn, {"posting_date": d, "posting_time": t, "set_posting_time": 1, "update_stock": 0,
+		fill("Sales Invoice", cn, {"posting_date": d, "posting_time": t, "set_posting_time": 1, "due_date": d, "update_stock": 0,
 			"payment_schedule": [], "update_outstanding_for_self": 1 if p["standalone"] else 0, "remarks": p["reason"]})
 		return self._done(ret, submit(cn), reason=p["reason"], standalone=p["standalone"])
 

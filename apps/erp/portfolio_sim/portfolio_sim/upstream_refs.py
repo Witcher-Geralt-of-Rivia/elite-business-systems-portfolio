@@ -52,7 +52,7 @@ SQL_COLUMNS: dict[str, tuple[str, ...]] = {
 	"GL Entry": ("account", "company", "debit", "credit", "is_cancelled", "voucher_type", "voucher_no", "posting_date"),
 	"Payment Ledger Entry": ("against_voucher_type", "against_voucher_no", "amount", "delinked", "company", "posting_date", "account"),
 	"Stock Ledger Entry": ("item_code", "warehouse", "actual_qty", "qty_after_transaction", "stock_value_difference",
-		"is_cancelled", "company", "posting_date"),
+		"is_cancelled", "company", "posting_date", "posting_datetime"),
 	"Bin": ("item_code", "warehouse", "actual_qty"),
 	"Account": ("account_type", "company"),
 	"Warehouse": ("company",),
