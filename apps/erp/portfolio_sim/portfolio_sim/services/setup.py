@@ -158,6 +158,11 @@ def setup(seed: int, start: date) -> dict:
 	for desig in sorted({e.designation for e in s.employees}):
 		if not _exists("Designation", desig):
 			new_doc("Designation", {"designation_name": desig}).insert()
+	# Gender records come from Frappe's interactive setup wizard, not from ERPNext's programmatic setup
+	# (found in CI run 44411918611: "Could not find Gender: Female").
+	for g in s.catalog["people"]["genders"]:
+		if not _exists("Gender", g):
+			new_doc("Gender", {"gender": g}).insert()
 	root_sp = resolve("get_root_of")("Sales Person")
 	for e in s.employees:
 		emp = frappe.db.get_value("Employee", {"first_name": e.first_name, "last_name": e.last_name, "company": company})

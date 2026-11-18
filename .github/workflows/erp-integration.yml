@@ -99,6 +99,8 @@ jobs:
           git -C /tmp/portfolio_sim -c user.name=ci -c user.email=ci@example.org commit -qm "portfolio_sim @ $GITHUB_SHA"
           bench get-app --skip-assets /tmp/portfolio_sim
           cat sites/apps.txt
+          # JUnit output for run-tests (ERPNext's CI gets it through `bench setup requirements --dev`).
+          bench pip install unittest-xml-reporting
 
       - name: Start bench processes (redis, web, workers)
         run: |
