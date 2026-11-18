@@ -14,6 +14,7 @@ Run (on a dedicated test site, never on a site with real history):
 from __future__ import annotations
 
 import json
+from collections import Counter
 from datetime import date, datetime
 
 import frappe
@@ -41,6 +42,50 @@ class TestDistributionLifecycle(IntegrationTestCase):
 	def _ok(self, result: dict):
 		self.assertEqual(result["failing"], [], json.dumps(result["results"], indent=1))
 
+	def _planned(self, until: str) -> Counter:
+		"""Event kinds the deterministic plan contains up to `until` (pure engine, same seed and start)."""
+		from portfolio_sim.engine import calendar as cal
+		from portfolio_sim.engine.planner import Planner, initial_state, plan_range
+		from portfolio_sim.services.setup import get_scenario
+
+		s = get_scenario(SEED, cal.on_or_after(START))
+		events, _ = plan_range(Planner(s), initial_state(s), s.start, date.fromisoformat(until[:10]))
+		return Counter(e.kind for e in events if f"{e.date} {e.time}" <= until)
+
+	def _done(self, kind: str) -> int:
+		return frappe.db.count("Distribution Sim Event", {"kind": kind, "outcome": "Done"})
+
+	def _assert_documents_match_plan(self, until: str):
+		"""Exact correspondence between the plan and ERPNext's submitted documents for the window."""
+		p = self._planned(until)
+		company = "Sable Ridge Electronics Supply Co."
+
+		def docs(doctype, **filters):
+			return frappe.db.count(doctype, {"docstatus": 1, "company": company, **filters})
+
+		self.assertEqual(frappe.db.count("Distribution Sim Event"), sum(p.values()), "ledger rows = planned events")
+		expect = {
+			("Sales Order", ()): p["sales_order"],
+			("Delivery Note", (("is_return", 0),)): p["delivery_note"],
+			("Delivery Note", (("is_return", 1),)): p["sales_return"],
+			("Sales Invoice", (("is_return", 0),)): p["sales_invoice"],
+			("Sales Invoice", (("is_return", 1),)): p["sales_return"],
+			("Purchase Order", ()): p["purchase_order"],
+			("Purchase Receipt", (("is_return", 0),)): p["purchase_receipt"],
+			("Purchase Receipt", (("is_return", 1),)): p["purchase_return"],
+			("Purchase Invoice", (("is_return", 0),)): p["purchase_invoice"],
+			("Purchase Invoice", (("is_return", 1),)): p["purchase_return"],
+			("Stock Entry", ()): p["stock_transfer"],
+			("Stock Reconciliation", ()): p["opening_stock"] + p["stock_count"],
+			("Journal Entry", (("is_system_generated", 0),)): p["expense"] + p["opening_capital"] + self._done("opening_clearing"),
+			("Payment Entry", (("payment_type", "Receive"),)): sum(self._done(k) for k in ("customer_payment", "customer_advance",
+				"month_end_settlement")),
+			("Payment Entry", (("payment_type", "Pay"),)): self._done("supplier_payment"),
+		}
+		for (doctype, filters), n in expect.items():
+			self.assertEqual(docs(doctype, **dict(filters)), n, f"{doctype} {dict(filters)}")
+		return p
+
 	def test_01_setup_created_master_data(self):
 		self.assertTrue(frappe.db.exists("Company", "Sable Ridge Electronics Supply Co."))
 		self.assertEqual(frappe.db.count("Item", {"item_code": ["like", "SRE-%"]}), 96)
@@ -59,11 +104,11 @@ class TestDistributionLifecycle(IntegrationTestCase):
 
 	def test_03_first_two_weeks_full_document_chains(self):
 		self._advance("2025-08-15 23:59:59")
-		result = integrity.run()
-		self._ok(result)
-		counts = result["counts"]
-		for dt in ("Sales Order", "Delivery Note", "Sales Invoice", "Purchase Order", "Purchase Receipt", "Purchase Invoice"):
-			self.assertGreater(counts[dt], 0, dt)
+		self._ok(integrity.run())
+		p = self._assert_documents_match_plan("2025-08-15 23:59:59")
+		# (The first supplier receipt is planned for 2025-08-18: opening stock covers the first weeks.)
+		for kind in ("sales_order", "delivery_note", "sales_invoice", "purchase_order", "stock_transfer", "customer_payment"):
+			self.assertGreater(p[kind], 0, kind)
 		# Sales order lines are priced from the Standard Selling list with the customer's discount.
 		row = frappe.db.sql("""select soi.price_list_rate, soi.discount_percentage, soi.rate from `tabSales Order Item` soi
 			join `tabSales Order` so on so.name = soi.parent where so.docstatus = 1 limit 1""", as_dict=True)[0]
@@ -73,12 +118,21 @@ class TestDistributionLifecycle(IntegrationTestCase):
 		# Five weeks: August month end (cycle count, advance settlement), Net 15/30 payments, the first supplier
 		# payment runs, returns and Friday reconciliations.
 		self._advance("2025-09-05 23:59:59")
-		result = integrity.run()
-		self._ok(result)
+		self._ok(integrity.run())
+		p = self._assert_documents_match_plan("2025-09-05 23:59:59")
+		for kind in ("purchase_receipt", "purchase_invoice", "sales_return", "stock_count", "month_end_settlement", "customer_advance"):
+			self.assertGreater(p[kind], 0, kind)
 		self.assertGreater(frappe.db.count("Sales Invoice", {"docstatus": 1, "is_return": 1}), 0)
-		self.assertGreater(frappe.db.count("Payment Entry", {"docstatus": 1, "payment_type": "Receive"}), 0)
-		self.assertGreater(frappe.db.count("Payment Entry", {"docstatus": 1, "payment_type": "Pay"}), 0)
 		self.assertGreater(frappe.db.count("Stock Reconciliation", {"docstatus": 1, "purpose": "Stock Reconciliation"}), 0)
+		# Partial deliveries: some sales orders were delivered in more than one Delivery Note.
+		multi = frappe.db.sql("""select count(*) from (select dni.against_sales_order from `tabDelivery Note Item` dni
+			join `tabDelivery Note` dn on dn.name = dni.parent where dn.docstatus = 1 and dn.is_return = 0
+			group by dni.against_sales_order having count(distinct dn.name) > 1) x""")[0][0]
+		self.assertGreater(multi, 0, "orders with partial deliveries")
+		# Reconciliation allocated advances/credits against invoices at least once.
+		allocated = [json.loads(r.details or "{}").get("allocations", 0) for r in frappe.get_all("Distribution Sim Event",
+			filters={"kind": "reconcile", "outcome": "Done"}, fields=["details"])]
+		self.assertGreater(sum(allocated), 0, "reconciliation allocations")
 
 	def test_05_replay_matches_plan(self):
 		r = simulator.replay_check()
@@ -114,5 +168,8 @@ class TestDistributionLifecycle(IntegrationTestCase):
 			ex.Executor.run = original
 		self._advance("2025-09-12 23:59:59")
 		self._ok(integrity.run())
+		p = self._assert_documents_match_plan("2025-09-12 23:59:59")  # no partial or duplicate documents
+		self.assertGreater(p["supplier_payment"], 0)  # first supplier payment run is planned for 2025-09-11
+		self.assertGreater(frappe.db.count("Payment Entry", {"docstatus": 1, "payment_type": "Pay"}), 0)
 		r = simulator.replay_check()
 		self.assertEqual((r["missing_count"], r["unexpected_count"]), (0, 0), r)
