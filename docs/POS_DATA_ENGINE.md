@@ -49,6 +49,9 @@ cost × category markup rounded to .49/.99, unique company of each SKU's supplie
 - `harborpine_sim_state.processed_until` is the watermark; backfill and live operation both resume from it.
 - Both NexoPOS clocks are driven per event: `Carbon::setTestNow` (row timestamps) and `ns()->date->define`
   (day reports), in the store time zone.
+- `php artisan hp:replay-check --days=N` (read-only) recomputes the plan of the last N processed days and
+  compares every key, kind and timestamp with the ledger: 0 missing, 0 unexpected and 0 mismatches is the
+  evidence that recovery from any watermark reproduces exactly the same business day.
 
 ## Backfill and reports
 
@@ -65,11 +68,12 @@ resources); `php artisan hp:sim pause|resume|status`.
 
 ## Integrity (`Services/Integrity.php`, `php artisan hp:integrity`)
 
-41 SQL checks, each returning the number of violating rows (all must be 0): inventory vs. stock history (last
+43 SQL checks, each returning the number of violating rows (all must be 0): inventory vs. stock history (last
 movement, chain continuity, arithmetic, negatives), purchases vs. receipts, order subtotal/total/tax/payment
 arithmetic, refunds vs. original lines and order status, register balance chain, reconciled closings and logged
 payments, dashboard days vs. orders, months vs. days, duplicates (SKU, barcode, ledger entities), chronology
-(lines/payments/refunds vs. order time, sales vs. ledger time, nothing sold before first receipt), and
+(lines/payments/refunds vs. order time, sales vs. ledger time, nothing sold before first receipt, products and
+customers created before their first sale), and
 application-level references. The command also prints record counts and money reconciliation.
 
 ## Visitor access (`hp:showcase enable`)
@@ -79,3 +83,23 @@ plus the POS screen. Visitors enter through `/showcase/enter` (no credentials; r
 `ShowcaseGuard` refuses every visitor write; submitting an order from the POS screen returns
 "Checkout preview: … not saved" so the cashier workflow can be explored without touching the shared database;
 settings, modules, users, profile and media are refused; pages carry a read-only banner.
+
+- **POS screen for visitors:** NexoPOS asks the signed-in user for an opened register before selling; opening one
+  is a write, so `GET api/cash-registers/used` answers visitors with the first register marked "(preview)". All
+  register actions stay refused. Read-only POSTs that NexoPOS uses for reports and searches are allow-listed.
+- **Account shape:** the visitor gets NexoPOS's user-attribute row and default dashboard widgets (normally created
+  on account activation); its password is random and rotated on every `hp:showcase enable`.
+- **Evidence:** `run-pos-e2e.ps1 -Mode visitor` completes a sale on the POS screen (refused with the preview
+  message) and then asserts in the database that the visitor authored no orders, register entries, stock
+  movements or products.
+
+## Presentation (`hp:presentation`, idempotent)
+
+- **Artwork:** original vector artwork (`apps/pos/scripts/generate-artwork.py`: category colour, one of 22 simple
+  product-form shapes, three shades) published from the module's `Public/` folder and attached through
+  `ProductCategory.preview_url` and featured `ProductGallery` rows.
+- **Display options:** symbol currency (`$12.49`) and the walk-in customer as the POS default customer.
+- **Chronology (once):** the setup command runs on the real clock, so catalogue, supplier, register and customer
+  records carried the build time while trading starts a year earlier. Setup records are re-dated into the three
+  weeks before opening, each registered customer 0–25 days before their first purchase (seeded), customers
+  without purchases across the trading period. Only those timestamps change; two integrity checks keep it true.

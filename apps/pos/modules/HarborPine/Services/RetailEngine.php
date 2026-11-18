@@ -214,7 +214,7 @@ class RetailEngine
                 $this->counters[ $event['kind'] . ( $entity ? '' : '_skipped' ) ] = ( $this->counters[ $event['kind'] . ( $entity ? '' : '_skipped' ) ] ?? 0 ) + 1;
 
                 return true;
-            } );
+            }, 3 ); // a deadlock with a concurrent writer (e.g. a cashier) is retried; the ledger keeps it exactly-once
         } finally {
             Carbon::setTestNow();
         }
