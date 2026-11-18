@@ -4,7 +4,7 @@ import type { Db } from "../db.ts";
 import { audit } from "../resources/service.ts";
 import { verifyPassword } from "./password.ts";
 import { createSession, resolveSession, revokeSession, SESSION_COOKIE, type SessionUser } from "./sessions.ts";
-import { SHOWCASE_MESSAGE, showcaseForbids } from "./showcase.ts";
+import { SHOWCASE_MESSAGE, showcaseForbids, showcaseIdentity } from "./showcase.ts";
 
 const MAX_FAILED_LOGINS = 5;
 const LOCK_MINUTES = 15;
@@ -116,5 +116,7 @@ export function registerAuth(app: FastifyInstance, db: Db, config: AppConfig) {
     return { ok: true };
   });
 
-  app.get("/api/auth/me", { preHandler: requireUser }, async (req) => identity(req.user!));
+  app.get("/api/auth/me", { preHandler: requireUser }, async (req) =>
+    req.user!.role === "showcase" ? showcaseIdentity(db, req.user!.salesId, req.user!.email) : identity(req.user!),
+  );
 }

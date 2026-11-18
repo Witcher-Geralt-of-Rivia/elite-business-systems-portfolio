@@ -351,7 +351,13 @@ describe("read-only showcase access", () => {
     assert.equal(json(res).role, "showcase");
     state.visitor = cookieOf(res);
     const v = api(state.visitor);
-    assert.equal(json(await v.get("/api/auth/me")).role, "showcase");
+    const me = json(await v.get("/api/auth/me"));
+    assert.equal(me.role, "showcase");
+    assert.equal(me.administrator, false);
+    // Views the CRM as the busiest active rep (personal widgets show real work), never as an admin.
+    const viewed = await db.query(`select role from sales where id = $1`, [me.id]);
+    assert.ok(["sales_rep", "manager"].includes(viewed.rows[0].role));
+    assert.match(me.fullName, /^Guest · viewing as /);
     for (const url of ["/api/r/deals", "/api/r/companies", "/api/r/contacts", "/api/r/tasks", "/api/r/activity_log", "/api/configuration", "/api/search?q=pilot"]) {
       assert.equal((await v.get(url)).statusCode, 200, url);
     }
@@ -360,7 +366,10 @@ describe("read-only showcase access", () => {
   test("every write, admin function and private file is refused", async () => {
     const v = api(state.visitor);
     const me = json(await v.get("/api/auth/me"));
+    const own = await db.query(`select s.id from sales s join users u on u.id = s.user_id where u.email = $1`, [SHOWCASE_EMAIL]);
     const refused = [
+      await v.patch(`/api/users/${own.rows[0].id}`, { first_name: "Hacker" }),
+      await v.post(`/api/users/${own.rows[0].id}/password-link`),
       await v.post("/api/r/companies", { name: "Visitor Co" }),
       await v.patch(`/api/r/deals/${state.deal.id}`, { stage: "won" }),
       await v.del(`/api/r/deals/${state.deal.id}`),

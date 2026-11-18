@@ -26,8 +26,11 @@ test.describe("desktop", () => {
   test("visitor explores dashboard, pipeline, companies, contacts and tasks", async ({ page }) => {
     const errors = trackErrors(page);
     await startVisitorSession(page);
-    await page.waitForLoadState("networkidle");
-    await page.screenshot({ path: `${SHOTS}/desktop-dashboard.png`, fullPage: true });
+    // The dashboard must render real data, not just a shell.
+    await expect(page.getByText("Upcoming Deal Revenue")).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByText("Latest Activity")).toBeVisible();
+    await expect(page.locator("text=/added|moved|note about/").first()).toBeVisible();
+    await page.screenshot({ path: `${SHOTS}/desktop-dashboard.png` });
 
     await page.goto("/#/deals");
     await expect(page.getByText("Opportunity").first()).toBeVisible();
@@ -35,20 +38,25 @@ test.describe("desktop", () => {
     await page.screenshot({ path: `${SHOTS}/desktop-pipeline.png` });
 
     await page.goto("/#/companies");
-    await page.waitForLoadState("networkidle");
+    const firstCompany = (await (await page.request.get("/api/r/companies?sort=name&order=ASC&start=0&end=1")).json()).data[0];
+    await expect(page.getByText(firstCompany.name).first()).toBeVisible({ timeout: 20_000 });
     const companies = await page.request.get("/api/r/companies?start=0&end=1");
     expect((await companies.json()).total).toBeGreaterThan(300);
     await page.screenshot({ path: `${SHOTS}/desktop-companies.png` });
 
     await page.goto("/#/contacts");
-    await page.waitForLoadState("networkidle");
+    const firstContact = (await (await page.request.get("/api/r/contacts?sort=last_seen&order=DESC&start=0&end=1")).json()).data[0];
+    await expect(page.getByText(`${firstContact.first_name} ${firstContact.last_name}`).first()).toBeVisible({ timeout: 20_000 });
     await page.screenshot({ path: `${SHOTS}/desktop-contacts.png` });
 
     const contact = (await (await page.request.get("/api/r/contacts?sort=last_seen&order=DESC&start=0&end=1")).json()).data[0];
     await page.goto(`/#/contacts/${contact.id}/show`);
-    await expect(page.getByText(`${contact.first_name} ${contact.last_name}`).first()).toBeVisible();
-    await page.waitForLoadState("networkidle");
-    await page.screenshot({ path: `${SHOTS}/desktop-contact.png`, fullPage: true });
+    await expect(page.getByText(`${contact.first_name} ${contact.last_name}`).first()).toBeVisible({ timeout: 20_000 });
+    // Notes are part of the record page: wait for the newest one to render.
+    const notesFilter = encodeURIComponent(JSON.stringify({ contact_id: contact.id }));
+    const note = (await (await page.request.get(`/api/r/contact_notes?filter=${notesFilter}&sort=date&order=DESC&start=0&end=1`)).json()).data[0];
+    if (note) await expect(page.getByText(note.text.slice(0, 40)).first()).toBeVisible({ timeout: 20_000 });
+    await page.screenshot({ path: `${SHOTS}/desktop-contact.png` });
 
     expect(errors).toEqual([]);
   });
@@ -94,10 +102,11 @@ test.describe("mobile", () => {
   test("visitor experience works on a phone", async ({ page }) => {
     const errors = trackErrors(page);
     await startVisitorSession(page);
-    await page.waitForLoadState("networkidle");
-    await page.screenshot({ path: `${SHOTS}/mobile-home.png`, fullPage: true });
+    await expect(page.locator("text=/added|moved|note about/").first()).toBeVisible({ timeout: 20_000 });
+    await page.screenshot({ path: `${SHOTS}/mobile-home.png` });
     await page.goto("/#/contacts");
-    await page.waitForLoadState("networkidle");
+    const c = (await (await page.request.get("/api/r/contacts?sort=last_seen&order=DESC&start=0&end=1")).json()).data[0];
+    await expect(page.getByText(`${c.first_name} ${c.last_name}`).first()).toBeVisible({ timeout: 20_000 });
     await page.screenshot({ path: `${SHOTS}/mobile-contacts.png` });
     expect(errors).toEqual([]);
   });

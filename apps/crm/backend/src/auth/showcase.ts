@@ -57,7 +57,38 @@ export function registerShowcase(app: FastifyInstance, db: Db, config: AppConfig
       reply.setCookie(SESSION_COOKIE, token, { httpOnly: true, secure: config.cookieSecure, sameSite: "lax", path: "/", expires: expiresAt });
       await audit(db, { salesId: rows[0].sales_id, kind: "user" }, "showcase_login", "auth", null, null, req.ip);
       const user = await resolveSession(db, token);
-      return { id: user!.salesId, fullName: "Guest Visitor", email: user!.email, role: "showcase", administrator: false };
+      return showcaseIdentity(db, user!.salesId, user!.email);
     },
   );
+}
+
+/**
+ * Visitors see the CRM through the eyes of the busiest active sales rep, so the personal widgets
+ * (hot contacts, upcoming tasks, "deals I manage") show a real working day instead of an empty
+ * guest account. This changes only the identity returned to the UI; the session still belongs to
+ * the read-only showcase account, so nothing can be written.
+ */
+let viewAsCache: { at: number; value: { id: number; name: string } | null } | null = null;
+export async function showcaseViewAs(db: Db): Promise<{ id: number; name: string } | null> {
+  if (viewAsCache && Date.now() - viewAsCache.at < 10 * 60_000) return viewAsCache.value;
+  const { rows } = await db.query(
+    `select s.id, s.first_name || ' ' || s.last_name as name
+       from sales s
+      where s.role in ('sales_rep', 'manager') and not s.disabled
+      order by (select count(*) from deals d where d.sales_id = s.id and d.archived_at is null) desc, s.id
+      limit 1`,
+  );
+  viewAsCache = { at: Date.now(), value: rows[0] ? { id: Number(rows[0].id), name: rows[0].name } : null };
+  return viewAsCache.value;
+}
+
+export async function showcaseIdentity(db: Db, ownSalesId: number, email: string) {
+  const viewAs = await showcaseViewAs(db);
+  return {
+    id: viewAs?.id ?? ownSalesId,
+    fullName: viewAs ? `Guest · viewing as ${viewAs.name}` : "Guest Visitor",
+    email,
+    role: "showcase" as const,
+    administrator: false,
+  };
 }
