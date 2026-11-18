@@ -27,6 +27,7 @@ backups/
 infrastructure/backups/output/
 data/
 !apps/pos/modules/HarborPine/Data/
+!apps/erp/portfolio_sim/portfolio_sim/data/
 volumes/
 *.sqlite
 *.sqlite3

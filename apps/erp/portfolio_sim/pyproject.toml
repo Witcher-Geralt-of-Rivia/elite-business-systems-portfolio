@@ -1,0 +1,28 @@
+[project]
+name = "portfolio_sim"
+authors = [
+    { name = "Elite Business Systems Portfolio contributors", email = "maintainers@example.org" }
+]
+description = "Sable Ridge Electronics Supply Co.: deterministic wholesale-distribution simulation for ERPNext v16"
+requires-python = ">=3.14"
+readme = "README.md"
+license = { file = "license.txt" }
+dynamic = ["version"]
+dependencies = [
+    # "frappe~=16.0.0" and "erpnext~=16.0.0" are installed and managed by bench (pinned to v16.60.0).
+]
+
+[build-system]
+requires = ["flit_core >=3.4,<4"]
+build-backend = "flit_core.buildapi"
+
+[tool.ruff]
+line-length = 120
+target-version = "py314"
+
+[tool.ruff.lint]
+select = ["F", "E", "W", "I", "UP", "B", "RUF"]
+ignore = ["W191", "E101", "E501"]
+
+[tool.ruff.format]
+indent-style = "tab"

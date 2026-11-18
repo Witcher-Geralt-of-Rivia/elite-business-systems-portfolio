@@ -1,0 +1,134 @@
+{
+ "actions": [],
+ "autoname": "field:event_key",
+ "creation": "2026-11-18 14:00:00.000000",
+ "description": "Idempotency ledger of the distribution simulation: one row per executed business event, written in the same database transaction as the ERPNext documents it created.",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "event_key",
+  "kind",
+  "business_date",
+  "business_time",
+  "column_break_main",
+  "outcome",
+  "reference_doctype",
+  "reference_name",
+  "second_doctype",
+  "second_name",
+  "section_break_details",
+  "details"
+ ],
+ "fields": [
+  {
+   "fieldname": "event_key",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Event Key",
+   "read_only": 1,
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "kind",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Kind",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "business_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Business Date",
+   "read_only": 1,
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "business_time",
+   "fieldtype": "Time",
+   "label": "Business Time",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_main",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "outcome",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Outcome",
+   "options": "Done\nNothing Due",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reference_doctype",
+   "fieldtype": "Link",
+   "label": "Reference DocType",
+   "options": "DocType",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reference_name",
+   "fieldtype": "Dynamic Link",
+   "label": "Reference Name",
+   "options": "reference_doctype",
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "second_doctype",
+   "fieldtype": "Link",
+   "label": "Second DocType",
+   "options": "DocType",
+   "read_only": 1
+  },
+  {
+   "fieldname": "second_name",
+   "fieldtype": "Dynamic Link",
+   "label": "Second Name",
+   "options": "second_doctype",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_details",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "details",
+   "fieldtype": "JSON",
+   "label": "Details",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-11-18 14:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Distribution Simulation",
+ "name": "Distribution Sim Event",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "export": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager"
+  },
+  {
+   "read": 1,
+   "report": 1,
+   "role": "Accounts Manager"
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 0
+}
