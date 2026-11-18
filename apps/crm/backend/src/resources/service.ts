@@ -113,6 +113,7 @@ export class ResourceService {
       if (!row || row[def.ownerColumn] === actor.salesId) return;
       throw new Forbidden("You can only modify records you own.");
     }
+    if (actor.role === "showcase") throw new Forbidden("This is a read-only demo: changes are disabled.");
     throw new Forbidden("Your role cannot modify this resource.");
   }
 

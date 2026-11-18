@@ -123,7 +123,9 @@ export function registerUserRoutes(app: FastifyInstance, db: Db, config: AppConf
       const created = await withTransaction(db, async (c) => {
         // Serialise concurrent first-run attempts; only an empty instance accepts a sign-up.
         await c.query(`select pg_advisory_xact_lock(hashtext('crm_first_signup'))`);
-        const { rows } = await c.query(`select count(*)::int as n from users`);
+        const { rows } = await c.query(
+          `select count(*)::int as n from users u where not exists (select 1 from sales s where s.user_id = u.id and s.role = 'showcase')`,
+        );
         if (rows[0].n > 0) return null;
         const email = body.email.trim().toLowerCase();
         const u = await c.query(`insert into users (email, password_hash) values ($1, $2) returning id`, [email, hash]);

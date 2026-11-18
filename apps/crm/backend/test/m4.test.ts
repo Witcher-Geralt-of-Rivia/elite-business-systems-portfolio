@@ -10,6 +10,7 @@ import { after, before, describe, test } from "node:test";
 import type { FastifyInstance } from "fastify";
 import { buildApp, CSRF_HEADER } from "../src/app.ts";
 import { purgeOrphanAttachments } from "../src/attachments/routes.ts";
+import { SHOWCASE_EMAIL } from "../src/auth/showcase.ts";
 import { loadConfig } from "../src/config.ts";
 import { createPool, type Db } from "../src/db.ts";
 
@@ -20,6 +21,7 @@ const config = {
   logLevel: "silent",
   loginRateLimitPerMinute: 1000,
   attachmentsDir: filesDir,
+  showcase: { enabled: true, sessionHours: 2 },
 };
 assert.match(config.databaseUrl, /\/crm_test(\?|$)/, "tests must run against crm_test");
 
@@ -338,5 +340,65 @@ describe("live updates", () => {
     await api(state.admin).patch(`/api/r/deals/${state.deal.id}`, { stage: "proposal-sent" });
     await waitFor(new RegExp(`"table":"deals","op":"update","id":${state.deal.id}`));
     controller.abort();
+  });
+});
+
+describe("read-only showcase access", () => {
+  test("visitors get a session without credentials and can read everything a demo needs", async () => {
+    assert.equal(json(await app.inject({ method: "GET", url: "/api/auth/init-state" })).showcase, true);
+    const res = await app.inject({ method: "POST", url: "/api/auth/showcase", headers: csrf, payload: {} });
+    assert.equal(res.statusCode, 200, res.body);
+    assert.equal(json(res).role, "showcase");
+    state.visitor = cookieOf(res);
+    const v = api(state.visitor);
+    assert.equal(json(await v.get("/api/auth/me")).role, "showcase");
+    for (const url of ["/api/r/deals", "/api/r/companies", "/api/r/contacts", "/api/r/tasks", "/api/r/activity_log", "/api/configuration", "/api/search?q=pilot"]) {
+      assert.equal((await v.get(url)).statusCode, 200, url);
+    }
+  });
+
+  test("every write, admin function and private file is refused", async () => {
+    const v = api(state.visitor);
+    const me = json(await v.get("/api/auth/me"));
+    const refused = [
+      await v.post("/api/r/companies", { name: "Visitor Co" }),
+      await v.patch(`/api/r/deals/${state.deal.id}`, { stage: "won" }),
+      await v.del(`/api/r/deals/${state.deal.id}`),
+      await v.post("/api/users", { email: "x@example.com", first_name: "X", last_name: "Y" }),
+      await v.patch(`/api/users/${me.id}`, { first_name: "Hacker" }),
+      await v.post(`/api/users/${me.id}/password-link`),
+      await v.post(`/api/contacts/${state.contact.id}/merge`, { winnerId: state.contact.id }),
+      await app.inject({ method: "PUT", url: "/api/configuration", headers: { cookie: state.visitor, ...csrf }, payload: { title: "x" } }),
+      await app.inject({ method: "POST", url: "/api/attachments", payload: Buffer.from("x"),
+        headers: { cookie: state.visitor, ...csrf, "content-type": "application/octet-stream" } }),
+      await v.get(state.file.src),
+    ];
+    for (const res of refused) {
+      assert.equal(res.statusCode, 403, res.body);
+      assert.equal(json(res).code, "showcase_read_only");
+    }
+    const deal = json(await api(state.admin).get(`/api/r/deals/${state.deal.id}`)).data;
+    assert.notEqual(deal.stage, "won", "nothing changed");
+    assert.equal((await v.post("/api/auth/logout")).statusCode, 200, "visitors can still sign out");
+  });
+
+  test("the showcase account has no password and the first-user bootstrap stays closed", async () => {
+    assert.equal((await login(SHOWCASE_EMAIL, "")).statusCode, 400);
+    assert.equal((await login(SHOWCASE_EMAIL, "any-password-at-all")).statusCode, 401);
+    const { rows } = await db.query(`select password_hash from users where email = $1`, [SHOWCASE_EMAIL]);
+    assert.equal(rows[0].password_hash, null);
+    const signup = await app.inject({ method: "POST", url: "/api/auth/signup", headers: csrf,
+      payload: { email: "late@example.com", password: ADMIN_PW, first_name: "Late", last_name: "Comer" } });
+    assert.equal(signup.statusCode, 403);
+  });
+
+  test("showcase access is off unless explicitly enabled", async () => {
+    const off = await buildApp({ ...config, showcase: { enabled: false, sessionHours: 2 } }, db);
+    try {
+      assert.equal((await off.inject({ method: "POST", url: "/api/auth/showcase", headers: csrf, payload: {} })).statusCode, 404);
+      assert.equal(json(await off.inject({ method: "GET", url: "/api/auth/init-state" })).showcase, false);
+    } finally {
+      await off.close();
+    }
   });
 });

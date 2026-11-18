@@ -39,7 +39,8 @@ New-Item -ItemType Directory -Force -Path $apiDir, $wwwDir, $filesDir, $logDir |
 
 # --- 1. API code -------------------------------------------------------------------------------
 $backend = Join-Path $repo 'apps\crm\backend'
-robocopy $backend $apiDir /MIR /XD node_modules test .git /XF .env .env.* /NFL /NDL /NJH /NJS /NP | Out-Null
+# The service wrapper (exe/xml/logs) lives in the same folder and is managed in step 4: keep it out of the mirror.
+robocopy $backend $apiDir /MIR /XD node_modules test .git /XF .env .env.* "$svc.exe" "$svc.xml" "$svc.*.log" /NFL /NDL /NJH /NJS /NP | Out-Null
 if ($LASTEXITCODE -ge 8) { throw "robocopy failed ($LASTEXITCODE)" }
 Push-Location $apiDir
 try { Invoke-Native 'npm ci (api)' { npm ci --omit=dev --no-audit --no-fund --loglevel=error } } finally { Pop-Location }
@@ -71,15 +72,14 @@ icacls C:\srv\portfolio\secrets /grant "${acct}:(RX)" | Out-Null          # trav
 icacls $EnvFile /grant "${acct}:(R)" | Out-Null                             # its own env file only
 icacls C:\srv\portfolio\crm\www /grant "NT SERVICE\caddy:(OI)(CI)(RX)" | Out-Null
 
-Copy-Item $WinSW (Join-Path $apiDir "$svc.exe") -Force
-Copy-Item (Join-Path $repo 'infrastructure\windows\services\portfolio-crm-api.xml') (Join-Path $apiDir "$svc.xml") -Force
 $exe = Join-Path $apiDir "$svc.exe"
-if (-not (Get-Service $svc -ErrorAction SilentlyContinue)) {
-    Invoke-Native 'service install' { & $exe install }
-} else {
-    Stop-Service $svc -ErrorAction SilentlyContinue
-    Invoke-Native 'service refresh' { & $exe refresh }
-}
+$installed = [bool](Get-Service $svc -ErrorAction SilentlyContinue)
+# The wrapper exe is locked while the service runs: stop first, then replace exe + xml.
+if ($installed) { Stop-Service $svc -ErrorAction SilentlyContinue; (Get-Service $svc).WaitForStatus('Stopped', '00:00:30') }
+Copy-Item $WinSW $exe -Force
+Copy-Item (Join-Path $repo 'infrastructure\windows\services\portfolio-crm-api.xml') (Join-Path $apiDir "$svc.xml") -Force
+# WinSW 2.x reads the XML at every start, so an installed service needs no refresh command.
+if (-not $installed) { Invoke-Native 'service install' { & $exe install } }
 Start-Service $svc
 
 $deadline = (Get-Date).AddSeconds(30)

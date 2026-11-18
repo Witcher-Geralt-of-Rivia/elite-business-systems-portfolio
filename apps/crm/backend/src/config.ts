@@ -10,6 +10,8 @@ export interface AppConfig {
   loginRateLimitPerMinute: number;
   /** Live server-side simulation (off unless CRM_SIMULATION=live). */
   simulation: { live: boolean; tickSeconds: number; intensity: number };
+  /** Read-only visitor access (off unless CRM_SHOWCASE=on). */
+  showcase: { enabled: boolean; sessionHours: number };
 }
 
 function required(name: string): string {
@@ -34,6 +36,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
       live: env.CRM_SIMULATION === "live",
       tickSeconds: Math.max(10, Number(env.CRM_SIM_TICK_SECONDS ?? 60)),
       intensity: Math.min(20, Math.max(0.1, Number(env.CRM_SIM_INTENSITY ?? 1))),
+    },
+    showcase: {
+      enabled: env.CRM_SHOWCASE === "on",
+      sessionHours: Math.min(12, Math.max(1, Number(env.CRM_SHOWCASE_SESSION_HOURS ?? 2))),
     },
   };
 }

@@ -17,6 +17,13 @@ interface Identity {
 
 let cachedIdentity: Identity | null = null;
 
+/** Forget the cached identity (e.g. after a visitor session was started outside login()). */
+export const resetIdentityCache = () => {
+  cachedIdentity = null;
+};
+
+const SHOWCASE_DENIED_ACTIONS = new Set(["create", "edit", "delete", "clone", "import"]);
+
 async function fetchIdentity(): Promise<Identity> {
   if (cachedIdentity) return cachedIdentity;
   cachedIdentity = await apiFetch<Identity>("/auth/me");
@@ -60,12 +67,14 @@ export const getAuthProvider = (): AuthProvider => ({
 
   async getIdentity() {
     const identity = await fetchIdentity();
-    return { id: identity.id, fullName: identity.fullName, avatar: identity.avatar };
+    return { id: identity.id, fullName: identity.fullName, avatar: identity.avatar, role: identity.role };
   },
 
   async canAccess(params) {
     try {
       const identity = await fetchIdentity();
+      // Visitors browse only; the API refuses their writes regardless of what the UI shows.
+      if (identity.role === "showcase" && SHOWCASE_DENIED_ACTIONS.has(params.action)) return false;
       // Upstream UI distinguishes admin vs everyone else; finer rules are enforced by the API.
       return canAccess(identity.administrator ? "admin" : "user", params);
     } catch {

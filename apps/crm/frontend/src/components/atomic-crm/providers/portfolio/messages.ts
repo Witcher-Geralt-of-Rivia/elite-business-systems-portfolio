@@ -26,6 +26,11 @@ export const portfolioEnglishMessages = {
     profile: {
       password_reset_sent: "Choose your new password.",
     },
+    showcase: {
+      explore: "Explore the live demo (read-only)",
+      explore_hint: "Fictional company and simulated activity. No sign-up needed.",
+      banner: "Read-only demo · fictional data, live simulated activity · changes are disabled",
+    },
   },
   resources: {
     sales: {
@@ -59,6 +64,11 @@ export const portfolioFrenchMessages = {
     },
     profile: {
       password_reset_sent: "Choisissez votre nouveau mot de passe.",
+    },
+    showcase: {
+      explore: "Explorer la démo en direct (lecture seule)",
+      explore_hint: "Entreprise fictive et activité simulée. Aucune inscription nécessaire.",
+      banner: "Démo en lecture seule · données fictives, activité simulée en direct · modifications désactivées",
     },
   },
   resources: {

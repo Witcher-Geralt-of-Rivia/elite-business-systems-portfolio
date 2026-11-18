@@ -2,6 +2,7 @@ import cookie from "@fastify/cookie";
 import rateLimit from "@fastify/rate-limit";
 import Fastify, { type FastifyInstance } from "fastify";
 import { registerAuth } from "./auth/routes.ts";
+import { ensureShowcaseAccount, registerShowcase } from "./auth/showcase.ts";
 import type { AppConfig } from "./config.ts";
 import { registerAttachmentRoutes } from "./attachments/routes.ts";
 import { registerConfigurationRoutes } from "./configuration/routes.ts";
@@ -68,6 +69,8 @@ export async function buildApp(config: AppConfig, db: Db, options: AppOptions = 
 
   const schema = await loadSchema(db);
   registerAuth(app, db, config);
+  if (config.showcase.enabled) await ensureShowcaseAccount(db);
+  registerShowcase(app, db, config);
   registerResourceRoutes(app, new ResourceService(db, schema));
   registerConfigurationRoutes(app, db);
   registerSearchRoutes(app, db);

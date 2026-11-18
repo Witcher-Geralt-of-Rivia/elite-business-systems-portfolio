@@ -59,7 +59,8 @@ test("sign in, create a company through the UI, verify persistence, clean up, si
   );
   expect(check.status()).toBe(200);
   expect((await check.json()).total).toBe(1);
-  await page.goto("/#/companies");
+  // The CRM holds hundreds of companies: find the new one through the list's search filter.
+  await page.goto(`/#/companies?filter=${encodeURIComponent(JSON.stringify({ q: COMPANY }))}`);
   await page.reload();
   await expect(page.getByText(COMPANY).first()).toBeVisible();
 

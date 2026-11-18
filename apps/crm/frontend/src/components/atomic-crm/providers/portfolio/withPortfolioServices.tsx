@@ -1,6 +1,7 @@
 import type { ComponentType, ReactNode } from "react";
 import { LiveUpdates } from "./LiveUpdates";
 import { OneTimeLinkDialog } from "./OneTimeLinkDialog";
+import { ShowcaseBanner } from "./ShowcaseBanner";
 
 /** Wraps an upstream layout so every authenticated page gets live updates and the link dialog. */
 export function withPortfolioServices(Layout: ComponentType<{ children: ReactNode }>) {
@@ -9,6 +10,7 @@ export function withPortfolioServices(Layout: ComponentType<{ children: ReactNod
       <Layout>{children}</Layout>
       <LiveUpdates />
       <OneTimeLinkDialog />
+      <ShowcaseBanner />
     </>
   );
   PortfolioLayout.displayName = `withPortfolioServices(${Layout.displayName ?? Layout.name ?? "Layout"})`;

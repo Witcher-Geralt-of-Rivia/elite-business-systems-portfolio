@@ -7,6 +7,7 @@ import { TextInput } from "@/components/admin/text-input";
 import { Notification } from "@/components/admin/notification";
 import { useConfigurationContext } from "@/components/atomic-crm/root/ConfigurationContext.tsx";
 import { SSOAuthButton } from "./SSOAuthButton";
+import { ShowcaseLoginButton } from "../providers/portfolio/ShowcaseLoginButton";
 import {
   disableEmailPasswordAuthentication,
   googleWorkplaceDomain,
@@ -147,6 +148,7 @@ export const LoginPage = (props: { redirectTo?: string }) => {
                 })}
               </Link>
             )}
+            <ShowcaseLoginButton />
           </div>
         </div>
       </div>
