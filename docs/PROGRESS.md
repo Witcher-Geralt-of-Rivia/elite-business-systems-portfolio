@@ -2,6 +2,19 @@
 
 Newest first. Every entry states what was **verified**, not just what was written.
 
+## 2026-11-18 — M8 technically complete; CRM live-lead observation closed
+
+- **CRM observation (pending since M4):** the day's single scheduled lead arrived at its planned business time
+  (20:48:48 UTC) with contacts, an intro note and a task. All 7 records were audited as `simulator`, and the SSE
+  insert reached the subscriber 59 ms after commit. There was no missing activity: before it arrived, the engine
+  state showed exactly one lead queued for the day. Nothing was reset.
+- **Integration regression:** CRM public E2E 10/10 (cleanup clean), CRM integrity 22/22, POS integrity 43/43,
+  public POS visitor 4/4. Portal status routes OK, Práctica reachable, host Caddyfile unchanged, Caddy never
+  restarted.
+- **M8 status:** technically complete for CRM, POS and portal. The host incident R-014 stays open as an owner
+  action (SEC-ROTATE); public deployment does not establish that the VPS is remediated. Next: M9 final delivery
+  for the deployed applications; ERP stays on hold.
+
 ## 2026-11-18 — M8: dependency security update, licence review, monitoring
 
 - **PHP dependencies:** NexoPOS v6.3.0's lock had published advisories in 11 packages. The critical Laravel

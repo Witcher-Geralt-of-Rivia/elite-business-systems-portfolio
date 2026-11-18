@@ -2,8 +2,8 @@
   "project": "elite-business-systems-portfolio",
   "repository": "https://github.com/Witcher-Geralt-of-Rivia/elite-business-systems-portfolio",
   "updated": "2026-11-18",
-  "current_milestone": "M8",
-  "current_task": "M8: integration, performance and operational validation of the public CRM + POS + portal (in progress); ERP on hold (REBOOT)",
+  "current_milestone": "M9",
+  "current_task": "M9 final delivery for the deployed applications (CRM, POS, portal): claims vs evidence review, README/portal status; ERP on hold (REBOOT)",
   "status": "in_progress",
   "last_verified_commit": "db5fe48",
   "milestones": {
@@ -11,11 +11,11 @@
     "M1": "done",
     "M2": "done (D-008/D-009 owner decisions; ERP WSL1 reboot pending separate approval)",
     "M3": "done for CRM (HTTPS route, WinSW service, rolling logs, nightly verified backups); POS/ERP parts added with their runtimes",
-    "M4": "done 2026-11-17: production deployment + public E2E 10/10 (see TEST_RESULTS); one observation pending (first live lead in a business window)",
+    "M4": "done 2026-11-17: production deployment + public E2E 10/10; first live lead in a production business window observed 2026-11-18 (TEST_RESULTS M8 item 11)",
     "M5": "on_hold: ERPNext selected; Windows runtime decision pending (WSL1 needs an unapproved reboot); repository-only work allowed",
     "M6": "done 2026-11-18: publicly deployed and verified (D-017). Activation preflight 43/43, backup+restore check, graceful reload, HTTPS/HSTS/secure-cookie smoke, public visitor E2E 4/4 (0 visitor records), portal switched to live; local acceptance evidence (dataset, replay, worker, admin E2E 8/8 on clone) in TEST_RESULTS",
     "M7": "deployed 2026-11-18: portal live with CRM and POS links + live status (/status/crm, /status/pos); ERP \"in preparation\"; deploy-portal.ps1 with rollback; browser check desktop+phone 0 errors",
-    "M8": "in_progress 2026-11-18: installed-state race fixed, telemetry opt-out, lang ACL, visitor background calls, POS CSP, E2E helpers, PHP dependency security update (audit clean), licence review, health monitor (15 min, event log), backup/recovery/monitoring runbook; resources re-measured",
+    "M8": "technically_complete 2026-11-18 for CRM + POS + portal (no open deployment/core-workflow failures, audits clean, monitoring live); owner-side R-014 host remediation (SEC-ROTATE) still open",
     "M9": "not_started"
   },
   "pins": {
@@ -47,11 +47,12 @@
     "M7 portal deployed (2026-11-18): see docs/TEST_RESULTS.md M7 section",
     "M6 public activation (2026-11-18, D-017): see docs/TEST_RESULTS.md POS M6 public activation section",
     "M8 part 1 (2026-11-18): see docs/TEST_RESULTS.md M8 section",
-    "M8 part 2 (2026-11-18): dependency security update, licence review, health monitor; see TEST_RESULTS M8 items 8-10"
+    "M8 part 2 (2026-11-18): dependency security update, licence review, health monitor; see TEST_RESULTS M8 items 8-10",
+    "CRM live-lead observation closed (2026-11-18): lead 501 at planned time, audited, SSE delivered",
+    "M8 integration regression (2026-11-18): CRM E2E 10/10, CRM integrity 22/22, POS 43/43, POS visitor 4/4"
   ],
   "pending_tasks": [
-    "CRM follow-up: read C:/srv/portfolio/logs/crm-live-observation-20261118.json after 2026-11-18 13:05 local (one lead scheduled 20:48 UTC) and record evidence",
-    "M8 remaining: cross-app/portal link check, final M8 acceptance review",
+    "M9: final delivery review for CRM + POS + portal (claims vs evidence, README status, handover notes)",
     "ERP: repository-only preparation (no runtime changes)"
   ],
   "blocked_tasks": [
@@ -89,8 +90,8 @@
   },
   "last_test_results": {
     "crm_backend": "42/42 (poc + m4 + simulation)",
-    "crm_public_e2e": "10/10",
-    "crm_production_integrity": "22 checks, 0 failing",
+    "crm_public_e2e": "10/10 (2026-11-18, cleanup: 0 loginable test accounts)",
+    "crm_production_integrity": "22 checks, 0 failing (2026-11-18)",
     "pos_integrity": "43/43 (live, 2026-11-18 10:30, activation preflight)",
     "pos_replay": "366 days 26754/26754",
     "pos_recovery_suite": "passed (clone)",
@@ -101,7 +102,8 @@
     "pos_installed_race": "before: 1/348 parallel API calls redirected to /do-setup; after: 0/623, 0 fallback hits",
     "resources": "2026-11-18 11:40, 10 min: hosted services <1.5% of one core; POS public /sign-in 336 ms median; CRM/portal/Practica 55-70 ms",
     "pos_dependency_audit": "composer audit clean after update (2026-11-18); npm audit clean (CRM backend/frontend, POS e2e)",
-    "monitor": "10/10 checks ok as SYSTEM; failure/recovery events verified"
+    "monitor": "10/10 checks ok as SYSTEM; failure/recovery events verified",
+    "crm_live_lead": "observed 2026-11-18 20:48:48 UTC (company 501), audit 7 entries, SSE 59 ms"
   },
   "deployment_status": {
     "crm": "production at crm.<ip>.sslip.io: M4 build, 13-month synthetic history, live simulation (intensity 3), read-only visitor access; public E2E 10/10",
@@ -109,18 +111,17 @@
     "erp": "not deployed (on hold)",
     "portal": "deployed: portal/site via deploy-portal.ps1 (crm=live, pos=live, erp=planned); /status/crm + /status/pos; strict CSP"
   },
-  "next_action": "Record the CRM live-lead observation after 13:05 local; then the final M8 acceptance review.",
+  "next_action": "M9 final delivery review for the deployed applications; ERP waits for the REBOOT decision.",
   "completed_milestones": [
     "M0",
     "M1",
     "M2",
     "M3",
     "M4",
-    "M6"
+    "M6",
+    "M7"
   ],
-  "pending_observations": [
-    "CRM: first naturally scheduled live lead in a production business window (14:00-24:00 UTC): verify record, audit event and browser update"
-  ],
+  "pending_observations": [],
   "security": {
     "incident": "R-014 confirmed historical malware execution (2026-10-07); documented in docs/SECURITY_INVESTIGATION.md",
     "status": "open (credential rotation and host remediation are owner actions); does not block repository development (D-013)",
@@ -128,7 +129,7 @@
   },
   "running_jobs": [
     "POS live simulation: Windows service portfolio-pos-sim (hp:worker; pause with php artisan hp:sim pause)",
-    "CRM live-lead observation (one-time task) until 2026-11-18 13:05 local",
+    "CRM live simulation inside portfolio-crm-api",
     "Portfolio - health monitor (scheduled task, every 15 min, SYSTEM)"
   ],
   "shared_hosting": "Since 2026-11-18 the host Caddy also serves the owner's Práctica app (D-016, owner-authorized). Touch only portfolio site files; validate the whole host Caddyfile; caddy reload only, never restart."

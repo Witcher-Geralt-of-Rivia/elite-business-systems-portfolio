@@ -153,7 +153,7 @@ a year of stale overdue tasks; losses dominating the revenue chart. Fixes: 34e0b
 |---|---|
 | Restart preserves simulation state | clock continued 02:36:31 → 02:38:24 across a service restart; queue 159 → 159; data hash identical before/after (no duplicate events) |
 | Live worker running | `live simulation enabled` (tick 60 s, intensity 3); clock advances every minute |
-| New leads in production | **pending observation**: business events occur only in US business hours (14:00–24:00 UTC); deployment finished ~03:15 UTC. Live processing is covered by tests (10 ticks = one advance; deleted records skipped) and SSE delivery by the public E2E |
+| New leads in production | **observed 2026-11-18** (unattended observer, 14:05–21:00 UTC): the engine's one scheduled lead for the day (planned 20:48:48 UTC) arrived as company 501 with 3 contacts, an intro note and a first task, owned by its regional rep. All 7 records were audited as `simulator` at 20:49:42 (worker tick), and the SSE insert reached the subscribed client 59 ms after commit. 23 change events and 0 SSE errors in the window. See the M8 section |
 | Admin records protected | visitor writes refused at HTTP and service layers; the simulator never touches the administrator account |
 | Resources | API 81 MB RAM, 9 CPU-s since start; CRM PostgreSQL ~110 MB; pgdata 166 MB; backups 18 MB; host free RAM 4.0 GB, disk 15.3 GB |
 | API latency (visitor, public URL) | 0.10–0.32 s per list request on an idle host; up to 2.5 s while a test browser saturated the 3-CPU host |
@@ -445,6 +445,30 @@ CSP violations.
 - The SYSTEM task run returned 0.
 - A forced failure (impossible disk threshold) wrote Application event **1001** "disk.c FAILING", and the next
   normal run wrote **1000** "disk.c recovered".
+
+**11. CRM live-lead observation (pending since M4) — completed.**
+- **Window:** `observe-crm-live.mjs` ran 14:05–21:00 UTC, an unattended scheduled task over the production
+  business window.
+- **Mid-window check:** no lead by 18:30 UTC. The CRM engine state showed the clock in step with real time and
+  exactly one lead in the queue for the day, at 20:48:48 UTC. Nothing was missing, and the dataset was not
+  reset or touched.
+- **Arrival:** company **501 "Keystone Logistics"** (industrials), `created_at` 20:48:48.199 UTC (planned business
+  time), with 3 contacts, 1 intro note (warm) and 1 first task (a call due the next business day). No deal yet;
+  per the model, a qualifying lead opens one 3–18 days later.
+- **Audit:** 7 entries at 20:49:42 UTC (actor `simulator`, owner sales #6): company → contacts ×3 → note →
+  contact update → task.
+- **Live delivery:** the SSE `companies` insert reached the subscribed client at 20:49:42.139, 59 ms after the
+  company row was written. 23 change events and 0 SSE errors over the window. The client is a Node SSE
+  subscriber on the channel the UI uses; in-browser SSE rendering is covered by the public CRM E2E.
+
+**12. Integration regression after today's changes.**
+- CRM public E2E **10/10**; cleanup left 0 sign-in-capable test accounts.
+- CRM production integrity **22 checks, 0 failing**.
+- POS: integrity 43/43 (dependency promotion smoke); public visitor 4/4.
+- Portal: CRM and POS status routes 200.
+- Host Caddyfile SHA-256 unchanged throughout (`f606ec68…89b6`); Caddy reloaded, never restarted (process
+  start 2026-11-09).
+- Práctica reachable after every reload.
 
 **Resources and latency** (`measure-resources.ps1`, 10 min, 30 requests per URL; CRM, Práctica, POS worker and
 public POS all running):
