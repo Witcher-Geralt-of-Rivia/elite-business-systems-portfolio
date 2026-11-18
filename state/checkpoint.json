@@ -5,7 +5,7 @@
   "current_milestone": "M4",
   "current_task": "Security incident response (D-012) \u2014 awaiting owner decision",
   "status": "blocked_on_security_decision",
-  "last_verified_commit": "ce77381",
+  "last_verified_commit": "8806e85",
   "milestones": {
     "M0": "done",
     "M1": "done",
