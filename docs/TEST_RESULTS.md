@@ -159,3 +159,83 @@ a year of stale overdue tasks; losses dominating the revenue chart. Fixes: 34e0b
 | API latency (visitor, public URL) | 0.10–0.32 s per list request on an idle host; up to 2.5 s while a test browser saturated the 3-CPU host |
 
 Once, a combined backend run reported 15 cancelled tests (0 failed); not reproduced in three later runs.
+
+## POS M6 — NexoPOS dataset, live simulation, visitor showcase (2026-11-18, local acceptance)
+
+**12-month history** (seed 20261118, store days 2025-11-17 → 2026-11-17, generated through NexoPOS services in
+32,407 s + report rebuild; never regenerated afterwards): 362 trading days (4 holiday closures), 24,313 orders /
+67,000 lines / 24,313 payments (18,888 simulated card $683,428.04; 5,425 cash, tendered $242,769.00),
+280 returns ($2,881.20), 573 deliveries (584 procurements, $447,697.96 at cost), 70,551 stock movements,
+724 register sessions, 88 products in 12 categories, 11 suppliers, 421 customers; paid sales $870,891.93,
+taxes $20,832.02, discounts $16,011.92; 368 day and 13 month reports; 26,754 ledger events; database ~100 MB.
+Monthly orders: Nov* 985 · Dec 2,696 · Jan 1,423 · Feb 1,394 · Mar 1,724 · Apr 1,782 · May 2,148 · Jun 2,184 ·
+Jul 2,388 · Aug 2,430 · Sep 1,879 · Oct 2,018 · Nov* 1,262 (*partial months).
+
+**Integrity (43 checks)** — baseline right after the backfill: 4 failing.
+
+| Check | Baseline | Cause | Fix | After |
+|---|---|---|---|---|
+| `refunded_order_status` | 23 | fully returned promotional orders: NexoPOS kept the flat discount → total −discount, status "paid" | engine: returned unit takes its discount share; `hp:repair-refunds` (refreshOrder, listeners off) | 0 |
+| `register_balance_chain` | 14 | for those orders NexoPOS re-recorded the cash change at the refund day's balance (7 cash) and created change payouts for card orders (16) | change entries restored from the ledger; payouts removed, session rebalanced | 0 |
+| `product_created_after_first_sale` | 88 | setup ran on the real clock | `hp:presentation` chronology | 0 |
+| `customer_created_after_first_order` | 421 | same | same | 0 |
+
+Rehearsed twice on a clone before touching the shared database (pre-change backup taken by the scheduled task).
+Live result: **43/43 pass** (26 s with the new lookup indexes; 1,385 s before). Paid sales moved by exactly the
++$12.44 of the 23 negative totals; refunds, payments and stock unchanged. With live trading included (08:48):
+43/43, 24,318 orders, dashboard paid sales = order paid sales ($871,056.25).
+`hp:replay-check --days=400` (bounded at the scenario start): 366 days, 26,754 planned = 26,754 ledger,
+0 missing / unexpected / time / kind mismatches.
+
+Two further defects found while testing and fixed: a return made the original sale day's report stale (NexoPOS
+only recomputes today) → stale-day marker + recompute after each run; the month report froze during simulated
+runs → recomputed per processed day.
+
+**Recovery suite on an isolated clone** (`run-pos-sim-recovery.ps1`, next store day 2026-11-19):
+two engines on the same window → exit 0 / 1 (the loser aborted on a register race, its transaction rolled
+back), settle run 0; engine killed mid-day after 15 events, recovery run 0, +40 events, watermark end of day;
+replay 154 = 154; 0 duplicate order entries; 65 orders = 65 sale events; integrity 43/43.
+
+**Live worker** (`portfolio-pos-sim`, LocalService, after deployment 07:07):
+
+| Test | Result |
+|---|---|
+| Catch-up from the backfill watermark | deliveries 07:16 / 07:28 and register openings 07:50 / 07:51 processed on time; health lag 9–23 s |
+| Planned recycle | exits with code 3 after `--max-minutes`; observed twice with a 2-minute setting, service restarted after 30 s / 60 s (a 0 exit would have stopped the service — fixed) |
+| Pause / resume | paused 08:08:27–08:25:05: sale due 08:09:21 not processed, watermark frozen at 08:07:53; after resume processed at 08:25:55 with its business time |
+| Service restart during trading | stopped 08:28–08:33; sales due 08:31:01 and 08:32:42 processed at 08:33:14; 0 duplicate ledger keys, 0 duplicate order entities, 3 orders = 3 sale events; replay (3 days) 136 = 136 |
+
+**Browser tests** (Chromium, `run-pos-e2e.ps1`):
+- *Isolated admin* (clone `nexopos_e2e`, dropped afterwards): **8/8** — wrong password refused and sign-in; register
+  open with float + cash-in; API checkout decreases stock and records payment; POS-screen checkout with the
+  simulated card; receipt, customer history and daily sales report include the sale; dashboard reflects it;
+  one-item refund restocks and marks the order partially refunded; register close at the counted balance reconciles.
+- *Visitor* (real dataset, read-only): **4/4** — entry without credentials and tour (dashboard, products, orders,
+  customers, registers, sales report); checkout preview on the POS screen refused with the explicit message;
+  writes, admin areas and report recomputation refused while reads work; phone viewport. Database check after
+  the run: **0 records authored by the visitor**.
+- Screenshot review (desktop 1280 px, phone 390 px) — fixed: upstream product ads shown to visitors (snoozed for
+  the visitor account, also avoids the remote ad lookup); 4-line banner covering phone content (compact
+  one-line form ≤ 640 px); dashboard captured before widgets loaded (test waits for real figures). Remaining,
+  upstream look: abbreviated `$0.0` style in the three summary cards; "This week vs last week" is partial early in the week.
+
+**Backup / restore** (`Portfolio - POS nightly backup`, SYSTEM, 03:45 daily, triggered manually at 07:03):
+dump 103.3 MB + SHA-256; restore into a scratch database; row counts equal for 7 business tables; text checksums
+equal for products, categories, registers, users and order codes; scratch dropped; task result 0.
+Defect found and fixed: restores piped the dump through PowerShell 5.1, which re-encodes non-ASCII text
+("Café" → "CafÃ©") while row counts still matched — now the client reads the file, and the content checksum
+catches such corruption. The same fix applied to the recovery suite and the E2E clone.
+
+**Resources** (`measure-resources.ps1`, 10 min at 08:35 with CRM, Práctica and the POS worker running):
+
+| Item | Value |
+|---|---|
+| Host | CPU avg 17.9 % / p95 25.5 % (3 vCPU) — dominated by the remote-desktop session (RustDesk ~48 % of one core, desktop compositor ~10 %), not by hosted services; RAM 6.8 / 12 GB; C: free 14.2 GB |
+| POS services | MariaDB 65 MB / 0.2 % core; PHP-FastCGI ×2 3 + 36 MB / 0 %; simulation worker 113 MB / 0.5 % core |
+| CRM services | API 40 MB / 0 %; PostgreSQL 23 MB / 0 % · Caddy 23 MB / 0.3 % · Práctica 4 + 29 MB / 0 % |
+| Disk | POS app 97 MB, MariaDB data 307 MB, POS backups 310 MB (3 dumps today), PHP 88 MB, CRM 175 MB |
+| Latency (20 sequential requests) | POS loopback `/sign-in` median 321 ms / p95 401 ms; `/harborpine/health` 335 / 424 ms; CRM public `/api/health` 67 / 129 ms, `/` 59 / 133 ms; portal `/healthz` 61 / 195 ms; Práctica `/acceder/` 102 / 183 ms |
+
+Working-set figures are as reported by Windows (trimmed pages excluded).
+
+**Not done (owner decision):** public HTTPS activation of the POS (`activate-pos-public.ps1 -OwnerApproved`).

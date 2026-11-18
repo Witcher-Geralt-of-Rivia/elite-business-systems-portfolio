@@ -2,6 +2,25 @@
 
 Newest first. Every entry states what was **verified**, not just what was written.
 
+## 2026-11-18 — M6 local acceptance: full POS dataset verified, live simulation running (still private)
+
+- **12-month history complete** (not regenerated): 24,313 orders, 280 returns, 573 deliveries, 724 register
+  sessions, paid sales $870,891.93 ([TEST_RESULTS](TEST_RESULTS.md#pos-m6--nexopos-dataset-live-simulation-visitor-showcase-2026-11-18-local-acceptance)).
+- **43/43 integrity checks pass** on the live database after fixing what the baseline found: 23 fully returned
+  promotional orders left at a negative total by NexoPOS's flat-discount refresh (engine rule + idempotent
+  `hp:repair-refunds`; register chain restored) and setup/customer creation dates (chronology). Replay over the
+  full year: 26,754 = 26,754 events.
+- **Lookup indexes** (module migration, indexes only): integrity 23 min → 26 s; repair 139 s → 15 s.
+- **Live worker** running as a service: catch-up, recycle (exit code 3 → restart), pause across a due sale,
+  service restart during trading — no loss, no duplicate. Recovery suite on a clone (concurrency, mid-day kill) passes.
+- **Browser tests:** isolated admin 8/8 on a clone; visitor 4/4 on the real data, 0 records written by the visitor.
+  Screenshot review fixes: upstream ads hidden for the visitor, compact phone banner.
+- **Backup/restore** verified as SYSTEM via the scheduled task, with row counts and text checksums; a restore
+  encoding defect (PowerShell re-encoding the dump) found and fixed in three scripts.
+- **Resources** measured with CRM, Práctica and the worker running: hosted services < 1 % of one core in total,
+  POS loopback pages ~0.3 s median, CRM/portal/Práctica public 60–100 ms median.
+- **POS remains private**: public activation awaits the owner's authorization (POS-PUBLIC).
+
 ## 2026-11-18 — Shared hosting: owner's Práctica application verified alongside the portfolio (D-016)
 
 - Owner-authorized reactivation verified end to end:

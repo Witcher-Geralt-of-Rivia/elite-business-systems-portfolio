@@ -83,8 +83,11 @@ affected day. Refund amounts, payments and stock movements are unchanged.
 ## Live operation
 
 `hp:worker` (Windows service `portfolio-pos-sim`): every 60 s processes the events that became due; one active
-worker (MariaDB `GET_LOCK`); exits after 120 min or 192 MB and is restarted by the service wrapper (bounded
-resources); `php artisan hp:sim pause|resume|status`.
+worker (MariaDB `GET_LOCK`); exits after 120 min or 192 MB with code 3 so the service wrapper's failure action
+restarts it (a clean 0 would stop a WinSW service); `php artisan hp:sim pause|resume|status`; health at
+`/harborpine/health` (paused, worker running, watermark, lag). While paused the watermark stays; on resume the due
+events run with their business times. After each processed day the month report is recomputed explicitly (NexoPOS's
+own month refresh did not land during simulated runs).
 
 ## Integrity (`Services/Integrity.php`, `php artisan hp:integrity`)
 
