@@ -125,6 +125,11 @@ Every line links to evidence in [ACCEPTANCE_MATRIX.md](ACCEPTANCE_MATRIX.md) and
 
 ## 6. Outstanding ERP milestone (M5)
 
+> **Post-release update (2026-11-18):** M5 development started after Release 1.0. The custom Frappe app and its
+> distribution engine are implemented, and verified without an ERPNext runtime (engine tests, static checks against
+> the pinned sources). ERPNext itself is still not running. Current status: [ERP_DATA_ENGINE.md](ERP_DATA_ENGINE.md)
+> and [runbooks/ERP_WSL1_POC.md](runbooks/ERP_WSL1_POC.md). The release-time text below is kept unchanged.
+
 **ERPNext is not implemented or deployed.** What exists and is preserved:
 - **Pins:** ERPNext/Frappe **v16.60.0** (D-005).
 - **Runtime research:**

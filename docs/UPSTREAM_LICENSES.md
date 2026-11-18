@@ -23,7 +23,8 @@
 | Path | License |
 |---|---|
 | `/` (default, original work) | MIT — root `LICENSE` |
-| `apps/erp/**` (future Frappe app) | GPL-3.0, own `LICENSE` to be added with the first code (M5, not started) |
+| `apps/erp/portfolio_sim/**` (custom Frappe app for ERPNext) | GPL-3.0, own `license.txt` (GPL v3 text, as distributed with ERPNext) |
+| `apps/erp/tests/**`, `scripts/verification/check_erp_upstream.py` | MIT (original test and verification code; no ERPNext code imported) |
 | `apps/pos/modules/HarborPine/**` | GPL-3.0, own `LICENSE` (NexoPOS module) |
 | `apps/pos/e2e/**` | MIT (original test code) |
 | `apps/crm/frontend/**` | MIT. Atomic CRM snapshot `22f38f0f`; upstream `LICENSE.md` retained ("Copyright (c) 2024-present, Francois Zaninotto, Marmelab") |

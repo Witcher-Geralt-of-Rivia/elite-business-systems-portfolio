@@ -7,7 +7,7 @@ action from the owner.
 
 | # | Limitation | Detail |
 |---|---|---|
-| L1 | **ERP not delivered** | ERPNext (M5) is on hold. Frappe v16 has no native Windows runtime; the host has no nested virtualisation, so WSL1 is the only path, and it needs the WSL feature and a Windows reboot (**owner: REBOOT**). Research, pins (v16.60.0) and the runbook are preserved ([FINAL_DELIVERY.md §6](FINAL_DELIVERY.md#6-outstanding-erp-milestone-m5)). The project as a whole is not complete |
+| L1 | **ERP not delivered** | Post-release: the custom app and engine exist and are verified without ERPNext ([ERP_DATA_ENGINE.md](ERP_DATA_ENGINE.md)), but ERPNext is not running. ERPNext (M5) runtime is on hold. Frappe v16 has no native Windows runtime; the host has no nested virtualisation, so WSL1 is the only path, and it needs the WSL feature and a Windows reboot (**owner: REBOOT**). Research, pins (v16.60.0) and the runbook are preserved ([FINAL_DELIVERY.md §6](FINAL_DELIVERY.md#6-outstanding-erp-milestone-m5)). The project as a whole is not complete |
 | L2 | Showcase, not a commercial service | Fictional businesses and synthetic data; payments simulated; no SLA. Not delivered to, or used by, a real client |
 
 ## Security

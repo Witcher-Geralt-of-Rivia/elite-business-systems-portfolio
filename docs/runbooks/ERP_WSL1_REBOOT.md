@@ -13,9 +13,14 @@ Read-only state on 2026-11-17: feature `Disabled`, no pending-reboot flags, last
 
 ## What the reboot affects
 
+> Updated 2026-11-18 for Release 1.0: the reboot now also affects the public POS, the monitoring task and the
+> owner's co-hosted application. The full PoC plan with pass/fail gates is [ERP_WSL1_POC.md](ERP_WSL1_POC.md).
+
 | Item | During reboot (~2–5 min typical) | After reboot |
 |---|---|---|
-| Portfolio sites (portal, CRM) | unavailable | start automatically (`caddy`, `portfolio-crm-postgres`, `portfolio-crm-api` are Auto) |
+| Portfolio sites (portal, CRM, POS) | unavailable | start automatically: `caddy`, `portfolio-crm-postgres`, `portfolio-crm-api`, `portfolio-pos-mariadb`, `portfolio-pos-php-1/-2` and `portfolio-pos-sim` are Auto. The CRM and POS simulations catch up from their persisted state without duplicates (tested) |
+| Monitoring and backups | — | `Portfolio - health monitor` runs on its 15-minute repetition; nightly backups unchanged. Expect monitor events 1001/1000 if a check runs before services are up |
+| Owner's co-hosted application | unavailable | its services are Auto (D-016); verify it is reachable |
 | Owner remote access | RDP/SSH/AnyDesk/RustDesk/Jump drop | `sshd`, AnyDesk, RustDesk, JumpConnect are Auto; RDP (TermService) is a Windows default and listens on 3389 after boot |
 | Other owner services | stop | `postgresql-x64-16`, `practica-postgres` are Auto; retired sites stay Disabled (D-008) |
 | Interactive sessions | editor windows, this agent session, manually started dev servers (e.g. n8n, Next.js demos) **end** | **not** restarted automatically — they were started by hand |
@@ -50,10 +55,8 @@ Read-only state on 2026-11-17: feature `Disabled`, no pending-reboot flags, last
 - If a portfolio service fails to start after boot: `Start-Service <name>`; logs under `C:\srv\portfolio\logs`. The services are independent of WSL.
 - If remote access does not return: the VPS provider's console (out-of-band) is the recovery path — confirm it is available **before** approving.
 
-## After approval: ERP proof of concept (time-boxed)
+## After approval: ERP proof of concept
 
-Distro: Ubuntu 24.04 (WSL1) with `uv`-managed Python 3.14, Node 24, Frappe bench v16.60.0; MariaDB 11.8
-and a Redis-compatible server run **natively on Windows** (WSL1 shares the network stack), avoiding
-WSL1's weakest areas (InnoDB AIO, Redis under syscall translation). Go/no-go criteria: `bench new-site`
-succeeds, ERPNext v16 installs, a Sales Invoice can be submitted, and steady-state RAM fits the budget.
-If any fails, ERP remains repo-complete but undeployed, with the evidence documented.
+Superseded by the staged plan [ERP_WSL1_POC.md](ERP_WSL1_POC.md). It defines pass and fail criteria per stage,
+failure criteria F1–F7 and alternatives A1–A4. ERPNext gets its **own** native MariaDB 11.8 instance, so the POS
+database server is not reconfigured.

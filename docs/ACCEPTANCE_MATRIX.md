@@ -83,7 +83,7 @@ Release-time re-verification (2026-11-18, about 13:10 local):
 
 | ID | Status | Note |
 |---|---|---|
-| ERP-F, ERP-G, ERP-W | Not in release | M5 on hold; runtime needs owner decision REBOOT |
+| ERP-F, ERP-G, ERP-W | Not in release | M5 on hold at release; runtime needs owner decision REBOOT. Post-release: app and engine implemented, ERPNext tests not yet executed ([ERP_DATA_ENGINE.md](ERP_DATA_ENGINE.md#verification-status)) |
 | ERP-R (reference evaluation) | Met (research) | [UPSTREAM_AUDIT.md](UPSTREAM_AUDIT.md) evaluates `erpnext_demo_gen`; R-012 |
 
 ## 7. Milestones

@@ -15,7 +15,7 @@ generating business activity.
 |---|---|---|---|---|
 | CRM | [Atomic CRM](https://github.com/marmelab/atomic-crm) (Marmelab, MIT) | *Meridian Advisory*, B2B operations-analytics software and services | Atomic CRM UI + project-built Fastify API, PostgreSQL 16 | **live**, read-only visitor demo |
 | POS | [NexoPOS](https://github.com/Blair2004/NexoPOS) v6.3.0 (Blair Jersyer, GPL-3.0) | *Harbor & Pine Market*, coastal specialty food and home store | NexoPOS (Laravel, PHP 8.3) + a GPL-3.0 module, MariaDB 11.8 | **live**, read-only visitor demo with checkout preview |
-| ERP | [ERPNext](https://github.com/frappe/erpnext) v16 (Frappe Technologies, GPL-3.0) | wholesale electronics distributor | Frappe/ERPNext (planned) | **on hold**: research, pins and runbook done; not implemented. The runtime needs an owner-approved Windows change |
+| ERP | [ERPNext](https://github.com/frappe/erpnext) v16 (Frappe Technologies, GPL-3.0) | wholesale electronics distributor | Frappe/ERPNext v16.60.0 + custom app `portfolio_sim` (GPL-3.0) | **in development**: app and distribution engine implemented and verified without ERPNext ([apps/erp](apps/erp/README.md)); **not running yet**, because the runtime needs an owner-approved Windows change |
 | Portal | original work (MIT) | — | static site behind Caddy | **live**, with live application status |
 
 Public hostnames follow `https://{portfolio,crm,pos}.<server-ip>.sslip.io`; the address is published on the portal,
@@ -58,7 +58,8 @@ not in this repository.
 | [OPERATIONS_HANDBOOK.md](docs/OPERATIONS_HANDBOOK.md) · [RECOVERY_GUIDE.md](docs/RECOVERY_GUIDE.md) | running, maintaining and recovering the deployment |
 | [KNOWN_LIMITATIONS.md](docs/KNOWN_LIMITATIONS.md) | what is not done or deliberately constrained |
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) · [DEPLOYMENT.md](docs/DEPLOYMENT.md) · [DECISIONS.md](docs/DECISIONS.md) · [RISKS.md](docs/RISKS.md) | design, host layout, decisions, risks |
-| [CRM_DATA_ENGINE.md](docs/CRM_DATA_ENGINE.md) · [POS_DATA_ENGINE.md](docs/POS_DATA_ENGINE.md) | the two data engines |
+| [CRM_DATA_ENGINE.md](docs/CRM_DATA_ENGINE.md) · [POS_DATA_ENGINE.md](docs/POS_DATA_ENGINE.md) · [ERP_DATA_ENGINE.md](docs/ERP_DATA_ENGINE.md) | the data engines (the ERP's is not yet running on ERPNext) |
+| [runbooks/ERP_WSL1_POC.md](docs/runbooks/ERP_WSL1_POC.md) | staged ERPNext-on-WSL1 proof of concept with pass/fail criteria and alternatives |
 | [TEST_RESULTS.md](docs/TEST_RESULTS.md) · [PROGRESS.md](docs/PROGRESS.md) · [state/checkpoint.json](state/checkpoint.json) | evidence, history, machine-readable state |
 
 ## Repository layout
@@ -68,6 +69,8 @@ apps/crm/frontend/         Atomic CRM snapshot @22f38f0f (MIT, notice retained) 
 apps/crm/backend/          Fastify API, migrations, CRM data engine, tests
 apps/pos/modules/HarborPine/  NexoPOS module (GPL-3.0): store, retail engine, live worker, visitor mode, checks
 apps/pos/e2e/              Playwright suites for the POS (isolated admin, public visitor)
+apps/erp/portfolio_sim/    custom Frappe app (GPL-3.0) for ERPNext v16.60.0: distribution engine (not yet running)
+apps/erp/tests/            engine and static tests runnable without Frappe
 portal/site/               portfolio portal (static)
 infrastructure/            Caddy site templates, Windows service definitions
 scripts/                   provisioning, maintenance (backups, monitor), verification

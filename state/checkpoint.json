@@ -3,8 +3,8 @@
   "repository": "https://github.com/Witcher-Geralt-of-Rivia/elite-business-systems-portfolio",
   "updated": "2026-11-18",
   "current_milestone": "M5",
-  "current_task": "Release 1.0 delivered (CRM + POS + portal). ERP (M5) outstanding: repository-only, non-disruptive preparation until the owner decides REBOOT",
-  "status": "release_1_0_delivered; erp_outstanding",
+  "current_task": "M5 ERP: custom Frappe app portfolio_sim + distribution engine implemented and verified without runtime; ERPNext runtime (WSL1 PoC) awaits owner decision REBOOT",
+  "status": "release_1_0_delivered; erp_in_development",
   "last_verified_commit": "e285d1b",
   "milestones": {
     "M0": "done",
@@ -12,15 +12,15 @@
     "M2": "done (D-008/D-009 owner decisions; ERP WSL1 reboot pending separate approval)",
     "M3": "done for CRM (HTTPS route, WinSW service, rolling logs, nightly verified backups); POS/ERP parts added with their runtimes",
     "M4": "done 2026-11-17: production deployment + public E2E 10/10; first live lead in a production business window observed 2026-11-18 (TEST_RESULTS M8 item 11)",
-    "M5": "on_hold: ERPNext selected; Windows runtime decision pending (WSL1 needs an unapproved reboot); repository-only work allowed",
+    "M5": "in_progress 2026-11-18: apps/erp/portfolio_sim implemented (engine, setup, executor via ERPNext mappers, exactly-once simulator, 32 integrity checks, replay, worker, CLI, DocTypes); engine+static tests 35/35; static check vs pinned v16.60.0 675/0; ERPNext integration tests written, NOT executed; runtime blocked on REBOOT (docs/runbooks/ERP_WSL1_POC.md)",
     "M6": "done 2026-11-18: publicly deployed and verified (D-017). Activation preflight 43/43, backup+restore check, graceful reload, HTTPS/HSTS/secure-cookie smoke, public visitor E2E 4/4 (0 visitor records), portal switched to live; local acceptance evidence (dataset, replay, worker, admin E2E 8/8 on clone) in TEST_RESULTS",
     "M7": "done 2026-11-18: portal live with CRM and POS links + live status; ERP \"in preparation\"; hero corrected in M9; no contact section (KNOWN_LIMITATIONS L13)",
     "M8": "technically_complete 2026-11-18 for CRM + POS + portal (no open deployment/core-workflow failures, audits clean, monitoring live); owner-side R-014 host remediation (SEC-ROTATE) still open",
     "M9": "done 2026-11-18 for Release 1.0 (CRM + POS + portal): delivery package (FINAL_DELIVERY, ACCEPTANCE_MATRIX, OPERATIONS_HANDBOOK, RECOVERY_GUIDE, KNOWN_LIMITATIONS), final acceptance in TEST_RESULTS M9; ERP delivery remains with M5"
   },
   "pins": {
-    "erpnext": "v16.60.0",
-    "frappe": "v16.60.0",
+    "erpnext": "v16.60.0 (886ab6a)",
+    "frappe": "v16.60.0 (bf9581a)",
     "nexopos": "v6.3.0 (PHP dependencies security-updated 2026-11-18 within upstream constraints: laravel/framework 12.73.0; composer audit clean)",
     "atomic_crm": "main@22f38f0f5918187a9c559e75dcc4cd4a329f9af2",
     "frappe_docker_reference": "main@0ad1a1152f93b1285104bcd0a8059e036dc5bd3d"
@@ -50,17 +50,19 @@
     "M8 part 2 (2026-11-18): dependency security update, licence review, health monitor; see TEST_RESULTS M8 items 8-10",
     "CRM live-lead observation closed (2026-11-18): lead 501 at planned time, audited, SSE delivered",
     "M8 integration regression (2026-11-18): CRM E2E 10/10, CRM integrity 22/22, POS 43/43, POS visitor 4/4",
-    "M9 Release 1.0 final acceptance and delivery package (2026-11-18)"
+    "M9 Release 1.0 final acceptance and delivery package (2026-11-18)",
+    "M5 repository level (2026-11-18): ERP custom app and engine; see TEST_RESULTS M5 section and docs/ERP_DATA_ENGINE.md"
   ],
   "pending_tasks": [
-    "ERP (M5): repository-only preparation (no WSL, no reboot) until owner decision REBOOT",
+    "ERP (M5): WSL1 PoC stages S0-S8 after owner decision REBOOT (docs/runbooks/ERP_WSL1_POC.md); then integration tests, backfill, integrity, browser E2E, public HTTPS (separate approval)",
+    "ERP (M5, repository): browser E2E specs for ERPNext desk (after runtime exists); optional refinements found by integration tests",
     "Owner: SEC-ROTATE (R-014/R-015) credential rotation and host remediation",
-    "Owner (optional): public contact channel for the portal (L13); off-host backup copies (L14)",
+    "Owner (optional): portal contact channel (L13); off-host backup copies (L14)",
     "Review NexoPOS scheduler jobs on a clone before enabling schedule:run (L21)"
   ],
   "blocked_tasks": [
     {
-      "task": "ERP runtime (WSL1)",
+      "task": "ERP runtime (WSL1 PoC)",
       "reason": "Windows reboot not approved by the owner",
       "decision_ids": [
         "REBOOT"
@@ -106,7 +108,10 @@
     "resources": "2026-11-18 11:40, 10 min: hosted services <1.5% of one core; POS public /sign-in 336 ms median; CRM/portal/Practica 55-70 ms",
     "pos_dependency_audit": "composer audit clean after update (2026-11-18); npm audit clean (CRM backend/frontend, POS e2e)",
     "monitor": "10/10 checks ok as SYSTEM; failure/recovery events verified",
-    "crm_live_lead": "observed 2026-11-18 20:48:48 UTC (company 501), audit 7 entries, SSE 59 ms"
+    "crm_live_lead": "observed 2026-11-18 20:48:48 UTC (company 501), audit 7 entries, SSE 59 ms",
+    "erp_engine_static": "35/35 (python -m unittest discover -s apps/erp/tests)",
+    "erp_upstream_static": "868 DocTypes, 675 checks, 0 problems (scripts/verification/check_erp_upstream.py)",
+    "erp_integration": "written (7 tests), NOT executed - no ERPNext runtime"
   },
   "deployment_status": {
     "crm": "production at crm.<ip>.sslip.io: M4 build, 13-month synthetic history, live simulation (intensity 3), read-only visitor access; public E2E 10/10",
@@ -114,7 +119,7 @@
     "erp": "not deployed (on hold)",
     "portal": "deployed: portal/site via deploy-portal.ps1 (crm=live, pos=live, erp=planned); /status/crm + /status/pos; strict CSP"
   },
-  "next_action": "Non-disruptive ERP (M5) repository preparation: Frappe custom app skeleton and generator design against the pinned v16.60.0, no runtime changes; ERP runtime waits for REBOOT.",
+  "next_action": "All ERP work that does not need a runtime is complete. Next: owner decision REBOOT, then WSL1 PoC S0-S8 (docs/runbooks/ERP_WSL1_POC.md). Release 1.0 stays unchanged.",
   "completed_milestones": [
     "M0",
     "M1",

@@ -2,6 +2,28 @@
 
 Newest first. Every entry states what was **verified**, not just what was written.
 
+## 2026-11-18 — M5 started: ERPNext custom app and distribution engine implemented (no runtime yet)
+
+- **App:** `apps/erp/portfolio_sim`, a custom Frappe app (GPL-3.0) for ERPNext/Frappe v16.60.0. It contains:
+  - hooks (live worker tick), bench commands, two DocTypes (event ledger, settings);
+  - setup through ERPNext's own programmatic `setup_complete`, plus master data;
+  - an executor using ERPNext's mappers with insert and submit;
+  - an exactly-once simulator, 32 integrity checks and a replay check.
+- **Scenario:** *Sable Ridge Electronics Supply Co.*, a fictional Ohio wholesale electronics distributor,
+  independent of the CRM and POS. 497 curated values, 96 items, 12 suppliers, 150 customers, 24 staff, 4
+  warehouses. 15½ months of planned history (26,461 events) covering purchasing, receiving, billing, payments,
+  selling with backorders, invoicing, returns and credit/debit notes, reconciliation, transfers, cycle counts and
+  expenses.
+- **Verified without ERPNext:** engine and static tests 35/35, and 675 checks against the pinned sources with 0
+  problems. The first checker run found a real v16 difference (Item Group has no description field), now fixed.
+- **Not yet executed:** the 7 ERPNext integration tests, integrity and replay on a site, and browser tests.
+  ERPNext is **not** claimed operational.
+- **Runtime plan:** [runbooks/ERP_WSL1_POC.md](runbooks/ERP_WSL1_POC.md). Staged gates S0–S8 and failure
+  criteria F1–F7 cover throughput, resources, latency impact and stability, with alternatives A1–A4. The ERP gets
+  its own MariaDB instance, so the POS database server stays untouched. The reboot runbook now lists the
+  Release 1.0 services it affects.
+- **Unchanged:** Release 1.0 not modified or redeployed; no WSL, no reboot; R-014 remains an open owner action.
+
 ## 2026-11-18 — M9: Release 1.0 (CRM + POS + Portal) delivered; ERP remains outstanding
 
 - **Release scope (D-018):** "Elite Business Systems Portfolio — CRM + POS + Portal, Release 1.0". The ERP is an

@@ -531,3 +531,45 @@ graceful reload).
 Delivery package: FINAL_DELIVERY, ACCEPTANCE_MATRIX, OPERATIONS_HANDBOOK, RECOVERY_GUIDE, KNOWN_LIMITATIONS
 (D-018).
 
+## M5 — ERP custom app, repository level (2026-11-18, no ERPNext runtime)
+
+Nothing here ran against ERPNext. Release 1.0 (CRM, POS, portal) and the co-hosted application were not
+touched. No WSL, runtime component or reboot.
+
+**Pinned sources:**
+- `git clone --depth 1 --branch v16.60.0` of erpnext (`886ab6a`) and frappe (`bf9581a`); both `__version__` =
+  16.60.0. They live in the git-ignored `upstream/`.
+- The earlier ERPNext clone was on `develop` (v17-dev) and was not used for verification.
+
+**Engine and static tests** (`python -m unittest discover -s apps/erp/tests`, Python 3.13 on the host; the engine
+has no Frappe imports): **35/35 pass** (about 18 s).
+
+| Area | What is asserted |
+|---|---|
+| RNG | same seed, same stream; pinned values; uniform/Poisson means; weighted choice |
+| Calendar | 2025/26 holidays incl. observed July 4th and the day after Thanksgiving; business-day arithmetic; month due days |
+| Catalogue | 450–650 curated values (497); 96 unique items; every group has a supplier; no placeholders or e-mail/URLs; independent of the CRM/POS scenarios; terms and expense accounts resolve |
+| Scenario | deterministic per seed; 150 unique customers; list price > cost; SKU format; warehouse by territory; tax only for Ohio non-exempt customers; account managers from staff |
+| Planner | identical hash on rerun and equal to a persisted day-by-day run with fresh processes (recovery); re-planning a day refused; unique keys in time order; business days only; references point to earlier events of the right kind; chain dates (invoice = delivery day, bill after receipt, returns ≥ 3 days later, payments after invoice); delivered/received/returned ≤ ordered/delivered; fully received purchase orders closed; stock replay never negative and equal to the projection; 10–20 orders per business day with December below October; first delivery complete for > 75 % of orders; returns 2–10 % of invoices; every invoice paid, scheduled (late payer) or fully credited; purchase lines in pack sizes at cost ±10 %; weekly and month-end routines on the right days; pinned first-month hash |
+| Static | every app module compiles; the engine imports no Frappe/ERPNext; the app matches the pinned sources; **self-tests**: the checker reports an unknown field, an unknown child-table field, an invalid Select value, a wrong or missing function signature and an unknown account |
+
+**Static verification against the pinned sources** (`python scripts/verification/check_erp_upstream.py`):
+- **868 DocTypes indexed, 675 checks passed, 0 problems.**
+- Coverage: pinned versions; 13 function signatures (mappers, `get_payment_entry`, `setup_complete`,
+  `get_stock_balance`, `get_root_of`, `filelock`); controller methods (Payment Reconciliation, Document); every
+  field, child-table field and Select value the services write or read; integrity SQL columns; Standard chart
+  accounts; fixture UOMs, modes of payment and price lists; app DocTypes and hooks.
+- **First run found 1 real defect:** v16's Item Group has no `description` field. The group descriptions are now
+  stored as comments.
+
+**Full plan statistics** (seed 20261119, 2025-08-01 → 2026-11-18): 26,461 events in 11 s; 5,094 sales orders
+(15.4 per business day), 6,266 deliveries and invoices, 5,347 customer payments, 567 purchase orders, 311 returns
+(5.0 %), 390 reconciliations, 1,114–2,054 events per month.
+
+**Written, not yet executed:**
+- `portfolio_sim/tests/test_lifecycle.py` (7 ERPNext integration tests);
+- the 32 integrity checks and the replay check on a real site;
+- browser E2E (not written yet).
+
+Execution needs the WSL1 runtime ([ERP_WSL1_POC.md](runbooks/ERP_WSL1_POC.md), owner decision REBOOT).
+
