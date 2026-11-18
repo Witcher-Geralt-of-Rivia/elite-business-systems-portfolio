@@ -5,7 +5,7 @@
   "current_milestone": "M5",
   "current_task": "M5 ERP: custom Frappe app portfolio_sim + distribution engine implemented and verified without runtime; ERPNext runtime (WSL1 PoC) awaits owner decision REBOOT",
   "status": "release_1_0_delivered; erp_in_development",
-  "last_verified_commit": "e285d1b",
+  "last_verified_commit": "cbc5142",
   "milestones": {
     "M0": "done",
     "M1": "done",
