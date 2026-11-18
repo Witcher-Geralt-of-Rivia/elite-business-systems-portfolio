@@ -47,7 +47,8 @@ try {
     & (Join-Path $bin 'mariadb-dump.exe') @conn --single-transaction --default-character-set=utf8mb4 --result-file=$dump $secret.database 2>&1 | Where-Object { "$_" -notmatch 'ssl' }
     if ($LASTEXITCODE -ne 0) { throw 'dump failed' }
     & (Join-Path $bin 'mariadb.exe') @conn -e "DROP DATABASE IF EXISTS $db; CREATE DATABASE $db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; GRANT ALL PRIVILEGES ON $db.* TO '$($secret.app_user)'@'127.0.0.1'; GRANT ALL PRIVILEGES ON $db.* TO '$($secret.app_user)'@'localhost';" 2>&1 | Out-Null
-    Get-Content $dump -Raw | & (Join-Path $bin 'mariadb.exe') @conn $db 2>&1 | Where-Object { "$_" -notmatch 'ssl' }
+    # The client reads the file itself: piping through PowerShell 5.1 would re-encode non-ASCII text.
+    & (Join-Path $bin 'mariadb.exe') @conn --default-character-set=utf8mb4 $db -e "source $($dump -replace '\\', '/')" 2>&1 | Where-Object { "$_" -notmatch 'ssl' }
     if ($LASTEXITCODE -ne 0) { throw 'restore into clone failed' }
     Remove-Item $dump
     $ErrorActionPreference = 'Stop'

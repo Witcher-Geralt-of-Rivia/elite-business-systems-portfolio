@@ -6,15 +6,15 @@ use Modules\HarborPine\Services\Integrity;
 
 class IntegrityCommand extends Command
 {
-    protected $signature = 'hp:integrity {--json : machine-readable output}';
+    protected $signature = 'hp:integrity {--json : machine-readable output} {--only= : comma-separated check names}';
 
     protected $description = 'Harbor & Pine Market: run the data-integrity checks and print record counts and reconciliation totals.';
 
     public function handle()
     {
-        $checks = Integrity::run();
+        $checks = Integrity::run( array_filter( explode( ',', (string) $this->option( 'only' ) ) ) );
         $failing = array_filter( $checks, fn( $n ) => $n > 0 );
-        $report = [ 'checks' => count( $checks ), 'failing' => $failing, 'results' => $checks ] + Integrity::profile();
+        $report = [ 'checks' => count( $checks ), 'failing' => $failing, 'results' => $checks ] + Integrity::profile() + [ 'seconds' => Integrity::$timings ];
         if ( $this->option( 'json' ) ) {
             $this->line( json_encode( $report, JSON_PRETTY_PRINT ) );
         } else {

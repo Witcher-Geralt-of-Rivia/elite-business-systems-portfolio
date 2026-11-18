@@ -109,13 +109,21 @@ class Integrity
         ];
     }
 
+    /** @var array<string,float> seconds per check in the last run */
+    public static array $timings = [];
+
     /** @return array<string,int> */
-    public static function run(): array
+    public static function run( array $only = [] ): array
     {
         $out = [];
         foreach ( self::checks() as $name => $sql ) {
+            if ( $only && ! in_array( $name, $only, true ) ) {
+                continue;
+            }
+            $t = microtime( true );
             $row = (array) DB::selectOne( $sql );
             $out[ $name ] = (int) array_values( $row )[0];
+            self::$timings[ $name ] = round( microtime( true ) - $t, 2 );
         }
 
         return $out;

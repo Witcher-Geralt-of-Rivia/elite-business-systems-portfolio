@@ -36,7 +36,7 @@ cost × category markup rounded to .49/.99, unique company of each SKU's supplie
 | Discounts | member group discount (5 % / 10 %), otherwise seasonal promotions when the basket qualifies; sent as the rounded amount so NexoPOS totals match to the cent |
 | Tax | 8.9 % on general merchandise, groceries exempt; computed on the discounted taxable amount; order is tax-exclusive |
 | Payment | 78 % simulated card (exact amount), 22 % cash (tendered rounded up to a note, change recorded in the register) |
-| Returns | ~1.2 % of sales: one item of a paid purchase from the last 30 days, through `refundOrder`; 70 % restocked, 30 % damaged (restocked then written off) |
+| Returns | ~1.2 % of sales: one item of a paid purchase from the last 30 days, through `refundOrder`; 70 % restocked, 30 % damaged (restocked then written off). On a promotional purchase the returned unit takes its share of the order discount with it (refund = price paid; the last unit takes the rest), because NexoPOS keeps a flat discount on refunded orders |
 | Adjustments | Mondays: perishable waste (2–6 % of stock, `defective`); first Monday of the month: shrink / count correction on a quarter of the long-life SKUs |
 
 ## Determinism, idempotency, recovery
@@ -59,6 +59,26 @@ cost × category markup rounded to .49/.99, unique company of each SKU's supplie
 dashboard after every order and every accounting line (~50 aggregate queries per sale); during backfill a
 `DeferredReportService` (container rebinding, backfill only) defers that, then the real service rebuilds every
 day and month chronologically (`ns:report --compute`). Live operation uses NexoPOS's normal per-order updates.
+
+A return turns an older sale from "paid" into "partially refunded", but NexoPOS only recomputes *today's*
+report. The engine therefore records the original sale day as stale (option `harborpine_reports_stale_from`,
+written in the return's transaction) and the simulator recomputes reports from that day after the run; a crash
+in between leaves the marker, so the next tick still does it.
+
+**Lookup indexes.** NexoPOS ships its tables with primary keys only. Migration
+`2026_11_18_000002_add_lookup_indexes` adds secondary indexes (`hp_*`) on the columns records are looked up by
+(order lines/payments/refunds by order, register history by register/order/payment, stock history by product,
+orders by date/customer, …). Indexes only — `down()` restores the upstream schema. Effect on the 12-month
+dataset: the 43 integrity checks run in ~30 s instead of ~23 min.
+
+**Correction of returned promotional orders (`hp:repair-refunds`, idempotent).** Before the discount-share rule,
+fully returned promotional purchases (23 in the first history) ended at total = −discount and stayed "paid";
+NexoPOS then re-recorded their cash change at the refund day's register balance (7 cash orders: register chain
+broken) or created a cash-change payout for card orders (16). The command withdraws the promotion of those
+orders and lets `refreshOrder()` settle them (total 0, "refunded") without re-firing order listeners, restores
+each cash-change entry to the change given at the sale (ledger), removes the spurious payouts and gives that
+amount back to the rest of the session (closing count included), then recomputes reports from the first
+affected day. Refund amounts, payments and stock movements are unchanged.
 
 ## Live operation
 

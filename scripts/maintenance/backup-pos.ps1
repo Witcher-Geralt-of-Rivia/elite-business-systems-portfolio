@@ -3,10 +3,12 @@
   Backup of the POS (NexoPOS) MariaDB database with retention and an optional restore check.
 
 .DESCRIPTION
-  Writes C:\srv\portfolio\backups\pos\pos-<yyyyMMdd-HHmmss>.sql.gz (mariadb-dump --single-transaction,
+  Writes C:\srv\portfolio\backups\pos\pos-<yyyyMMdd-HHmmss>.sql (mariadb-dump --single-transaction,
   consistent without locking the live store) plus a .sha256 file, deletes dumps older than -RetentionDays,
-  and with -VerifyRestore restores the dump into a scratch database, compares row counts of the business
-  tables, then drops the scratch database. Root credentials come from
+  and with -VerifyRestore restores the dump into a scratch database (the mariadb client reads the file
+  itself: piping it through PowerShell 5.1 would re-encode non-ASCII text), compares row counts of the
+  business tables and a checksum of text columns (names, SKUs, e-mails), then drops the scratch database.
+  Root credentials come from
   C:\srv\portfolio\secrets\pos-mariadb.json (Administrators/SYSTEM only) via MYSQL_PWD, never argv.
   Intended to run as SYSTEM from Task Scheduler; exits non-zero on any failure.
 #>
@@ -51,7 +53,7 @@ if ($VerifyRestore) {
     $tables = 'nexopos_orders', 'nexopos_orders_products', 'nexopos_orders_payments', 'nexopos_products', 'nexopos_procurements', 'nexopos_registers_history', 'nexopos_products_histories'
     Invoke-Maria 'mariadb.exe' ($conn + @('-e', "DROP DATABASE IF EXISTS $scratch; CREATE DATABASE $scratch CHARACTER SET utf8mb4;"))
     $ErrorActionPreference = 'Continue'
-    Get-Content $sql -Raw -Encoding utf8 | & (Join-Path $bin 'mariadb.exe') @conn $scratch 2>&1 | Where-Object { $_ -notmatch 'ssl-verify' } | ForEach-Object { Write-Host "  $_" }
+    & (Join-Path $bin 'mariadb.exe') @conn --default-character-set=utf8mb4 $scratch -e "source $($sql -replace '\\', '/')" 2>&1 | Where-Object { $_ -notmatch 'ssl-verify' } | ForEach-Object { Write-Host "  $_" }
     if ($LASTEXITCODE -ne 0) { throw "restore failed ($LASTEXITCODE)" }
     $ErrorActionPreference = 'Stop'
     $diff = @()
@@ -61,6 +63,17 @@ if ($VerifyRestore) {
         # The live store may have sold something since the dump: the restore must not have MORE rows.
         if ([int]$restored -gt [int]$live -or [int]$restored -eq 0 -and [int]$live -gt 0) { $diff += "$t live=$live restored=$restored" }
         Write-Host "  $t live=$live restored=$restored"
+    }
+    # Content fidelity: checksum of text columns over the rows present in the restore (ids <= restored max).
+    $content = [ordered]@{ nexopos_products = 'name, sku, barcode'; nexopos_products_categories = 'name'; nexopos_registers = 'name'
+        nexopos_users = 'username, email, first_name, last_name'; nexopos_orders = 'code' }
+    foreach ($t in $content.Keys) {
+        $max = (& (Join-Path $bin 'mariadb.exe') @conn -N -e "select coalesce(max(id),0) from $scratch.$t" 2>$null)
+        $q = { param($db) "select concat(count(*), ':', coalesce(sum(crc32(concat_ws('|', $($content[$t])))),0)) from $db.$t where id <= $max" }
+        $a = (& (Join-Path $bin 'mariadb.exe') @conn --default-character-set=utf8mb4 -N -e (& $q $secret.database) 2>$null)
+        $b = (& (Join-Path $bin 'mariadb.exe') @conn --default-character-set=utf8mb4 -N -e (& $q $scratch) 2>$null)
+        if (-not $b -or $a -ne $b) { $diff += "$t content live=$a restored=$b" }
+        Write-Host "  $t content live=$a restored=$b"
     }
     Invoke-Maria 'mariadb.exe' ($conn + @('-e', "DROP DATABASE $scratch;"))
     if ($diff) { throw "restore check mismatch: $($diff -join '; ')" }

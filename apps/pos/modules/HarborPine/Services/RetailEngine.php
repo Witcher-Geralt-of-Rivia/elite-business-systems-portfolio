@@ -534,16 +534,33 @@ class RetailEngine
         $restock = $rng->chance( $this->catalog->data['returns']['restockShare'] );
         $reason = $rng->pick( $this->catalog->data['returns']['reasons'] );
         $method = $order->payments->first()?->identifier ?? 'cash-payment';
+        $price = (float) $line->unit_price;
+        // Promotions are flat order discounts. NexoPOS keeps a flat discount when lines are refunded (a fully
+        // returned order would end at total = -discount and stay "paid"), so the returned unit takes its share
+        // of the discount with it: the customer gets back what they paid and the order total stays consistent.
+        $discount = (float) $order->discount;
+        if ( $discount > 0 ) {
+            $remaining = $order->products->sum( fn( $l ) => (float) $l->quantity );
+            $base = $order->products->sum( fn( $l ) => (float) $l->unit_price * (float) $l->quantity );
+            $share = $remaining <= 1 ? $discount : min( $discount, round( $discount * $price / max( $base, 0.01 ), 2 ) );
+            $share = min( $share, $price );
+            $price = round( $price - $share, 2 );
+            $order->discount = round( $discount - $share, 2 );
+            $order->saveQuietly();
+        }
         $result = app( OrdersService::class )->refundOrder( $order, [
             'payment' => [ 'identifier' => $method ],
             'refund_shipping' => false,
-            'total' => (float) $line->unit_price,
+            'total' => $price,
             'products' => [ [
-                'id' => $line->id, 'quantity' => 1, 'unit_price' => (float) $line->unit_price,
+                'id' => $line->id, 'quantity' => 1, 'unit_price' => $price,
                 'condition' => $restock ? 'unspoiled' : 'damaged', 'description' => $reason,
             ] ],
         ] );
         $refund = $result['data']['orderRefund'] ?? null;
+        // The original sale is no longer "paid": NexoPOS only recomputes today's report, so the sale day's
+        // figures (and the running totals after it) are marked stale in this same transaction.
+        Simulator::markReportsStale( Carbon::parse( $order->created_at, $this->tz() )->format( 'Y-m-d' ) );
 
         return [ 'refund', $refund?->id, [ 'order_id' => $order->id, 'reason' => $reason, 'restocked' => $restock ] ];
     }

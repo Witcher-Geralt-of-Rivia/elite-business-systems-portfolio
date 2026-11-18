@@ -15,6 +15,8 @@ use RuntimeException;
  */
 class Simulator
 {
+    public const STALE_REPORTS = 'harborpine_reports_stale_from';
+
     public function __construct( private Catalog $catalog )
     {
     }
@@ -55,12 +57,37 @@ class Simulator
             app()->bind( ReportService::class, fn() => new DeferredReportService( app()->make( DateService::class ), app()->make( ProductService::class ) ) );
         }
         try {
-            return $this->runRange( $to, $intensity, $progress );
+            $stats = $this->runRange( $to, $intensity, $progress );
         } finally {
             if ( $deferReports ) {
                 app()->bind( ReportService::class, fn() => new ReportService( app()->make( DateService::class ), app()->make( ProductService::class ) ) );
             }
         }
+        if ( ! $deferReports ) {
+            $this->refreshStaleReports();
+        }
+
+        return $stats;
+    }
+
+    /** Earliest sale day whose precomputed report a later return made stale (kept until recomputed). */
+    public static function markReportsStale( string $date ): void
+    {
+        $current = ns()->option->get( self::STALE_REPORTS );
+        if ( ! $current || $date < $current ) {
+            ns()->option->set( self::STALE_REPORTS, $date );
+        }
+    }
+
+    /** Recomputes reports from the earliest stale day, if any (also catches up after a crash). */
+    public function refreshStaleReports(): ?string
+    {
+        $from = ns()->option->get( self::STALE_REPORTS );
+        if ( $from ) {
+            $this->recomputeReports( Carbon::parse( $from, $this->catalog->store()['timezone'] ) );
+        }
+
+        return $from ?: null;
     }
 
     private function runRange( Carbon $to, float $intensity, ?callable $progress ): array
@@ -105,8 +132,12 @@ class Simulator
     public function recomputeReports( Carbon $from ): void
     {
         Carbon::setTestNow();
+        $stale = ns()->option->get( self::STALE_REPORTS );
         Artisan::call( 'ns:report', [ '--compute' => true, '--type' => 'day', '--from' => $from->format( 'Y-m-d' ) ] );
         Artisan::call( 'ns:report', [ '--compute' => true, '--type' => 'month', '--from' => $from->format( 'Y-m-d' ) ] );
+        if ( $stale && $from->format( 'Y-m-d' ) <= $stale ) {
+            ns()->option->delete( self::STALE_REPORTS );
+        }
     }
 
     public function setPaused( bool $paused ): void

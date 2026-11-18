@@ -26,6 +26,9 @@ class ReplayCheckCommand extends Command
         $result = [ 'days' => 0, 'planned' => 0, 'ledger' => 0, 'missing' => 0, 'unexpected' => 0, 'time_mismatch' => 0, 'kind_mismatch' => 0, 'samples' => [] ];
         for ( $i = (int) $this->option( 'days' ) - 1; $i >= 0; $i-- ) {
             $day = $until->copy()->startOfDay()->subDays( $i );
+            if ( $day->lt( Carbon::parse( $state->scenario_start, $tz )->startOfDay() ) ) {
+                continue;
+            }
             $planned = collect( $engine->planDay( $day ) )->filter( fn( $e ) => $e['at']->lte( $until ) )->keyBy( 'key' );
             $ledger = DB::table( 'harborpine_sim_ledger' )->where( 'event_key', 'like', $day->format( 'Y-m-d' ) . ':%' )->get()->keyBy( 'event_key' );
             $result['days']++;
