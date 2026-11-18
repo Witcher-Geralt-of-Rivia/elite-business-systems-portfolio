@@ -5,7 +5,7 @@
   "current_milestone": "M7",
   "current_task": "M7: portfolio portal (screenshots, status routes, deploy script, deployment); M6 locally accepted, POS public activation awaiting owner",
   "status": "in_progress",
-  "last_verified_commit": "435764a",
+  "last_verified_commit": "3a98749",
   "milestones": {
     "M0": "done",
     "M1": "done",
