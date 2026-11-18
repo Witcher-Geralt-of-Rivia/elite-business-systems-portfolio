@@ -22,7 +22,6 @@ export const resetIdentityCache = () => {
   cachedIdentity = null;
 };
 
-const SHOWCASE_DENIED_ACTIONS = new Set(["create", "edit", "delete", "clone", "import"]);
 
 async function fetchIdentity(): Promise<Identity> {
   if (cachedIdentity) return cachedIdentity;
@@ -73,8 +72,10 @@ export const getAuthProvider = (): AuthProvider => ({
   async canAccess(params) {
     try {
       const identity = await fetchIdentity();
-      // Visitors browse only; the API refuses their writes regardless of what the UI shows.
-      if (identity.role === "showcase" && SHOWCASE_DENIED_ACTIONS.has(params.action)) return false;
+      // Visitors (role "showcase") are NOT denied create/edit here: ra-core's create/edit
+      // controllers redirect to "Access denied" when refused, and Atomic CRM embeds such forms in
+      // read pages (e.g. the note form on a contact). The API refuses every visitor write and the
+      // UI shows its "read-only demo" message; the banner states it permanently.
       // Upstream UI distinguishes admin vs everyone else; finer rules are enforced by the API.
       return canAccess(identity.administrator ? "admin" : "user", params);
     } catch {

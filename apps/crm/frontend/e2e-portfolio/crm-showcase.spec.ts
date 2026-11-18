@@ -55,8 +55,16 @@ test.describe("desktop", () => {
 
   test("visitor cannot create, edit, administer or upload", async ({ page }) => {
     await startVisitorSession(page);
+    // Trying anyway through the UI: the save is refused with a clear message and nothing is stored.
+    const name = `Visitor attempt ${Date.now().toString(36)}`;
     await page.goto("/#/companies/create");
-    await expect(page.locator('input[name="name"]')).toHaveCount(0);
+    await page.locator('input[name="name"]').fill(name);
+    const save = page.waitForResponse((r) => r.url().endsWith("/api/r/companies") && r.request().method() === "POST");
+    await page.getByRole("button", { name: "Create Company" }).click();
+    expect((await save).status()).toBe(403);
+    await expect(page.getByText(/read-only demo: changes are disabled/i).first()).toBeVisible();
+    const filter = encodeURIComponent(JSON.stringify({ name }));
+    expect((await (await page.request.get(`/api/r/companies?filter=${filter}`)).json()).total).toBe(0);
 
     const headers = { "X-CRM-CSRF": "1" };
     const attempts = [
@@ -77,8 +85,11 @@ test.describe("desktop", () => {
   });
 });
 
+// Phone viewport/touch/user agent (the browser type stays the project's Chromium).
+const { defaultBrowserType: _browser, ...phone } = devices["Pixel 7"];
+
 test.describe("mobile", () => {
-  test.use({ ...devices["Pixel 7"] });
+  test.use(phone);
 
   test("visitor experience works on a phone", async ({ page }) => {
     const errors = trackErrors(page);

@@ -39,7 +39,7 @@ export async function ensureConfiguration(db: Db) {
   await db.query(
     `insert into configuration (id, config) values (1, $1::jsonb)
      on conflict (id) do update set config = configuration.config || $1::jsonb`,
-    [JSON.stringify({ dealCategories: categories, currency: catalog.business.currency })],
+    [JSON.stringify({ dealCategories: categories, currency: catalog.business.currency, title: `${catalog.business.name} CRM` })],
   );
 }
 

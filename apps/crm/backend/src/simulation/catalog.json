@@ -1,122 +1,1401 @@
 {
   "_about": "Curated source values for the CRM data engine. Fictional B2B firm 'Meridian Advisory' sells operations-analytics software and services to mid-market companies. All organisations, people, domains (.example) and phone numbers (555-01xx) are invented.",
-  "business": { "name": "Meridian Advisory", "domain": "meridian-advisory.example", "currency": "USD" },
+  "business": {
+    "name": "Meridian Advisory",
+    "domain": "meridian-advisory.example",
+    "currency": "USD"
+  },
   "team": [
-    { "first_name": "Elena", "last_name": "Vasquez", "role": "admin", "skill": 1.0, "capacity": 0.2, "regions": [] },
-    { "first_name": "Marcus", "last_name": "Whitfield", "role": "manager", "skill": 1.15, "capacity": 0.5, "regions": ["Northeast", "Midwest"] },
-    { "first_name": "Priya", "last_name": "Raman", "role": "sales_rep", "skill": 1.2, "capacity": 1.0, "regions": ["West"] },
-    { "first_name": "Daniel", "last_name": "Okonkwo", "role": "sales_rep", "skill": 1.0, "capacity": 1.0, "regions": ["South"] },
-    { "first_name": "Sofia", "last_name": "Lindgren", "role": "sales_rep", "skill": 1.05, "capacity": 1.0, "regions": ["Northeast"] },
-    { "first_name": "Tomás", "last_name": "Herrera", "role": "sales_rep", "skill": 0.9, "capacity": 1.0, "regions": ["Midwest"] },
-    { "first_name": "Grace", "last_name": "Kim", "role": "sales_rep", "skill": 0.95, "capacity": 0.8, "regions": ["West", "South"] }
+    {
+      "first_name": "Elena",
+      "last_name": "Vasquez",
+      "role": "admin",
+      "skill": 1.0,
+      "capacity": 0.2,
+      "regions": []
+    },
+    {
+      "first_name": "Marcus",
+      "last_name": "Whitfield",
+      "role": "manager",
+      "skill": 1.15,
+      "capacity": 0.5,
+      "regions": [
+        "Northeast",
+        "Midwest"
+      ]
+    },
+    {
+      "first_name": "Priya",
+      "last_name": "Raman",
+      "role": "sales_rep",
+      "skill": 1.2,
+      "capacity": 1.0,
+      "regions": [
+        "West"
+      ]
+    },
+    {
+      "first_name": "Daniel",
+      "last_name": "Okonkwo",
+      "role": "sales_rep",
+      "skill": 1.0,
+      "capacity": 1.0,
+      "regions": [
+        "South"
+      ]
+    },
+    {
+      "first_name": "Sofia",
+      "last_name": "Lindgren",
+      "role": "sales_rep",
+      "skill": 1.05,
+      "capacity": 1.0,
+      "regions": [
+        "Northeast"
+      ]
+    },
+    {
+      "first_name": "Tomás",
+      "last_name": "Herrera",
+      "role": "sales_rep",
+      "skill": 0.9,
+      "capacity": 1.0,
+      "regions": [
+        "Midwest"
+      ]
+    },
+    {
+      "first_name": "Grace",
+      "last_name": "Kim",
+      "role": "sales_rep",
+      "skill": 0.95,
+      "capacity": 0.8,
+      "regions": [
+        "West",
+        "South"
+      ]
+    }
   ],
   "dealCategories": [
-    { "value": "analytics-platform", "label": "Analytics platform", "base": 42000, "spread": 0.55, "cycleDays": 70, "weight": 5 },
-    { "value": "implementation", "label": "Implementation", "base": 28000, "spread": 0.5, "cycleDays": 45, "weight": 4 },
-    { "value": "data-integration", "label": "Data integration", "base": 36000, "spread": 0.5, "cycleDays": 60, "weight": 3 },
-    { "value": "managed-service", "label": "Managed service", "base": 54000, "spread": 0.45, "cycleDays": 85, "weight": 2 },
-    { "value": "advisory-retainer", "label": "Advisory retainer", "base": 18000, "spread": 0.4, "cycleDays": 35, "weight": 3 },
-    { "value": "training", "label": "Training", "base": 7500, "spread": 0.35, "cycleDays": 21, "weight": 3 },
-    { "value": "forecasting-module", "label": "Forecasting module", "base": 22000, "spread": 0.45, "cycleDays": 50, "weight": 2 },
-    { "value": "health-check", "label": "Operations health check", "base": 9500, "spread": 0.3, "cycleDays": 18, "weight": 2 }
+    {
+      "value": "analytics-platform",
+      "label": "Analytics platform",
+      "base": 42000,
+      "spread": 0.55,
+      "cycleDays": 70,
+      "weight": 5
+    },
+    {
+      "value": "implementation",
+      "label": "Implementation",
+      "base": 28000,
+      "spread": 0.5,
+      "cycleDays": 45,
+      "weight": 4
+    },
+    {
+      "value": "data-integration",
+      "label": "Data integration",
+      "base": 36000,
+      "spread": 0.5,
+      "cycleDays": 60,
+      "weight": 3
+    },
+    {
+      "value": "managed-service",
+      "label": "Managed service",
+      "base": 54000,
+      "spread": 0.45,
+      "cycleDays": 85,
+      "weight": 2
+    },
+    {
+      "value": "advisory-retainer",
+      "label": "Advisory retainer",
+      "base": 18000,
+      "spread": 0.4,
+      "cycleDays": 35,
+      "weight": 3
+    },
+    {
+      "value": "training",
+      "label": "Training",
+      "base": 7500,
+      "spread": 0.35,
+      "cycleDays": 21,
+      "weight": 3
+    },
+    {
+      "value": "forecasting-module",
+      "label": "Forecasting module",
+      "base": 22000,
+      "spread": 0.45,
+      "cycleDays": 50,
+      "weight": 2
+    },
+    {
+      "value": "health-check",
+      "label": "Operations health check",
+      "base": 9500,
+      "spread": 0.3,
+      "cycleDays": 18,
+      "weight": 2
+    }
   ],
   "sectors": [
-    { "value": "industrials", "weight": 6, "stems": ["Northwind", "Ironbridge", "Keystone", "Granite Peak", "Redline", "Steelhaven", "Forgeline", "Crane Valley"], "kinds": ["Logistics", "Manufacturing", "Freight", "Fabrication", "Machinery"], "descriptions": ["Regional manufacturer running multi-site production with growing pressure on throughput and on-time delivery.", "Freight and logistics operator modernising dispatch, warehousing and carrier management."] },
-    { "value": "consumer-discretionary", "weight": 4, "stems": ["Harborline", "Maple & Finch", "Bluewater", "Sundial", "Cedar Lane", "Brightwell", "Lantern Row", "Oak Hollow"], "kinds": ["Outfitters", "Home Goods", "Apparel", "Retail Group", "Brands"], "descriptions": ["Omnichannel retailer balancing store inventory with a fast-growing online channel.", "Consumer brand selling through wholesale partners and its own e-commerce site."] },
-    { "value": "consumer-staples", "weight": 3, "stems": ["Golden Field", "Riverbend", "Prairie Rose", "Clearspring", "Hearthstone", "Willow Creek", "Summit Pantry", "Orchard Row"], "kinds": ["Foods", "Beverages", "Provisions", "Distribution", "Farms"], "descriptions": ["Food producer with seasonal demand and tight margins on perishable inventory.", "Regional distributor supplying grocery chains and independent stores."] },
-    { "value": "health-care", "weight": 4, "stems": ["Mercy Ridge", "Lakeshore", "Evergreen", "Silverline", "Bayview", "Crescent", "Pinecrest", "Highmark Valley"], "kinds": ["Health", "Medical Group", "Clinics", "Diagnostics", "Care Partners"], "descriptions": ["Multi-clinic outpatient group standardising scheduling and capacity planning.", "Diagnostics provider scaling lab operations across several regions."] },
-    { "value": "information-technology", "weight": 5, "stems": ["Quantive", "Brightpath", "Nimbus Forge", "Vectorly", "Signalwise", "Corelane", "Datamere", "Lumenstack"], "kinds": ["Software", "Systems", "Labs", "Technologies", "Networks"], "descriptions": ["B2B software company scaling customer operations after a recent funding round.", "Managed IT provider looking to productise its reporting for clients."] },
-    { "value": "financials", "weight": 3, "stems": ["Ashford", "Kingsbridge", "Meridale", "Fairhaven", "Stonegate", "Whitmore", "Harrowgate", "Bellcourt"], "kinds": ["Capital", "Credit Union", "Insurance", "Partners", "Financial"], "descriptions": ["Regional credit union modernising branch reporting and member analytics.", "Specialty insurer improving claims operations and turnaround times."] },
-    { "value": "energy", "weight": 2, "stems": ["Sunreach", "Tidewater", "Blackrock Basin", "Windward", "Coalbrook", "Brightfield", "Gulfstar", "Highplains"], "kinds": ["Energy", "Power", "Renewables", "Resources", "Fuels"], "descriptions": ["Independent power producer tracking asset performance across wind and solar sites.", "Fuel distributor optimising delivery routes and depot inventory."] },
-    { "value": "materials", "weight": 2, "stems": ["Quarryside", "Copperline", "Ridgeway", "Basalt", "Silica Bay", "Flintwood", "Alder", "Timberline"], "kinds": ["Materials", "Chemicals", "Packaging", "Minerals", "Polymers"], "descriptions": ["Packaging manufacturer reducing scrap and changeover time on its lines.", "Specialty chemicals producer improving batch planning and quality tracking."] },
-    { "value": "real-estate", "weight": 2, "stems": ["Parkside", "Cornerstone", "Brookfield Row", "Lakeview", "Westgate", "Harbor Point", "Elm Street", "Summit Square"], "kinds": ["Properties", "Realty", "Property Management", "Developments", "Estates"], "descriptions": ["Commercial property manager consolidating maintenance and lease data.", "Residential developer tracking project costs across active builds."] },
-    { "value": "utilities", "weight": 1, "stems": ["Clearwater", "Valley Electric", "Riverstone", "Northgate", "Bluestem", "Kettle Falls", "Mill Creek", "Pine Ridge"], "kinds": ["Utilities", "Water", "Electric Cooperative", "Services", "Authority"], "descriptions": ["Municipal utility improving work-order management and outage reporting.", "Electric cooperative modernising field service scheduling."] },
-    { "value": "communication-services", "weight": 2, "stems": ["Broadleaf", "Echo Valley", "Signal Hill", "Brightline", "Wavecrest", "Beacon", "Clearchannel Bay", "Starling"], "kinds": ["Media", "Communications", "Broadband", "Studios", "Telecom"], "descriptions": ["Regional broadband provider reducing installation backlog and churn.", "Media group consolidating audience and advertising performance reporting."] }
+    {
+      "value": "industrials",
+      "weight": 6,
+      "stems": [
+        "Northwind",
+        "Ironbridge",
+        "Keystone",
+        "Granite Peak",
+        "Redline",
+        "Steelhaven",
+        "Forgeline",
+        "Crane Valley"
+      ],
+      "kinds": [
+        "Logistics",
+        "Manufacturing",
+        "Freight",
+        "Fabrication",
+        "Machinery"
+      ],
+      "descriptions": [
+        "Regional manufacturer running multi-site production with growing pressure on throughput and on-time delivery.",
+        "Freight and logistics operator modernising dispatch, warehousing and carrier management."
+      ]
+    },
+    {
+      "value": "consumer-discretionary",
+      "weight": 4,
+      "stems": [
+        "Harborline",
+        "Maple & Finch",
+        "Bluewater",
+        "Sundial",
+        "Cedar Lane",
+        "Brightwell",
+        "Lantern Row",
+        "Oak Hollow"
+      ],
+      "kinds": [
+        "Outfitters",
+        "Home Goods",
+        "Apparel",
+        "Retail Group",
+        "Brands"
+      ],
+      "descriptions": [
+        "Omnichannel retailer balancing store inventory with a fast-growing online channel.",
+        "Consumer brand selling through wholesale partners and its own e-commerce site."
+      ]
+    },
+    {
+      "value": "consumer-staples",
+      "weight": 3,
+      "stems": [
+        "Golden Field",
+        "Riverbend",
+        "Prairie Rose",
+        "Clearspring",
+        "Hearthstone",
+        "Willow Creek",
+        "Summit Pantry",
+        "Orchard Row"
+      ],
+      "kinds": [
+        "Foods",
+        "Beverages",
+        "Provisions",
+        "Distribution",
+        "Farms"
+      ],
+      "descriptions": [
+        "Food producer with seasonal demand and tight margins on perishable inventory.",
+        "Regional distributor supplying grocery chains and independent stores."
+      ]
+    },
+    {
+      "value": "health-care",
+      "weight": 4,
+      "stems": [
+        "Mercy Ridge",
+        "Lakeshore",
+        "Evergreen",
+        "Silverline",
+        "Bayview",
+        "Crescent",
+        "Pinecrest",
+        "Highmark Valley"
+      ],
+      "kinds": [
+        "Health",
+        "Medical Group",
+        "Clinics",
+        "Diagnostics",
+        "Care Partners"
+      ],
+      "descriptions": [
+        "Multi-clinic outpatient group standardising scheduling and capacity planning.",
+        "Diagnostics provider scaling lab operations across several regions."
+      ]
+    },
+    {
+      "value": "information-technology",
+      "weight": 5,
+      "stems": [
+        "Quantive",
+        "Brightpath",
+        "Nimbus Forge",
+        "Vectorly",
+        "Signalwise",
+        "Corelane",
+        "Datamere",
+        "Lumenstack"
+      ],
+      "kinds": [
+        "Software",
+        "Systems",
+        "Labs",
+        "Technologies",
+        "Networks"
+      ],
+      "descriptions": [
+        "B2B software company scaling customer operations after a recent funding round.",
+        "Managed IT provider looking to productise its reporting for clients."
+      ]
+    },
+    {
+      "value": "financials",
+      "weight": 3,
+      "stems": [
+        "Ashford",
+        "Kingsbridge",
+        "Meridale",
+        "Fairhaven",
+        "Stonegate",
+        "Whitmore",
+        "Harrowgate",
+        "Bellcourt"
+      ],
+      "kinds": [
+        "Capital",
+        "Credit Union",
+        "Insurance",
+        "Partners",
+        "Financial"
+      ],
+      "descriptions": [
+        "Regional credit union modernising branch reporting and member analytics.",
+        "Specialty insurer improving claims operations and turnaround times."
+      ]
+    },
+    {
+      "value": "energy",
+      "weight": 2,
+      "stems": [
+        "Sunreach",
+        "Tidewater",
+        "Blackrock Basin",
+        "Windward",
+        "Coalbrook",
+        "Brightfield",
+        "Gulfstar",
+        "Highplains"
+      ],
+      "kinds": [
+        "Energy",
+        "Power",
+        "Renewables",
+        "Resources",
+        "Fuels"
+      ],
+      "descriptions": [
+        "Independent power producer tracking asset performance across wind and solar sites.",
+        "Fuel distributor optimising delivery routes and depot inventory."
+      ]
+    },
+    {
+      "value": "materials",
+      "weight": 2,
+      "stems": [
+        "Quarryside",
+        "Copperline",
+        "Ridgeway",
+        "Basalt",
+        "Silica Bay",
+        "Flintwood",
+        "Alder",
+        "Timberline"
+      ],
+      "kinds": [
+        "Materials",
+        "Chemicals",
+        "Packaging",
+        "Minerals",
+        "Polymers"
+      ],
+      "descriptions": [
+        "Packaging manufacturer reducing scrap and changeover time on its lines.",
+        "Specialty chemicals producer improving batch planning and quality tracking."
+      ]
+    },
+    {
+      "value": "real-estate",
+      "weight": 2,
+      "stems": [
+        "Parkside",
+        "Cornerstone",
+        "Brookfield Row",
+        "Lakeview",
+        "Westgate",
+        "Harbor Point",
+        "Elm Street",
+        "Summit Square"
+      ],
+      "kinds": [
+        "Properties",
+        "Realty",
+        "Property Management",
+        "Developments",
+        "Estates"
+      ],
+      "descriptions": [
+        "Commercial property manager consolidating maintenance and lease data.",
+        "Residential developer tracking project costs across active builds."
+      ]
+    },
+    {
+      "value": "utilities",
+      "weight": 1,
+      "stems": [
+        "Clearwater",
+        "Valley Electric",
+        "Riverstone",
+        "Northgate",
+        "Bluestem",
+        "Kettle Falls",
+        "Mill Creek",
+        "Pine Ridge"
+      ],
+      "kinds": [
+        "Utilities",
+        "Water",
+        "Electric Cooperative",
+        "Services",
+        "Authority"
+      ],
+      "descriptions": [
+        "Municipal utility improving work-order management and outage reporting.",
+        "Electric cooperative modernising field service scheduling."
+      ]
+    },
+    {
+      "value": "communication-services",
+      "weight": 2,
+      "stems": [
+        "Broadleaf",
+        "Echo Valley",
+        "Signal Hill",
+        "Brightline",
+        "Wavecrest",
+        "Beacon",
+        "Clearchannel Bay",
+        "Starling"
+      ],
+      "kinds": [
+        "Media",
+        "Communications",
+        "Broadband",
+        "Studios",
+        "Telecom"
+      ],
+      "descriptions": [
+        "Regional broadband provider reducing installation backlog and churn.",
+        "Media group consolidating audience and advertising performance reporting."
+      ]
+    }
   ],
-  "sizeWeights": [ { "size": 10, "weight": 2, "revenue": "$1M-$5M", "amountFactor": 0.45 }, { "size": 50, "weight": 5, "revenue": "$5M-$25M", "amountFactor": 0.75 }, { "size": 250, "weight": 6, "revenue": "$25M-$100M", "amountFactor": 1.0 }, { "size": 500, "weight": 3, "revenue": "$100M+", "amountFactor": 1.6 } ],
+  "sizeWeights": [
+    {
+      "size": 10,
+      "weight": 2,
+      "revenue": "$1M-$5M",
+      "amountFactor": 0.45
+    },
+    {
+      "size": 50,
+      "weight": 5,
+      "revenue": "$5M-$25M",
+      "amountFactor": 0.75
+    },
+    {
+      "size": 250,
+      "weight": 6,
+      "revenue": "$25M-$100M",
+      "amountFactor": 1.0
+    },
+    {
+      "size": 500,
+      "weight": 3,
+      "revenue": "$100M+",
+      "amountFactor": 1.6
+    }
+  ],
   "cities": [
-    { "city": "Seattle", "state": "WA", "zip": "981", "region": "West" }, { "city": "Portland", "state": "OR", "zip": "972", "region": "West" },
-    { "city": "San Diego", "state": "CA", "zip": "921", "region": "West" }, { "city": "Sacramento", "state": "CA", "zip": "958", "region": "West" },
-    { "city": "Denver", "state": "CO", "zip": "802", "region": "West" }, { "city": "Salt Lake City", "state": "UT", "zip": "841", "region": "West" },
-    { "city": "Phoenix", "state": "AZ", "zip": "850", "region": "West" }, { "city": "Boise", "state": "ID", "zip": "837", "region": "West" },
-    { "city": "Reno", "state": "NV", "zip": "895", "region": "West" }, { "city": "Spokane", "state": "WA", "zip": "992", "region": "West" },
-    { "city": "Austin", "state": "TX", "zip": "787", "region": "South" }, { "city": "Dallas", "state": "TX", "zip": "752", "region": "South" },
-    { "city": "Houston", "state": "TX", "zip": "770", "region": "South" }, { "city": "Atlanta", "state": "GA", "zip": "303", "region": "South" },
-    { "city": "Nashville", "state": "TN", "zip": "372", "region": "South" }, { "city": "Charlotte", "state": "NC", "zip": "282", "region": "South" },
-    { "city": "Raleigh", "state": "NC", "zip": "276", "region": "South" }, { "city": "Tampa", "state": "FL", "zip": "336", "region": "South" },
-    { "city": "Orlando", "state": "FL", "zip": "328", "region": "South" }, { "city": "Birmingham", "state": "AL", "zip": "352", "region": "South" },
-    { "city": "Chicago", "state": "IL", "zip": "606", "region": "Midwest" }, { "city": "Minneapolis", "state": "MN", "zip": "554", "region": "Midwest" },
-    { "city": "Columbus", "state": "OH", "zip": "432", "region": "Midwest" }, { "city": "Indianapolis", "state": "IN", "zip": "462", "region": "Midwest" },
-    { "city": "Milwaukee", "state": "WI", "zip": "532", "region": "Midwest" }, { "city": "Kansas City", "state": "MO", "zip": "641", "region": "Midwest" },
-    { "city": "Detroit", "state": "MI", "zip": "482", "region": "Midwest" }, { "city": "Omaha", "state": "NE", "zip": "681", "region": "Midwest" },
-    { "city": "Cleveland", "state": "OH", "zip": "441", "region": "Midwest" }, { "city": "Des Moines", "state": "IA", "zip": "503", "region": "Midwest" },
-    { "city": "Boston", "state": "MA", "zip": "021", "region": "Northeast" }, { "city": "Philadelphia", "state": "PA", "zip": "191", "region": "Northeast" },
-    { "city": "Pittsburgh", "state": "PA", "zip": "152", "region": "Northeast" }, { "city": "Hartford", "state": "CT", "zip": "061", "region": "Northeast" },
-    { "city": "Providence", "state": "RI", "zip": "029", "region": "Northeast" }, { "city": "Albany", "state": "NY", "zip": "122", "region": "Northeast" },
-    { "city": "Buffalo", "state": "NY", "zip": "142", "region": "Northeast" }, { "city": "Newark", "state": "NJ", "zip": "071", "region": "Northeast" },
-    { "city": "Portland", "state": "ME", "zip": "041", "region": "Northeast" }, { "city": "Burlington", "state": "VT", "zip": "054", "region": "Northeast" }
+    {
+      "city": "Seattle",
+      "state": "WA",
+      "zip": "981",
+      "region": "West"
+    },
+    {
+      "city": "Portland",
+      "state": "OR",
+      "zip": "972",
+      "region": "West"
+    },
+    {
+      "city": "San Diego",
+      "state": "CA",
+      "zip": "921",
+      "region": "West"
+    },
+    {
+      "city": "Sacramento",
+      "state": "CA",
+      "zip": "958",
+      "region": "West"
+    },
+    {
+      "city": "Denver",
+      "state": "CO",
+      "zip": "802",
+      "region": "West"
+    },
+    {
+      "city": "Salt Lake City",
+      "state": "UT",
+      "zip": "841",
+      "region": "West"
+    },
+    {
+      "city": "Phoenix",
+      "state": "AZ",
+      "zip": "850",
+      "region": "West"
+    },
+    {
+      "city": "Boise",
+      "state": "ID",
+      "zip": "837",
+      "region": "West"
+    },
+    {
+      "city": "Reno",
+      "state": "NV",
+      "zip": "895",
+      "region": "West"
+    },
+    {
+      "city": "Spokane",
+      "state": "WA",
+      "zip": "992",
+      "region": "West"
+    },
+    {
+      "city": "Austin",
+      "state": "TX",
+      "zip": "787",
+      "region": "South"
+    },
+    {
+      "city": "Dallas",
+      "state": "TX",
+      "zip": "752",
+      "region": "South"
+    },
+    {
+      "city": "Houston",
+      "state": "TX",
+      "zip": "770",
+      "region": "South"
+    },
+    {
+      "city": "Atlanta",
+      "state": "GA",
+      "zip": "303",
+      "region": "South"
+    },
+    {
+      "city": "Nashville",
+      "state": "TN",
+      "zip": "372",
+      "region": "South"
+    },
+    {
+      "city": "Charlotte",
+      "state": "NC",
+      "zip": "282",
+      "region": "South"
+    },
+    {
+      "city": "Raleigh",
+      "state": "NC",
+      "zip": "276",
+      "region": "South"
+    },
+    {
+      "city": "Tampa",
+      "state": "FL",
+      "zip": "336",
+      "region": "South"
+    },
+    {
+      "city": "Orlando",
+      "state": "FL",
+      "zip": "328",
+      "region": "South"
+    },
+    {
+      "city": "Birmingham",
+      "state": "AL",
+      "zip": "352",
+      "region": "South"
+    },
+    {
+      "city": "Chicago",
+      "state": "IL",
+      "zip": "606",
+      "region": "Midwest"
+    },
+    {
+      "city": "Minneapolis",
+      "state": "MN",
+      "zip": "554",
+      "region": "Midwest"
+    },
+    {
+      "city": "Columbus",
+      "state": "OH",
+      "zip": "432",
+      "region": "Midwest"
+    },
+    {
+      "city": "Indianapolis",
+      "state": "IN",
+      "zip": "462",
+      "region": "Midwest"
+    },
+    {
+      "city": "Milwaukee",
+      "state": "WI",
+      "zip": "532",
+      "region": "Midwest"
+    },
+    {
+      "city": "Kansas City",
+      "state": "MO",
+      "zip": "641",
+      "region": "Midwest"
+    },
+    {
+      "city": "Detroit",
+      "state": "MI",
+      "zip": "482",
+      "region": "Midwest"
+    },
+    {
+      "city": "Omaha",
+      "state": "NE",
+      "zip": "681",
+      "region": "Midwest"
+    },
+    {
+      "city": "Cleveland",
+      "state": "OH",
+      "zip": "441",
+      "region": "Midwest"
+    },
+    {
+      "city": "Des Moines",
+      "state": "IA",
+      "zip": "503",
+      "region": "Midwest"
+    },
+    {
+      "city": "Boston",
+      "state": "MA",
+      "zip": "021",
+      "region": "Northeast"
+    },
+    {
+      "city": "Philadelphia",
+      "state": "PA",
+      "zip": "191",
+      "region": "Northeast"
+    },
+    {
+      "city": "Pittsburgh",
+      "state": "PA",
+      "zip": "152",
+      "region": "Northeast"
+    },
+    {
+      "city": "Hartford",
+      "state": "CT",
+      "zip": "061",
+      "region": "Northeast"
+    },
+    {
+      "city": "Providence",
+      "state": "RI",
+      "zip": "029",
+      "region": "Northeast"
+    },
+    {
+      "city": "Albany",
+      "state": "NY",
+      "zip": "122",
+      "region": "Northeast"
+    },
+    {
+      "city": "Buffalo",
+      "state": "NY",
+      "zip": "142",
+      "region": "Northeast"
+    },
+    {
+      "city": "Newark",
+      "state": "NJ",
+      "zip": "071",
+      "region": "Northeast"
+    },
+    {
+      "city": "Portland",
+      "state": "ME",
+      "zip": "041",
+      "region": "Northeast"
+    },
+    {
+      "city": "Burlington",
+      "state": "VT",
+      "zip": "054",
+      "region": "Northeast"
+    }
   ],
   "firstNames": [
-    ["Aaliyah", "female"], ["Adrian", "male"], ["Aisha", "female"], ["Alejandro", "male"], ["Amara", "female"], ["Andre", "male"], ["Anika", "female"], ["Ben", "male"],
-    ["Bianca", "female"], ["Caleb", "male"], ["Camila", "female"], ["Chen", "male"], ["Chloe", "female"], ["Connor", "male"], ["Dana", "nonbinary"], ["Darius", "male"],
-    ["Divya", "female"], ["Eli", "male"], ["Elif", "female"], ["Emeka", "male"], ["Emma", "female"], ["Ethan", "male"], ["Fatima", "female"], ["Felix", "male"],
-    ["Gabriela", "female"], ["Hana", "female"], ["Hassan", "male"], ["Ingrid", "female"], ["Isaac", "male"], ["Jamal", "male"], ["Jasmine", "female"], ["Javier", "male"],
-    ["Jordan", "nonbinary"], ["Julia", "female"], ["Kai", "male"], ["Keisha", "female"], ["Kenji", "male"], ["Lara", "female"], ["Leo", "male"], ["Lucia", "female"],
-    ["Malik", "male"], ["Maya", "female"], ["Mateo", "male"], ["Mei", "female"], ["Miguel", "male"], ["Nadia", "female"], ["Nathan", "male"], ["Nia", "female"],
-    ["Noah", "male"], ["Olga", "female"], ["Omar", "male"], ["Paloma", "female"], ["Rafael", "male"], ["Rachel", "female"], ["Ravi", "male"], ["Rosa", "female"],
-    ["Ryan", "male"], ["Sana", "female"], ["Samuel", "male"], ["Sara", "female"], ["Sean", "male"], ["Shreya", "female"], ["Taylor", "nonbinary"], ["Theo", "male"],
-    ["Valentina", "female"], ["Victor", "male"], ["Wen", "female"], ["Xavier", "male"], ["Yara", "female"], ["Yusuf", "male"], ["Zoe", "female"], ["Zane", "male"]
+    [
+      "Aaliyah",
+      "female"
+    ],
+    [
+      "Adrian",
+      "male"
+    ],
+    [
+      "Aisha",
+      "female"
+    ],
+    [
+      "Alejandro",
+      "male"
+    ],
+    [
+      "Amara",
+      "female"
+    ],
+    [
+      "Andre",
+      "male"
+    ],
+    [
+      "Anika",
+      "female"
+    ],
+    [
+      "Ben",
+      "male"
+    ],
+    [
+      "Bianca",
+      "female"
+    ],
+    [
+      "Caleb",
+      "male"
+    ],
+    [
+      "Camila",
+      "female"
+    ],
+    [
+      "Chen",
+      "male"
+    ],
+    [
+      "Chloe",
+      "female"
+    ],
+    [
+      "Connor",
+      "male"
+    ],
+    [
+      "Dana",
+      "nonbinary"
+    ],
+    [
+      "Darius",
+      "male"
+    ],
+    [
+      "Divya",
+      "female"
+    ],
+    [
+      "Eli",
+      "male"
+    ],
+    [
+      "Elif",
+      "female"
+    ],
+    [
+      "Emeka",
+      "male"
+    ],
+    [
+      "Emma",
+      "female"
+    ],
+    [
+      "Ethan",
+      "male"
+    ],
+    [
+      "Fatima",
+      "female"
+    ],
+    [
+      "Felix",
+      "male"
+    ],
+    [
+      "Gabriela",
+      "female"
+    ],
+    [
+      "Hana",
+      "female"
+    ],
+    [
+      "Hassan",
+      "male"
+    ],
+    [
+      "Ingrid",
+      "female"
+    ],
+    [
+      "Isaac",
+      "male"
+    ],
+    [
+      "Jamal",
+      "male"
+    ],
+    [
+      "Jasmine",
+      "female"
+    ],
+    [
+      "Javier",
+      "male"
+    ],
+    [
+      "Jordan",
+      "nonbinary"
+    ],
+    [
+      "Julia",
+      "female"
+    ],
+    [
+      "Kai",
+      "male"
+    ],
+    [
+      "Keisha",
+      "female"
+    ],
+    [
+      "Kenji",
+      "male"
+    ],
+    [
+      "Lara",
+      "female"
+    ],
+    [
+      "Leo",
+      "male"
+    ],
+    [
+      "Lucia",
+      "female"
+    ],
+    [
+      "Malik",
+      "male"
+    ],
+    [
+      "Maya",
+      "female"
+    ],
+    [
+      "Mateo",
+      "male"
+    ],
+    [
+      "Mei",
+      "female"
+    ],
+    [
+      "Miguel",
+      "male"
+    ],
+    [
+      "Nadia",
+      "female"
+    ],
+    [
+      "Nathan",
+      "male"
+    ],
+    [
+      "Nia",
+      "female"
+    ],
+    [
+      "Noah",
+      "male"
+    ],
+    [
+      "Olga",
+      "female"
+    ],
+    [
+      "Omar",
+      "male"
+    ],
+    [
+      "Paloma",
+      "female"
+    ],
+    [
+      "Rafael",
+      "male"
+    ],
+    [
+      "Rachel",
+      "female"
+    ],
+    [
+      "Ravi",
+      "male"
+    ],
+    [
+      "Rosa",
+      "female"
+    ],
+    [
+      "Ryan",
+      "male"
+    ],
+    [
+      "Sana",
+      "female"
+    ],
+    [
+      "Samuel",
+      "male"
+    ],
+    [
+      "Sara",
+      "female"
+    ],
+    [
+      "Sean",
+      "male"
+    ],
+    [
+      "Shreya",
+      "female"
+    ],
+    [
+      "Taylor",
+      "nonbinary"
+    ],
+    [
+      "Theo",
+      "male"
+    ],
+    [
+      "Valentina",
+      "female"
+    ],
+    [
+      "Victor",
+      "male"
+    ],
+    [
+      "Wen",
+      "female"
+    ],
+    [
+      "Xavier",
+      "male"
+    ],
+    [
+      "Yara",
+      "female"
+    ],
+    [
+      "Yusuf",
+      "male"
+    ],
+    [
+      "Zoe",
+      "female"
+    ],
+    [
+      "Zane",
+      "male"
+    ]
   ],
   "lastNames": [
-    "Abernathy", "Adeyemi", "Alvarez", "Andersen", "Bauer", "Bergstrom", "Bhatt", "Brennan", "Caldwell", "Castellanos", "Chandra", "Choi",
-    "Coleman", "Costa", "Dalton", "Delgado", "Donovan", "Ellison", "Eze", "Fischer", "Fitzgerald", "Fontaine", "Gallagher", "Garza",
-    "Grayson", "Gupta", "Haddad", "Halvorsen", "Hartley", "Hoang", "Ibarra", "Iyer", "Jansen", "Kaplan", "Kowalski", "Lambert",
-    "Larsen", "Lebeau", "Lindqvist", "Lowell", "Mahoney", "Marchetti", "Mendoza", "Moreau", "Nakamura", "Novak", "Nyberg", "Oduya",
-    "Okafor", "Olsen", "Pacheco", "Park", "Patel", "Pereira", "Quinlan", "Ramirez", "Reyes", "Rocha", "Rossi", "Sandoval",
-    "Schaefer", "Serrano", "Shapiro", "Sorensen", "Takahashi", "Thornton", "Tran", "Uchenna", "Valdez", "Vance", "Varga", "Voss",
-    "Wakefield", "Walsh", "Weber", "Whitaker", "Yamamoto", "Yilmaz", "Zamora", "Zhang"
+    "Abernathy",
+    "Adeyemi",
+    "Alvarez",
+    "Andersen",
+    "Bauer",
+    "Bergstrom",
+    "Bhatt",
+    "Brennan",
+    "Caldwell",
+    "Castellanos",
+    "Chandra",
+    "Choi",
+    "Coleman",
+    "Costa",
+    "Dalton",
+    "Delgado",
+    "Donovan",
+    "Ellison",
+    "Eze",
+    "Fischer",
+    "Fitzgerald",
+    "Fontaine",
+    "Gallagher",
+    "Garza",
+    "Grayson",
+    "Gupta",
+    "Haddad",
+    "Halvorsen",
+    "Hartley",
+    "Hoang",
+    "Ibarra",
+    "Iyer",
+    "Jansen",
+    "Kaplan",
+    "Kowalski",
+    "Lambert",
+    "Larsen",
+    "Lebeau",
+    "Lindqvist",
+    "Lowell",
+    "Mahoney",
+    "Marchetti",
+    "Mendoza",
+    "Moreau",
+    "Nakamura",
+    "Novak",
+    "Nyberg",
+    "Oduya",
+    "Okafor",
+    "Olsen",
+    "Pacheco",
+    "Park",
+    "Patel",
+    "Pereira",
+    "Quinlan",
+    "Ramirez",
+    "Reyes",
+    "Rocha",
+    "Rossi",
+    "Sandoval",
+    "Schaefer",
+    "Serrano",
+    "Shapiro",
+    "Sorensen",
+    "Takahashi",
+    "Thornton",
+    "Tran",
+    "Uchenna",
+    "Valdez",
+    "Vance",
+    "Varga",
+    "Voss",
+    "Wakefield",
+    "Walsh",
+    "Weber",
+    "Whitaker",
+    "Yamamoto",
+    "Yilmaz",
+    "Zamora",
+    "Zhang"
   ],
   "titles": [
-    { "title": "Chief Operating Officer", "level": 3, "decision": true }, { "title": "Chief Financial Officer", "level": 3, "decision": true },
-    { "title": "Chief Information Officer", "level": 3, "decision": true }, { "title": "VP of Operations", "level": 3, "decision": true },
-    { "title": "VP of Supply Chain", "level": 3, "decision": true }, { "title": "VP of Finance", "level": 3, "decision": true },
-    { "title": "Head of Data", "level": 2, "decision": true }, { "title": "Director of Operations", "level": 2, "decision": true },
-    { "title": "Director of IT", "level": 2, "decision": false }, { "title": "Director of Procurement", "level": 2, "decision": true },
-    { "title": "Director of Customer Success", "level": 2, "decision": false }, { "title": "Controller", "level": 2, "decision": false },
-    { "title": "Operations Manager", "level": 1, "decision": false }, { "title": "Plant Manager", "level": 1, "decision": false },
-    { "title": "Logistics Manager", "level": 1, "decision": false }, { "title": "BI Manager", "level": 1, "decision": false },
-    { "title": "Procurement Manager", "level": 1, "decision": false }, { "title": "IT Manager", "level": 1, "decision": false },
-    { "title": "Financial Analyst", "level": 0, "decision": false }, { "title": "Data Analyst", "level": 0, "decision": false },
-    { "title": "Operations Analyst", "level": 0, "decision": false }, { "title": "Project Coordinator", "level": 0, "decision": false },
-    { "title": "Systems Administrator", "level": 0, "decision": false }, { "title": "Supply Chain Planner", "level": 0, "decision": false }
+    {
+      "title": "Chief Operating Officer",
+      "level": 3,
+      "decision": true
+    },
+    {
+      "title": "Chief Financial Officer",
+      "level": 3,
+      "decision": true
+    },
+    {
+      "title": "Chief Information Officer",
+      "level": 3,
+      "decision": true
+    },
+    {
+      "title": "VP of Operations",
+      "level": 3,
+      "decision": true
+    },
+    {
+      "title": "VP of Supply Chain",
+      "level": 3,
+      "decision": true
+    },
+    {
+      "title": "VP of Finance",
+      "level": 3,
+      "decision": true
+    },
+    {
+      "title": "Head of Data",
+      "level": 2,
+      "decision": true
+    },
+    {
+      "title": "Director of Operations",
+      "level": 2,
+      "decision": true
+    },
+    {
+      "title": "Director of IT",
+      "level": 2,
+      "decision": false
+    },
+    {
+      "title": "Director of Procurement",
+      "level": 2,
+      "decision": true
+    },
+    {
+      "title": "Director of Customer Success",
+      "level": 2,
+      "decision": false
+    },
+    {
+      "title": "Controller",
+      "level": 2,
+      "decision": false
+    },
+    {
+      "title": "Operations Manager",
+      "level": 1,
+      "decision": false
+    },
+    {
+      "title": "Plant Manager",
+      "level": 1,
+      "decision": false
+    },
+    {
+      "title": "Logistics Manager",
+      "level": 1,
+      "decision": false
+    },
+    {
+      "title": "BI Manager",
+      "level": 1,
+      "decision": false
+    },
+    {
+      "title": "Procurement Manager",
+      "level": 1,
+      "decision": false
+    },
+    {
+      "title": "IT Manager",
+      "level": 1,
+      "decision": false
+    },
+    {
+      "title": "Financial Analyst",
+      "level": 0,
+      "decision": false
+    },
+    {
+      "title": "Data Analyst",
+      "level": 0,
+      "decision": false
+    },
+    {
+      "title": "Operations Analyst",
+      "level": 0,
+      "decision": false
+    },
+    {
+      "title": "Project Coordinator",
+      "level": 0,
+      "decision": false
+    },
+    {
+      "title": "Systems Administrator",
+      "level": 0,
+      "decision": false
+    },
+    {
+      "title": "Supply Chain Planner",
+      "level": 0,
+      "decision": false
+    }
   ],
-  "companySuffixes": ["Inc.", "LLC", "Co.", "Group", "Holdings", "Corp."],
-  "leadSources": ["Inbound demo request", "Webinar attendee", "Partner referral", "Trade show", "Outbound sequence", "Customer referral", "Content download", "Former customer"],
-  "painPoints": ["manual month-end reporting", "inventory visibility across sites", "forecast accuracy", "late deliveries", "spreadsheet-based planning", "slow quote turnaround", "fragmented customer data", "rising overtime costs", "capacity planning", "audit preparation"],
+  "companySuffixes": [
+    "Inc.",
+    "LLC",
+    "Co.",
+    "Group",
+    "Holdings",
+    "Corp."
+  ],
+  "leadSources": [
+    "Inbound demo request",
+    "Webinar attendee",
+    "Partner referral",
+    "Trade show",
+    "Outbound sequence",
+    "Customer referral",
+    "Content download",
+    "Former customer"
+  ],
+  "painPoints": [
+    "manual month-end reporting",
+    "inventory visibility across sites",
+    "forecast accuracy",
+    "late deliveries",
+    "spreadsheet-based planning",
+    "slow quote turnaround",
+    "fragmented customer data",
+    "rising overtime costs",
+    "capacity planning",
+    "audit preparation"
+  ],
   "tags": [
-    { "name": "Decision maker", "color": "#eddcd2" }, { "name": "Champion", "color": "#cce3de" }, { "name": "Technical buyer", "color": "#dbe7e4" },
-    { "name": "Budget holder", "color": "#fde2e4" }, { "name": "Partner referral", "color": "#e2ece9" }, { "name": "Event lead", "color": "#fff1e6" },
-    { "name": "Reference customer", "color": "#d6e2e9" }, { "name": "At risk", "color": "#f0efeb" }
+    {
+      "name": "Decision maker",
+      "color": "#eddcd2"
+    },
+    {
+      "name": "Champion",
+      "color": "#cce3de"
+    },
+    {
+      "name": "Technical buyer",
+      "color": "#dbe7e4"
+    },
+    {
+      "name": "Budget holder",
+      "color": "#fde2e4"
+    },
+    {
+      "name": "Partner referral",
+      "color": "#e2ece9"
+    },
+    {
+      "name": "Event lead",
+      "color": "#fff1e6"
+    },
+    {
+      "name": "Reference customer",
+      "color": "#d6e2e9"
+    },
+    {
+      "name": "At risk",
+      "color": "#f0efeb"
+    }
   ],
-  "dealNames": ["{category} for {short}", "{short} — {category}", "{category} rollout at {short}", "{short}: {category} phase {phase}", "{category} pilot ({short})", "{short} {category} renewal"],
+  "dealNames": [
+    "{category} rollout",
+    "{category} pilot",
+    "{category} — phase {phase}",
+    "{category} renewal",
+    "{category} multi-site rollout",
+    "{category} program"
+  ],
   "notes": {
-    "lead": ["{source}: {first} reached out about {pain}. Booked an intro call.", "Intro call with {first}. Main issue is {pain}; they currently rely on spreadsheets.", "{first} found us through a {source_lower}. Interested in how peers handle {pain}."],
-    "discovery": ["Discovery session with {first} and two team leads. Mapped the current process for {pain}.", "Walked {first} through the reporting demo. Strong interest in the {category_lower} scope.", "{first} shared sample data. Quality is decent; integration effort looks moderate."],
-    "proposal": ["Sent proposal for {category_lower}: {amount}. {first} will review with finance.", "Proposal delivered ({amount}). Timeline: kickoff within {weeks} weeks of signature.", "Shared pricing options; {first} prefers the phased approach."],
-    "negotiation": ["Procurement asked for revised payment terms; offered quarterly billing.", "Legal review in progress. Redlines on data processing addendum.", "{first} confirmed budget; negotiating scope of the first phase.", "Competing bid on the table; emphasised implementation track record."],
-    "won": ["Signed! {category} at {amount}. Kickoff scheduled.", "Contract countersigned by {first}. Handing over to delivery.", "Closed-won. {first} cited time-to-value as the deciding factor."],
-    "lost": ["Lost: {reason}.", "{first} informed us they will not proceed — {reason}.", "Closed-lost after final review: {reason}."],
-    "delayed": ["Project paused: {delay}. Follow up next quarter.", "{first} asked to revisit after {delay}."],
-    "checkin": ["Quarterly check-in with {first}. Usage is steady; exploring an add-on.", "{first} asked about training for new team members.", "Shared a customer story relevant to {pain}."]
+    "lead": [
+      "{source}: {first} reached out about {pain}. Booked an intro call.",
+      "Intro call with {first}. Main issue is {pain}; they currently rely on spreadsheets.",
+      "{first} found us through a {source_lower}. Interested in how peers handle {pain}."
+    ],
+    "discovery": [
+      "Discovery session with {first} and two team leads. Mapped the current process for {pain}.",
+      "Walked {first} through the reporting demo. Strong interest in the {category_lower} scope.",
+      "{first} shared sample data. Quality is decent; integration effort looks moderate."
+    ],
+    "proposal": [
+      "Sent proposal for {category_lower}: {amount}. {first} will review with finance.",
+      "Proposal delivered ({amount}). Timeline: kickoff within {weeks} weeks of signature.",
+      "Shared pricing options; {first} prefers the phased approach."
+    ],
+    "negotiation": [
+      "Procurement asked for revised payment terms; offered quarterly billing.",
+      "Legal review in progress. Redlines on data processing addendum.",
+      "{first} confirmed budget; negotiating scope of the first phase.",
+      "Competing bid on the table; emphasised implementation track record."
+    ],
+    "won": [
+      "Signed! {category} at {amount}. Kickoff scheduled.",
+      "Contract countersigned by {first}. Handing over to delivery.",
+      "Closed-won. {first} cited time-to-value as the deciding factor."
+    ],
+    "lost": [
+      "Lost: {reason}.",
+      "{first} informed us they will not proceed — {reason}.",
+      "Closed-lost after final review: {reason}."
+    ],
+    "delayed": [
+      "Project paused: {delay}. Follow up next quarter.",
+      "{first} asked to revisit after {delay}."
+    ],
+    "checkin": [
+      "Quarterly check-in with {first}. Usage is steady; exploring an add-on.",
+      "{first} asked about training for new team members.",
+      "Shared a customer story relevant to {pain}."
+    ]
   },
-  "lossReasons": ["budget reallocated to another initiative", "chose a competitor with an existing relationship", "decided to build in-house", "timing — leadership change", "price above approved budget", "scope too large for this fiscal year", "no executive sponsor", "went with their ERP vendor's module", "project cancelled after reorganisation", "procurement freeze"],
-  "delayReasons": ["the ERP migration finishes", "the fiscal year closes", "the new COO starts", "the budget cycle in Q1", "the peak season", "the board meeting"],
+  "lossReasons": [
+    "budget reallocated to another initiative",
+    "chose a competitor with an existing relationship",
+    "decided to build in-house",
+    "timing — leadership change",
+    "price above approved budget",
+    "scope too large for this fiscal year",
+    "no executive sponsor",
+    "went with their ERP vendor's module",
+    "project cancelled after reorganisation",
+    "procurement freeze"
+  ],
+  "delayReasons": [
+    "the ERP migration finishes",
+    "the fiscal year closes",
+    "the new COO starts",
+    "the budget cycle in Q1",
+    "the peak season",
+    "the board meeting"
+  ],
   "tasks": {
-    "lead": [["call", "Intro call with {first}"], ["email", "Send overview deck to {first}"], ["follow-up", "Follow up on {source_lower}"]],
-    "discovery": [["demo", "Product demo for {first}'s team"], ["meeting", "Discovery workshop with {first}"], ["email", "Request sample data from {first}"]],
-    "proposal": [["email", "Send proposal to {first}"], ["follow-up", "Check proposal feedback with {first}"], ["call", "Pricing call with {first}"]],
-    "negotiation": [["meeting", "Negotiation meeting with {first}"], ["follow-up", "Chase redlines from legal"], ["call", "Align on final scope with {first}"]],
-    "won": [["thank-you", "Send thank-you note to {first}"], ["meeting", "Kickoff meeting with {first}"], ["ship", "Ship onboarding pack to {first}"]],
-    "checkin": [["lunch", "Lunch with {first}"], ["call", "Quarterly check-in with {first}"]]
+    "lead": [
+      [
+        "call",
+        "Intro call with {first}"
+      ],
+      [
+        "email",
+        "Send overview deck to {first}"
+      ],
+      [
+        "follow-up",
+        "Follow up on {source_lower}"
+      ]
+    ],
+    "discovery": [
+      [
+        "demo",
+        "Product demo for {first}'s team"
+      ],
+      [
+        "meeting",
+        "Discovery workshop with {first}"
+      ],
+      [
+        "email",
+        "Request sample data from {first}"
+      ]
+    ],
+    "proposal": [
+      [
+        "email",
+        "Send proposal to {first}"
+      ],
+      [
+        "follow-up",
+        "Check proposal feedback with {first}"
+      ],
+      [
+        "call",
+        "Pricing call with {first}"
+      ]
+    ],
+    "negotiation": [
+      [
+        "meeting",
+        "Negotiation meeting with {first}"
+      ],
+      [
+        "follow-up",
+        "Chase redlines from legal"
+      ],
+      [
+        "call",
+        "Align on final scope with {first}"
+      ]
+    ],
+    "won": [
+      [
+        "thank-you",
+        "Send thank-you note to {first}"
+      ],
+      [
+        "meeting",
+        "Kickoff meeting with {first}"
+      ],
+      [
+        "ship",
+        "Ship onboarding pack to {first}"
+      ]
+    ],
+    "checkin": [
+      [
+        "lunch",
+        "Lunch with {first}"
+      ],
+      [
+        "call",
+        "Quarterly check-in with {first}"
+      ]
+    ]
   }
 }

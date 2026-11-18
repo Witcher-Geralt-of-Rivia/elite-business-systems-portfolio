@@ -8,7 +8,7 @@ export const ShowcaseBanner = () => {
   return (
     <div
       role="status"
-      className="fixed bottom-3 left-1/2 -translate-x-1/2 z-50 max-w-[calc(100vw-2rem)] rounded-full border bg-background/95 px-4 py-1.5 text-xs shadow-md backdrop-blur"
+      className="fixed bottom-20 sm:bottom-3 left-1/2 -translate-x-1/2 z-50 max-w-[calc(100vw-2rem)] rounded-full border bg-background/95 px-4 py-1.5 text-xs shadow-md backdrop-blur"
     >
       {translate("crm.showcase.banner", {
         _: "Read-only demo · fictional data, live simulated activity · changes are disabled",

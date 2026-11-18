@@ -28,6 +28,7 @@ export const INTEGRITY_CHECKS: Record<string, string> = {
 /** Checks that need the as-of date: nothing may be dated after it (tasks may be due later). */
 const FUTURE_CHECKS: Record<string, string> = {
   company_in_future: `select count(*) from companies where created_at > $1`,
+  contact_in_future: `select count(*) from contacts where first_seen > $1 or last_seen > $1`,
   deal_in_future: `select count(*) from deals where created_at > $1 or updated_at > $1 or archived_at > $1`,
   note_in_future: `select (select count(*) from contact_notes where date > $1) + (select count(*) from deal_notes where date > $1)`,
   task_done_in_future: `select count(*) from tasks where done_date > $1 or created_at > $1`,
@@ -60,7 +61,10 @@ export async function businessProfile(db: Db) {
   const stages = await q(`select stage, count(*)::int as n from deals where archived_at is null group by stage order by stage`);
   const monthly = await q(`select to_char(date_trunc('month', created_at), 'YYYY-MM') as month, count(*)::int as companies
       from companies group by 1 order by 1`);
-  const [weekend] = await q(`select coalesce(avg(case when extract(isodow from created_at) in (6, 7) then 1 else 0 end), 0)::float as share from companies`);
+  // Business activity happens on weekdays (UTC): companies, contacts and notes.
+  const [weekend] = await q(`select coalesce(avg(case when extract(isodow from t) in (6, 7) then 1 else 0 end), 0)::float as share from (
+      select created_at as t from companies union all select first_seen from contacts
+      union all select date from contact_notes union all select date from deal_notes) x`);
   const owners = await q(`select s.first_name || ' ' || s.last_name as owner, count(*)::int as deals,
       count(*) filter (where d.stage = 'won')::int as won from deals d join sales s on s.id = d.sales_id group by 1 order by 1`);
   return {

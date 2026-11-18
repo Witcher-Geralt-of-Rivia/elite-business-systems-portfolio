@@ -232,16 +232,22 @@ export class Engine {
     return id;
   }
 
-  private companyName(sector: Sector): { name: string; short: string } {
-    for (let attempt = 0; attempt < 50; attempt++) {
-      const stem = this.rng.pick(sector.stems);
-      const kind = this.rng.pick(sector.kinds);
-      const base = `${stem} ${kind}`;
-      const name = attempt < 25 && this.rng.chance(0.6) ? base : `${base} ${this.rng.pick(catalog.companySuffixes)}`;
-      if (!this.state.usedNames.includes(name)) {
-        this.state.usedNames.push(name);
-        return { name, short: stem };
-      }
+  /**
+   * Distinct, plausible names: the base name (without legal suffix) is unique, and each stem or
+   * city is used at most three times while alternatives remain (soft cap, so growth never stalls).
+   */
+  private companyName(sector: Sector, cityName: string): { name: string; short: string } {
+    const suffix = new RegExp(` (${catalog.companySuffixes.map((x) => x.replace(".", "\\.")).join("|")})$`);
+    const bases = new Set(this.state.usedNames.map((n) => n.replace(suffix, "")));
+    const uses = (short: string) => this.state.usedNames.filter((n) => n.startsWith(`${short} `)).length;
+    for (let attempt = 0; attempt < 120; attempt++) {
+      const short = this.rng.chance(0.3) ? cityName : this.rng.pick(sector.stems);
+      const base = `${short} ${this.rng.pick(sector.kinds)}`;
+      if (bases.has(base)) continue;
+      if (uses(short) >= 3 && attempt < 90) continue;
+      const name = this.rng.chance(0.55) ? base : `${base} ${this.rng.pick(catalog.companySuffixes)}`;
+      this.state.usedNames.push(name);
+      return { name, short };
     }
     const fallback = `${this.rng.pick(sector.stems)} ${this.rng.pick(sector.kinds)} ${this.state.usedNames.length}`;
     this.state.usedNames.push(fallback);
@@ -274,7 +280,7 @@ export class Engine {
     const city = rng.pick(catalog.cities);
     const owner = this.ownerFor(city.region);
     const size = rng.weighted(catalog.sizeWeights, (s) => s.weight);
-    const { name, short } = this.companyName(sector);
+    const { name, short } = this.companyName(sector, city.city);
     const slug = ascii(name.replace(/ (Inc\.|LLC|Co\.|Group|Holdings|Corp\.)$/, ""));
     const source = rng.pick(catalog.leadSources);
     const pain = rng.pick(catalog.painPoints);
@@ -316,7 +322,7 @@ export class Engine {
       if (i === 0 && source === "Partner referral") tags.push(await this.ensureTag("Partner referral"));
       if (i === 0 && (source === "Trade show" || source === "Webinar attendee")) tags.push(await this.ensureTag("Event lead"));
       if (title.title.includes("IT") || title.title.includes("Information") || title.title.includes("Data")) tags.push(await this.ensureTag("Technical buyer"));
-      const seen = at + i * rng.int(0, 3) * DAY;
+      const seen = at;
       const id = await this.writer.create("contacts", owner.salesId, {
         first_name: first,
         last_name: last,
@@ -368,7 +374,7 @@ export class Engine {
     const rng = this.rng;
     const category = this.pickCategory(expansion);
     const amount = Math.max(2500, Math.round(rng.lognormal(category.base * base.sizeFactor, category.spread) / 500) * 500);
-    const name = fill(rng.pick(catalog.dealNames), { category: category.label, short: base.short, phase: rng.int(1, 3) });
+    const name = fill(rng.pick(catalog.dealNames), { category: category.label, phase: rng.int(1, 3) });
     const contactIds = base.contactIds.slice(0, rng.int(1, Math.min(3, base.contactIds.length)));
     const closing = at + Math.round(category.cycleDays * rng.lognormal(1, 0.25)) * DAY;
     const dealId = await this.writer.create("deals", base.ownerId, {
