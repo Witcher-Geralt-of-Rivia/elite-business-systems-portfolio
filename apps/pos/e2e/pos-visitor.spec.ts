@@ -19,7 +19,12 @@ test.describe("desktop", () => {
   test("visitor enters without credentials and explores the store", async ({ page }) => {
     const errors = trackPageErrors(page);
     await enterDemo(page);
-    await page.waitForTimeout(4000);
+    // Widgets load asynchronously: wait for the lifetime figures (e.g. "$880.8k") and the best customers.
+    await expect(page.getByText(/^\$\d+(\.\d)?k$/).nth(1)).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByText("Walk-in Customer").first()).toBeVisible({ timeout: 60_000 });
+    await page.waitForLoadState("networkidle");
+    // Upstream product notices are snoozed for the visitor account.
+    await expect(page.getByText("Learn More")).toHaveCount(0);
     await page.screenshot({ path: `${SHOTS}/dashboard.png` });
 
     await page.goto("/dashboard/products");
@@ -107,7 +112,10 @@ test.describe("mobile", () => {
   test("visitor experience on a phone", async ({ page }) => {
     const errors = trackPageErrors(page);
     await enterDemo(page);
-    await page.waitForTimeout(4000);
+    await expect(page.getByText(/^\$\d+(\.\d)?k$/).nth(1)).toBeVisible({ timeout: 60_000 });
+    // The read-only banner stays on one line on a phone and does not cover the page.
+    const box = await page.locator("#hp-showcase-banner").boundingBox();
+    expect(box && box.height).toBeLessThan(40);
     await page.screenshot({ path: `${SHOTS}/mobile-dashboard.png` });
     await page.goto("/dashboard/orders");
     await expect(page.getByText(/^\d{6}-\d{3}$/).first()).toBeVisible({ timeout: 60_000 });

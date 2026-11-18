@@ -5,6 +5,7 @@ use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\Options;
+use App\Services\UserOptions;
 use App\Services\UsersService;
 use App\Services\WidgetService;
 use Illuminate\Support\Facades\Cache;
@@ -84,6 +85,9 @@ class Showcase
         app( UsersService::class )->createAttribute( $user ); // theme/language row the layouts require
         // NexoPOS seeds dashboard widgets on account activation, which the visitor never goes through.
         app( WidgetService::class )->addDefaultWidgetsToAreas( $user );
+        // Upstream product notices ("Learn more", module store) are not part of the store being shown:
+        // the visitor account keeps NexoPOS's own "snooze ads" preference, without expiry.
+        ( new UserOptions( $user->id ) )->set( 'snooze_ads_24h', 'yes' );
         app( Options::class )->set( self::OPTION, $enable ? 'yes' : 'no' );
 
         return [ 'enabled' => $enable, 'permissions' => count( $existing ), 'missing' => array_values( array_diff( self::PERMISSIONS, $existing ) ), 'user_id' => $user->id ];
