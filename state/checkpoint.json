@@ -3,9 +3,9 @@
   "repository": "https://github.com/Witcher-Geralt-of-Rivia/elite-business-systems-portfolio",
   "updated": "2026-11-18",
   "current_milestone": "M6",
-  "current_task": "M6 POS: retail data engine module (Harbor & Pine Market)",
+  "current_task": "M6: 12-month backfill running (detached); then integrity, visitor mode deploy, live worker, E2E",
   "status": "in_progress",
-  "last_verified_commit": "550e7e8",
+  "last_verified_commit": "435764a",
   "milestones": {
     "M0": "done",
     "M1": "done",
@@ -13,7 +13,7 @@
     "M3": "done for CRM (HTTPS route, WinSW service, rolling logs, nightly verified backups); POS/ERP parts added with their runtimes",
     "M4": "done 2026-11-17: production deployment + public E2E 10/10 (see TEST_RESULTS); one observation pending (first live lead in a business window)",
     "M5": "on_hold: ERPNext selected; Windows runtime decision pending (WSL1 needs an unapproved reboot); repository-only work allowed",
-    "M6": "in_progress: runtime installed (PHP 8.3.36, MariaDB 11.8.10, 2 php-cgi workers, loopback Caddy site); NexoPOS v6.3.0 installed; not public",
+    "M6": "in_progress: engine + integrity suite verified on an 8-day trial (41/41); 12-month backfill running; visitor mode, worker, backup, E2E built but not yet deployed/run; not public",
     "M7": "not_started",
     "M8": "not_started",
     "M9": "not_started"
@@ -45,13 +45,12 @@
     "POS runtime: PHP 8.3.36 + MariaDB 11.8.10 service + NexoPOS v6.3.0 setup + php-cgi workers + loopback Caddy site (550e7e8)"
   ],
   "pending_tasks": [
-    "M6: Harbor & Pine Market catalog (~500 curated values) + retail data engine as a NexoPOS module (history 12-18 months, live worker, pause/resume)",
-    "M6: report recompute + integrity checks + record-count/reconciliation report",
-    "M6: read-only visitor access + isolated checkout preview",
-    "M6: cold-start/performance work, backend + browser tests on the local install",
-    "M6: deployment-ready public config, deploy + backup scripts (public rollout needs separate owner authorization)",
-    "CRM follow-up: observe a naturally scheduled live lead (record, audit event, browser update)",
-    "CRM follow-up: safe removal of disabled test accounts; stop E2E from accumulating them",
+    "M6: finish 12-month backfill; run hp:integrity on the full dataset; record counts/reconciliation report",
+    "M6: deploy module update; hp:showcase enable (loopback only); install portfolio-pos-sim worker; restart/idempotency test",
+    "M6: run E2E (visitor on real data, admin on isolated clone); UI checkout test; screenshots review desktop + phone",
+    "M6: resource measurements (CPU, RAM, disk, latency, worker stability); POS nightly backup task",
+    "M6: public rollout only after owner authorization (POS-PUBLIC)",
+    "CRM follow-up: read C:/srv/portfolio/logs/crm-live-observation-20261118.json after 2026-11-18 14:05 UTC and record evidence",
     "ERP: repository-only preparation (no runtime changes)"
   ],
   "blocked_tasks": [
@@ -106,7 +105,7 @@
     "erp": "not deployed (on hold)",
     "portal": "placeholder live (healthz verified)"
   },
-  "next_action": "M6: build the Harbor & Pine Market retail engine as a NexoPOS module (catalog, procurement, sales, refunds, registers) using NexoPOS services; then reports, integrity, visitor mode, tests.",
+  "next_action": "When backfill-12m.log ends: php artisan hp:integrity; then deploy-pos-module.ps1, hp:showcase enable, install-pos-sim-service.ps1, run-pos-e2e.ps1 (visitor, isolated).",
   "completed_milestones": [
     "M0",
     "M1",
@@ -121,5 +120,8 @@
     "incident": "R-014 confirmed historical malware execution (2026-10-07); documented in docs/SECURITY_INVESTIGATION.md",
     "status": "open (credential rotation and host remediation are owner actions); does not block repository development (D-013)",
     "constraints": "no unnecessary new secrets; no public exposure without authorization; host not declared clean"
-  }
+  },
+  "running_jobs": [
+    "POS 12-month backfill: php artisan hp:backfill (log C:/srv/portfolio/pos/logs/backfill-12m.log); resumable from harborpine_sim_state.processed_until"
+  ]
 }

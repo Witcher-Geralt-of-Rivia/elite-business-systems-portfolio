@@ -2,6 +2,20 @@
 
 Newest first. Every entry states what was **verified**, not just what was written.
 
+## 2026-11-18 — M6 in progress: Harbor & Pine Market engine built; 12-month history generating
+
+- **Checkpoint reconciled** (M4 done, M6 active, pending/blocked lists corrected).
+- **Retail engine** as NexoPOS module `HarborPine` (GPL-3.0): catalog, deterministic day plans, idempotency
+  ledger, deliveries, registers, sales with discounts/tax/cash+card, returns, waste/shrink — all through NexoPOS
+  services ([POS_DATA_ENGINE.md](POS_DATA_ENGINE.md)). Trial (8 days, 575 orders): **41/41 integrity checks pass**.
+- **Performance:** cold start 41 s → 2.7–3.8 s (Laravel optimize); backfill 2.5 s → 0.75 s per sale after
+  deferring per-order dashboard recomputation and stopping a runaway Defender scan that held 2 of 3 cores.
+- **Running now:** detached 12-month backfill (~55 s per store day, ~6 h).
+- **Built, not yet deployed/tested:** read-only visitor mode with checkout preview, live worker service,
+  MariaDB backup with restore check, isolated-clone E2E runner + specs, public HTTPS site (inactive).
+- **CRM follow-ups:** test accounts kept (audit history); public E2E reuses one invitee (no accumulation, verified);
+  unattended live-lead observer scheduled for the next business window (2026-11-18 14:05 UTC).
+
 ## 2026-11-17 — M4 done: CRM deployed with live synthetic operations and read-only visitor access
 
 - **Live:** `https://crm.<VPS_IP>.sslip.io` runs the M4 build; 13-month history (499 companies, 312 deals,
