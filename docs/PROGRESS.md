@@ -2,6 +2,23 @@
 
 Newest first. Every entry states what was **verified**, not just what was written.
 
+## 2026-11-18 — M8: dependency security update, licence review, monitoring
+
+- **PHP dependencies:** NexoPOS v6.3.0's lock had published advisories in 11 packages. The critical Laravel
+  TokenGuard bypass is not reachable here, but request-path issues applied to the public site.
+  - Updated inside upstream's constraints (Laravel 12.73.0); `composer audit` is clean.
+  - Verified on staging: admin 9/9, visitor 4/4, recovery suite with an identical deterministic replay,
+    integrity 43/43.
+  - Promoted with about one minute of POS downtime and automatic rollback ready; public visitor suite 4/4
+    afterwards. Script: `update-pos-dependencies.ps1`.
+- **Licences:** no conflicts in the CRM runtime trees (permissive plus OFL/MPL components used as intended).
+  `npm audit` is clean for both CRM trees and the test tooling.
+- **Monitoring:** `Portfolio - health monitor` runs every 15 minutes as SYSTEM, covering public health, POS
+  worker lag, TLS lifetime, services, backups and disk (the R-004 alarm). It logs JSON lines and writes event-log
+  entries on state changes; the failure and recovery events were tested.
+- **Docs:** DEPLOYMENT now has the backup schedule, recovery runbook, monitoring and dependency-update sections.
+  R-014 status wording now matches D-013/D-017; the host is still not declared clean.
+
 ## 2026-11-18 — M8 in progress: public POS hardened, upstream race fixed, performance re-measured
 
 - **Visitor-facing defect found and fixed:** NexoPOS deletes its cached "installed" flag after every response and

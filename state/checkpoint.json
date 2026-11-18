@@ -15,13 +15,13 @@
     "M5": "on_hold: ERPNext selected; Windows runtime decision pending (WSL1 needs an unapproved reboot); repository-only work allowed",
     "M6": "done 2026-11-18: publicly deployed and verified (D-017). Activation preflight 43/43, backup+restore check, graceful reload, HTTPS/HSTS/secure-cookie smoke, public visitor E2E 4/4 (0 visitor records), portal switched to live; local acceptance evidence (dataset, replay, worker, admin E2E 8/8 on clone) in TEST_RESULTS",
     "M7": "deployed 2026-11-18: portal live with CRM and POS links + live status (/status/crm, /status/pos); ERP \"in preparation\"; deploy-portal.ps1 with rollback; browser check desktop+phone 0 errors",
-    "M8": "in_progress 2026-11-18: installed-state race fixed (module), telemetry opt-out, lang ACL, visitor background calls, POS CSP, E2E helpers; resources/latency re-measured with POS public",
+    "M8": "in_progress 2026-11-18: installed-state race fixed, telemetry opt-out, lang ACL, visitor background calls, POS CSP, E2E helpers, PHP dependency security update (audit clean), licence review, health monitor (15 min, event log), backup/recovery/monitoring runbook; resources re-measured",
     "M9": "not_started"
   },
   "pins": {
     "erpnext": "v16.60.0",
     "frappe": "v16.60.0",
-    "nexopos": "v6.3.0",
+    "nexopos": "v6.3.0 (PHP dependencies security-updated 2026-11-18 within upstream constraints: laravel/framework 12.73.0; composer audit clean)",
     "atomic_crm": "main@22f38f0f5918187a9c559e75dcc4cd4a329f9af2",
     "frappe_docker_reference": "main@0ad1a1152f93b1285104bcd0a8059e036dc5bd3d"
   },
@@ -46,11 +46,12 @@
     "M6 local acceptance (2026-11-18): see docs/TEST_RESULTS.md POS M6 section",
     "M7 portal deployed (2026-11-18): see docs/TEST_RESULTS.md M7 section",
     "M6 public activation (2026-11-18, D-017): see docs/TEST_RESULTS.md POS M6 public activation section",
-    "M8 part 1 (2026-11-18): see docs/TEST_RESULTS.md M8 section"
+    "M8 part 1 (2026-11-18): see docs/TEST_RESULTS.md M8 section",
+    "M8 part 2 (2026-11-18): dependency security update, licence review, health monitor; see TEST_RESULTS M8 items 8-10"
   ],
   "pending_tasks": [
     "CRM follow-up: read C:/srv/portfolio/logs/crm-live-observation-20261118.json after 2026-11-18 13:05 local (one lead scheduled 20:48 UTC) and record evidence",
-    "M8 remaining: dependency/licence review, monitoring/alerting for the POS worker and public endpoints, backup schedule overview (CRM + POS), cross-app links check, final M8 acceptance",
+    "M8 remaining: cross-app/portal link check, final M8 acceptance review",
     "ERP: repository-only preparation (no runtime changes)"
   ],
   "blocked_tasks": [
@@ -98,7 +99,9 @@
     "pos_backup_restore": "verified as SYSTEM (counts + text checksums); activation backup 10:30 verified",
     "portal": "deployed crm=live pos=live; smoke tests pass; browser desktop+phone 0 errors",
     "pos_installed_race": "before: 1/348 parallel API calls redirected to /do-setup; after: 0/623, 0 fallback hits",
-    "resources": "2026-11-18 11:40, 10 min: hosted services <1.5% of one core; POS public /sign-in 336 ms median; CRM/portal/Practica 55-70 ms"
+    "resources": "2026-11-18 11:40, 10 min: hosted services <1.5% of one core; POS public /sign-in 336 ms median; CRM/portal/Practica 55-70 ms",
+    "pos_dependency_audit": "composer audit clean after update (2026-11-18); npm audit clean (CRM backend/frontend, POS e2e)",
+    "monitor": "10/10 checks ok as SYSTEM; failure/recovery events verified"
   },
   "deployment_status": {
     "crm": "production at crm.<ip>.sslip.io: M4 build, 13-month synthetic history, live simulation (intensity 3), read-only visitor access; public E2E 10/10",
@@ -106,7 +109,7 @@
     "erp": "not deployed (on hold)",
     "portal": "deployed: portal/site via deploy-portal.ps1 (crm=live, pos=live, erp=planned); /status/crm + /status/pos; strict CSP"
   },
-  "next_action": "Record the CRM live-lead observation after 13:05 local; then remaining M8 items (dependency/licence review, monitoring of worker and endpoints, backup overview).",
+  "next_action": "Record the CRM live-lead observation after 13:05 local; then the final M8 acceptance review.",
   "completed_milestones": [
     "M0",
     "M1",
@@ -125,7 +128,8 @@
   },
   "running_jobs": [
     "POS live simulation: Windows service portfolio-pos-sim (hp:worker; pause with php artisan hp:sim pause)",
-    "CRM live-lead observation (one-time task) until 2026-11-18 13:05 local"
+    "CRM live-lead observation (one-time task) until 2026-11-18 13:05 local",
+    "Portfolio - health monitor (scheduled task, every 15 min, SYSTEM)"
   ],
   "shared_hosting": "Since 2026-11-18 the host Caddy also serves the owner's Práctica app (D-016, owner-authorized). Touch only portfolio site files; validate the whole host Caddyfile; caddy reload only, never restart."
 }

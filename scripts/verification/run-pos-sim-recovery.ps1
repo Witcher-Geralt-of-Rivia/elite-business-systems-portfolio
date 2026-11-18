@@ -12,9 +12,14 @@
   caches and data are untouched. The clone is dropped at the end unless -KeepDatabase.
 #>
 [CmdletBinding()]
-param([switch]$KeepDatabase, [int]$KillAfterSeconds = 25)
+param(
+    [switch]$KeepDatabase,
+    [int]$KillAfterSeconds = 25,
+    # Application tree to run (e.g. a staging copy with updated dependencies); the clone is the only database written.
+    [string]$AppRoot = 'C:\srv\portfolio\pos\app'
+)
 $ErrorActionPreference = 'Stop'
-$app = 'C:\srv\portfolio\pos\app'
+$app = $AppRoot
 $php = 'C:\srv\portfolio\pos\php\php.exe'
 $bin = 'C:\srv\portfolio\pos\mariadb\bin'
 $secret = Get-Content 'C:\srv\portfolio\secrets\pos-mariadb.json' -Raw | ConvertFrom-Json

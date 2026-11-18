@@ -398,6 +398,54 @@ CSP violations.
 **7. Known limitation (kept).** NexoPOS's API rate limit (80 requests/min per client) answers with HTTP 500
 "Too Many Attempts" instead of 429. Normal browsing stays far below it.
 
+**8. Dependency licences and vulnerabilities.**
+- **Repository structure:**
+  - upstream trees are git-ignored (0 tracked files);
+  - the repo root is MIT; the NexoPOS module carries GPL-3.0; the CRM frontend snapshot keeps Atomic CRM's MIT.
+- **CRM runtime licences** (`npm ls --omit=dev`):
+  - Backend: 66 packages, all MIT/BSD/ISC.
+  - Frontend: 254 packages, permissive except Inter (OFL-1.1, bundling allowed with notice), DOMPurify (MPL-2.0 or
+    Apache-2.0) and lightningcss (MPL-2.0, an unmodified build tool). No GPL/AGPL.
+- **`npm audit --omit=dev`:** CRM backend 0, CRM frontend 0, POS E2E tooling 0.
+- **`composer audit` of NexoPOS v6.3.0's lock** found advisories in 11 packages, including Laravel 12.62, Symfony
+  7.4.13/14, Guzzle, CommonMark, Dompdf and PhpSpreadsheet.
+  - The critical Laravel TokenGuard bypass is **not reachable** here: the `api` token guard is configured but
+    unused, and Sanctum consults only `web`.
+  - Request-path advisories (a Symfony header ReDoS, the Laravel relationship-inclusion range) apply to a public
+    site, so the packages were updated.
+
+**9. PHP dependency security update** (`update-pos-dependencies.ps1`):
+- **Stage:** a staging copy got `composer update <11 packages> -W --no-dev` inside NexoPOS's own constraints
+  (Laravel 12.62.0 → 12.73.0, Symfony → 7.4.22/23, Guzzle 7.12.3 → 7.16.3, CommonMark 2.8.2 → 2.10.7,
+  Flysystem 3.35.1 → 3.36.0, Dompdf 3.1.5 → 3.1.6, PhpSpreadsheet 5.8.1 → 5.11.0, Carbon 3.13.0 → 3.15.1).
+  `composer audit`: **no advisories**.
+- **Verification on staging:**
+  - Admin isolated: **9/9**.
+  - Visitor: **4/4**, 0 records.
+  - Simulation recovery suite: **passed**.
+    - Concurrency exits 1/0 with settle 0; crash after 19 events, recovery 0, +40 events.
+    - Replay 154/154. The test day produced 65 orders = 65 sale events, the same as before the update, so the
+      newer Carbon kept the engine deterministic.
+    - 0 duplicates; integrity 43/43.
+- **Promote (132 s):**
+  - Worker and PHP workers stopped (public POS unavailable for about a minute).
+  - Staged `vendor` copied into the app tree, so it inherits the LOCAL SERVICE read permission (verified), then
+    swapped.
+  - Caches rebuilt, services restarted. Health ok, integrity **43/43**, previous tree kept as `vendor.prev`
+    (not web-reachable: 404).
+- **Live afterwards:**
+  - `composer audit`: no advisories; `artisan --version` 12.73.0.
+  - Public visitor suite **4/4**, 0 visitor records.
+  - Worker caught up: 25 orders = 25 sale events, 0 duplicate keys or entities.
+  - CRM, portal and Práctica reachable.
+
+**10. Monitoring** (`monitor-portfolio.ps1`, scheduled as SYSTEM every 15 minutes):
+- First runs: all **10 checks ok** (CRM/POS/portal health, 3 TLS certificates with 89–90 days left, 7 services,
+  both backups with checksums and task result 0, 14.2 GB free).
+- The SYSTEM task run returned 0.
+- A forced failure (impossible disk threshold) wrote Application event **1001** "disk.c FAILING", and the next
+  normal run wrote **1000** "disk.c recovered".
+
 **Resources and latency** (`measure-resources.ps1`, 10 min, 30 requests per URL; CRM, Práctica, POS worker and
 public POS all running):
 
