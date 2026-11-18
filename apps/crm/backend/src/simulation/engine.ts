@@ -261,9 +261,12 @@ export class Engine {
       contact_id: contactId, type, text: fill(text, vars), due_date: iso(due), created_at: iso(at), sales_id: ownerId,
     });
     this.count("tasks");
-    // Most tasks get done around their due date; some slip and stay open (realistic overdue list).
-    if (this.rng.chance(0.88)) {
+    // Most tasks get done around their due date; slipped ones are usually closed 1–6 weeks late,
+    // and a few are never closed (a realistic, recent-looking overdue list rather than a year of debris).
+    if (this.rng.chance(0.85)) {
       this.schedule({ kind: "complete_task", at: businessTime(due + (this.rng.next() * 3 - 1) * DAY, this.rng), taskId: id, ownerId });
+    } else if (this.rng.chance(0.85)) {
+      this.schedule({ kind: "complete_task", at: businessTime(due + this.rng.int(7, 42) * DAY, this.rng), taskId: id, ownerId });
     }
   }
 
@@ -419,10 +422,10 @@ export class Engine {
         next = rng.chance(0.6 * skill) ? "proposal-sent" : rng.chance(0.65) ? "lost" : "delayed";
         break;
       case "proposal-sent":
-        next = rng.chance(0.58 * skill + quarterEnd) ? "in-negociation" : rng.chance(0.7) ? "lost" : "delayed";
+        next = rng.chance(0.62 * skill + quarterEnd) ? "in-negociation" : rng.chance(0.7) ? "lost" : "delayed";
         break;
       case "in-negociation":
-        next = rng.chance(Math.min(0.85, 0.6 * skill + quarterEnd)) ? "won" : rng.chance(0.8) ? "lost" : "delayed";
+        next = rng.chance(Math.min(0.88, 0.68 * skill + quarterEnd)) ? "won" : rng.chance(0.8) ? "lost" : "delayed";
         break;
       case "delayed":
         next = rng.chance(0.45) ? (ctx.prevStage ?? "opportunity") : "lost";
