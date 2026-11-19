@@ -175,13 +175,17 @@ class TestDistributionLifecycle(IntegrationTestCase):
 		ex.Executor.run = flaky
 		try:
 			with self.assertRaises(RuntimeError):
-				self._advance("2025-09-12 23:59:59")
+				self._advance("2025-10-03 23:59:59")
 		finally:
 			ex.Executor.run = original
-		self._advance("2025-09-12 23:59:59")
+		self._advance("2025-10-03 23:59:59")
 		self._ok(integrity.run())
-		p = self._assert_documents_match_plan("2025-09-12 23:59:59")  # no partial or duplicate documents
+		p = self._assert_documents_match_plan("2025-10-03 23:59:59")  # no partial or duplicate documents
 		self.assertGreater(p["supplier_payment"], 0)  # first supplier payment run is planned for 2025-09-11
 		self.assertGreater(frappe.db.count("Payment Entry", {"docstatus": 1, "payment_type": "Pay"}), 0)
+		# Purchase side returns: receipt return plus debit note (first one is planned for 2025-09-25).
+		self.assertGreater(p["purchase_return"], 0)
+		self.assertGreater(frappe.db.count("Purchase Receipt", {"docstatus": 1, "is_return": 1}), 0)
+		self.assertGreater(frappe.db.count("Purchase Invoice", {"docstatus": 1, "is_return": 1}), 0)
 		r = simulator.replay_check()
 		self.assertEqual((r["missing_count"], r["unexpected_count"]), (0, 0), r)
