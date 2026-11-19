@@ -22,7 +22,7 @@ Read-only state on 2026-11-17: feature `Disabled`, no pending-reboot flags, last
 | Monitoring and backups | — | `Portfolio - health monitor` runs on its 15-minute repetition; nightly backups unchanged. Expect monitor events 1001/1000 if a check runs before services are up |
 | Owner's co-hosted application | unavailable | its services are Auto (D-016); verify it is reachable |
 | Owner remote access | RDP/SSH/AnyDesk/RustDesk/Jump drop | `sshd`, AnyDesk, RustDesk, JumpConnect are Auto; RDP (TermService) is a Windows default and listens on 3389 after boot |
-| Other owner services | stop | `postgresql-x64-16`, `practica-postgres` are Auto; retired sites stay Disabled (D-008) |
+| Other owner services | stop | the owner's other database services are Auto; retired sites stay Disabled (D-008) |
 | Interactive sessions | editor windows, this agent session, manually started dev servers (e.g. n8n, Next.js demos) **end** | **not** restarted automatically — they were started by hand |
 | Scheduled tasks | — | unchanged |
 

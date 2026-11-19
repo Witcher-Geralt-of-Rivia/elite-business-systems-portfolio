@@ -14,7 +14,10 @@
 param([int]$Minutes = 5, [int]$Requests = 20, [string]$PublicIp = $env:PUBLIC_IP)
 $ErrorActionPreference = 'Stop'
 if (-not $PublicIp) { $PublicIp = (Select-String -Path C:\srv\portfolio\caddy\crm.caddy -Pattern 'crm\.(\d+\.\d+\.\d+\.\d+)\.sslip').Matches[0].Groups[1].Value }
-$services = 'caddy', 'portfolio-crm-api', 'portfolio-crm-postgres', 'portfolio-pos-mariadb', 'portfolio-pos-php-1', 'portfolio-pos-php-2', 'portfolio-pos-sim', 'practica-web', 'practica-postgres'
+$services = @('caddy', 'portfolio-crm-api', 'portfolio-crm-postgres', 'portfolio-pos-mariadb', 'portfolio-pos-php-1', 'portfolio-pos-php-2', 'portfolio-pos-sim')
+# The co-hosted application's identifiers live only on the host, not in this public repository.
+$coCfg = if (Test-Path 'C:\srv\portfolio\config\cohosted.json') { Get-Content 'C:\srv\portfolio\config\cohosted.json' -Raw | ConvertFrom-Json } else { $null }
+if ($coCfg) { $services += @(Get-Service | Where-Object { $n = $_.Name; @($coCfg.service_patterns | Where-Object { $n -like $_ }).Count } | ForEach-Object Name) }
 
 function Get-Tree([int]$root) {
     $all = Get-CimInstance Win32_Process | Select-Object ProcessId, ParentProcessId
@@ -75,7 +78,7 @@ $targets['pos loopback /harborpine/health'] = 'http://127.0.0.1:8820/harborpine/
 $targets['crm public /api/health'] = "https://crm.$PublicIp.sslip.io/api/health"
 $targets['crm public /'] = "https://crm.$PublicIp.sslip.io/"
 $targets['portal public /healthz'] = "https://portfolio.$PublicIp.sslip.io/healthz"
-$targets['practica public /acceder/'] = "https://practica.$PublicIp.sslip.io/acceder/"
+if ($coCfg -and $coCfg.url) { $targets['co-hosted application'] = $coCfg.url }
 $lat = [ordered]@{}
 foreach ($k in $targets.Keys) {
     $times = @(); $codes = @{}
