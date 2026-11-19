@@ -234,7 +234,7 @@ catches such corruption. The same fix applied to the recovery suite and the E2E 
 | POS services | MariaDB 65 MB / 0.2 % core; PHP-FastCGI ×2 3 + 36 MB / 0 %; simulation worker 113 MB / 0.5 % core |
 | CRM services | API 40 MB / 0 %; PostgreSQL 23 MB / 0 % · Caddy 23 MB / 0.3 % · Práctica 4 + 29 MB / 0 % |
 | Disk | POS app 97 MB, MariaDB data 307 MB, POS backups 310 MB (3 dumps today), PHP 88 MB, CRM 175 MB |
-| Latency (20 sequential requests) | POS loopback `/sign-in` median 321 ms / p95 401 ms; `/harborpine/health` 335 / 424 ms; CRM public `/api/health` 67 / 129 ms, `/` 59 / 133 ms; portal `/healthz` 61 / 195 ms; Práctica `/acceder/` 102 / 183 ms |
+| Latency (20 sequential requests) | POS loopback `/sign-in` median 321 ms / p95 401 ms; `/harborpine/health` 335 / 424 ms; CRM public `/api/health` 67 / 129 ms, `/` 59 / 133 ms; portal `/healthz` 61 / 195 ms; co-hosted application sign-in page 102 / 183 ms |
 
 Working-set figures are as reported by Windows (trimmed pages excluded).
 
@@ -248,7 +248,7 @@ and after): staged with `crm=live, pos=preparing`; smoke tests passed (home 200 
 Re-rendered CRM/POS site files differ from the previous ones only by a comment character (renderer now reads
 templates as UTF-8; the em dash had been written as `â€”`).
 
-**Neighbours after the reload:** CRM `/api/health` and `/` 200, Práctica `/acceder/` 200, POS loopback health 200,
+**Neighbours after the reload:** CRM `/api/health` and `/` 200, co-hosted application sign-in page 200, POS loopback health 200,
 no public POS site.
 
 **Browser check** (Chromium, desktop 1366 px and phone 390 px, public URL): 0 page/console/request errors,
@@ -502,7 +502,7 @@ Latency:
 | CRM `/api/health` | 70 ms | 179 ms |
 | CRM `/` | 56 ms | 107 ms |
 | Portal `/healthz` | 55 ms | 90 ms |
-| Práctica `/acceder/` | 62 ms | 110 ms |
+| co-hosted application sign-in page | 62 ms | 110 ms |
 
 All responses were 200. POS latency is PHP-CGI framework boot (Laravel + NexoPOS modules), the same over
 loopback and public HTTPS.
