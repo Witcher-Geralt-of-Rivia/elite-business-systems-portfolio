@@ -21,10 +21,12 @@
 [CmdletBinding()]
 param(
     [switch]$RunBackups,
-    [string]$Repo = (Resolve-Path (Join-Path $PSScriptRoot '..\..')),
+    [string]$Repo,
     [int]$MaxBackupAgeHours = 26
 )
 $ErrorActionPreference = 'Stop'
+# ($PSScriptRoot is empty inside param() defaults in Windows PowerShell 5.1.)
+if (-not $Repo) { $Repo = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path }
 $results = [System.Collections.Generic.List[object]]::new()
 function Add-Check([string]$area, [string]$name, [string]$status, [string]$detail) {
     $results.Add([pscustomobject]@{ area = $area; check = $name; status = $status; detail = $detail })
