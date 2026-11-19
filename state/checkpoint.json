@@ -5,7 +5,7 @@
   "current_milestone": "M5",
   "current_task": "M5 ERP: pre-reboot readiness complete (preflight 0 failing, fresh verified backups); WSL1 PoC S0-S8 waits for owner console confirmation, maintenance window and REBOOT approval",
   "status": "release_1_0_delivered; erp_in_development",
-  "last_verified_commit": "7a835a8",
+  "last_verified_commit": "c6acb5a",
   "milestones": {
     "M0": "done",
     "M1": "done",
