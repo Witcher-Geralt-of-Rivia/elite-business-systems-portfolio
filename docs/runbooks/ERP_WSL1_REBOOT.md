@@ -33,7 +33,8 @@ Read-only state on 2026-11-17: feature `Disabled`, no pending-reboot flags, last
    Get-Service caddy, portfolio-crm-postgres, portfolio-crm-api, sshd | Format-Table Name, Status, StartType
    git -C "C:\Workstation\CRM, ERP, POS\elite-business-systems-portfolio" status --short   # must be clean
    ```
-2. **Enable the feature without restarting**, then restart at a chosen time:
+2. **Enable the feature without restarting**, then restart at a chosen time. WSL1 only: never run `wsl --install`
+   (it enables VirtualMachinePlatform and WSL2), and do not enable VirtualMachinePlatform or Hyper-V:
    ```powershell
    Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux -NoRestart
    Restart-Computer   # only at the approved time
