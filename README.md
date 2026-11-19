@@ -15,7 +15,7 @@ generating business activity.
 |---|---|---|---|---|
 | CRM | [Atomic CRM](https://github.com/marmelab/atomic-crm) (Marmelab, MIT) | *Meridian Advisory*, B2B operations-analytics software and services | Atomic CRM UI + project-built Fastify API, PostgreSQL 16 | **live**, read-only visitor demo |
 | POS | [NexoPOS](https://github.com/Blair2004/NexoPOS) v6.3.0 (Blair Jersyer, GPL-3.0) | *Harbor & Pine Market*, coastal specialty food and home store | NexoPOS (Laravel, PHP 8.3) + a GPL-3.0 module, MariaDB 11.8 | **live**, read-only visitor demo with checkout preview |
-| ERP | [ERPNext](https://github.com/frappe/erpnext) v16 (Frappe Technologies, GPL-3.0) | wholesale electronics distributor | Frappe/ERPNext v16.60.0 + custom app `portfolio_sim` (GPL-3.0) | **in development**: app and distribution engine implemented and verified without ERPNext ([apps/erp](apps/erp/README.md)); **not running yet**, because the runtime needs an owner-approved Windows change |
+| ERP | [ERPNext](https://github.com/frappe/erpnext) v16 (Frappe Technologies, GPL-3.0) | wholesale electronics distributor | Frappe/ERPNext v16.60.0 + custom app `portfolio_sim` (GPL-3.0) | **in development**: app and distribution engine pass their integration tests on real ERPNext v16.60.0 **on Linux** (GitHub Actions); **not deployed** on the portfolio host, because the Windows runtime (WSL1) is untested and needs an owner-approved change |
 | Portal | original work (MIT) | — | static site behind Caddy | **live**, with live application status |
 
 Public hostnames follow `https://{portfolio,crm,pos}.<server-ip>.sslip.io`; the address is published on the portal,

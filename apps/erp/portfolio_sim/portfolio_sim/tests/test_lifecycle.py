@@ -1,10 +1,9 @@
 """ERPNext integration tests for the distribution simulation.
 
-STATUS: WRITTEN, NOT YET EXECUTED. They need a running Frappe v16.60.0 / ERPNext v16.60.0 site, which does not
-exist yet: the only supported route on the Windows host is WSL1, and enabling it needs an owner-approved reboot
-(see docs/runbooks/ERP_WSL1_POC.md). Until they have run and passed on a real site, nothing in this app is claimed
-to work against ERPNext; the pure engine is covered by apps/erp/tests (executed) and the API references by
-scripts/verification/check_erp_upstream.py (executed).
+STATUS: EXECUTED ON LINUX. 7/7 pass on real Frappe/ERPNext v16.60.0 in GitHub Actions (ubuntu-24.04, Python 3.14,
+MariaDB 11.8): .github/workflows/erp-integration.yml, run 44425817273 (3,068 events over 64 business days). This
+validates the application on a supported Linux runtime only. WSL1 on the Windows host is untested
+(docs/runbooks/ERP_WSL1_POC.md).
 
 Run (on a dedicated test site, never on a site with real history):
 	bench --site <test-site> set-config allow_tests true

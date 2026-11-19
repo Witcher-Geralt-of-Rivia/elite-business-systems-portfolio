@@ -2,6 +2,29 @@
 
 Newest first. Every entry states what was **verified**, not just what was written.
 
+## 2026-11-19 — M5: ERPNext integration tests pass on Linux (GitHub Actions); WSL1 still untested
+
+- **Workflow:** `.github/workflows/erp-integration.yml`, manually triggered. A real Frappe bench and ERPNext v16.60.0
+  (Python 3.14, Node 24, MariaDB 11.8, Redis) on a temporary Ubuntu 24.04 runner, with an isolated throwaway site.
+  No production credentials and no VPS access.
+- **Result:** run 44425817273 passed **7/7**.
+  - 3,068 events over 64 business days, every submitted document count equal to the deterministic plan.
+  - Purchasing, sales with partial deliveries, invoices, customer and supplier payments, advances, returns, credit
+    and debit notes, and reconciliation.
+  - **36 integrity checks at 0**; replay 3,068 = 3,068.
+  - Exactly-once: a re-run adds nothing, and an injected crash recovers. About 3.9 events/s.
+- **Found and fixed on real ERPNext** (11 runs, every failure recorded):
+  - **App defects:** packaging README; Gender fixtures; Stock Reconciliation over 100 rows queued instead of
+    submitted; mapper due dates computed from today; **every order priced at 0** (ERPNext fills server-side item
+    fields only when `None`); credit-note reconciliation journals dated today.
+  - **Check corrections:** the Bin check; advances excluded from payment-before-invoice; integrity/replay refuse an
+    empty site.
+  - **CI guard:** Frappe v16's `--skip-test-records` silently runs nothing, which made one run a false pass.
+- **Limits:** Linux runtime validation only. WSL1 compatibility, the host deployment and browser tests remain open.
+- **Reboot readiness:** read-only inspection recorded in the PoC runbook. Technically ready, conditional on the owner
+  confirming the provider console, choosing a window and approving REBOOT. The database services have no
+  restart-on-failure actions (recommendation, not changed). The reboot is **not** authorised.
+
 ## 2026-11-18 — M5 started: ERPNext custom app and distribution engine implemented (no runtime yet)
 
 - **App:** `apps/erp/portfolio_sim`, a custom Frappe app (GPL-3.0) for ERPNext/Frappe v16.60.0. It contains:

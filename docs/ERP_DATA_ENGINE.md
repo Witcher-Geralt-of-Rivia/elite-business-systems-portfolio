@@ -1,12 +1,14 @@
 # ERP data engine — Sable Ridge Electronics Supply Co.
 
-**Status (2026-11-18):** the custom Frappe app `portfolio_sim` is implemented in `apps/erp/portfolio_sim`.
-- **Executed:** the pure-Python engine and the static verification against the pinned sources.
-- **Not executed:** the ERPNext integration tests. There is no ERPNext runtime yet; see
-  [runbooks/ERP_WSL1_POC.md](runbooks/ERP_WSL1_POC.md).
+**Status (2026-11-19):** the custom Frappe app `portfolio_sim` is implemented in `apps/erp/portfolio_sim`.
+- **Linux:** its ERPNext integration tests **pass on real Frappe/ERPNext v16.60.0 on Linux** (GitHub Actions, 7/7,
+  3,068 events, 36 integrity checks at 0, replay exact).
+- **Windows host:** ERPNext is **not deployed**. WSL1 compatibility is untested
+  ([runbooks/ERP_WSL1_POC.md](runbooks/ERP_WSL1_POC.md)), and there are no browser tests yet. ERPNext is not
+  claimed operational on the portfolio host.
 
-ERPNext is **not operational** until those tests, the financial integrity suite and browser tests have passed on a
-real site.
+Integrity: 36 checks. The 32 described below plus four value checks (zero-rate order/purchase lines, zero-value
+invoices/bills) added after the Linux runs showed that a zero-priced history is internally consistent.
 
 ## Scenario (independent of the CRM and POS)
 
@@ -111,7 +113,8 @@ chronological order, so no later postings exist when a document is submitted.
 |---|---|
 | General ledger | GL balanced per voucher and in total; nothing posted after the processed point; nothing on weekends; operating bank account never negative |
 | Receivables and payables | Sales and Purchase Invoice outstanding = Payment Ledger sum; Debtors/Creditors GL balance = payment ledger; sales tax = rate × net total; no untaxed invoice for a taxable customer |
-| Inventory | Bin = Stock Ledger sum; no negative stock; stock value (SLE) = Stock accounts (GL); ERP quantities = planner projection after each complete day |
+| Values (added after the Linux runs) | no zero-rate sales or purchase order lines; no zero-value invoices or bills |
+| Inventory | Bin = quantity after the latest Stock Ledger entry (corrected after the Linux runs: Stock Reconciliation entries carry `actual_qty` 0); no negative stock; stock value (SLE) = Stock accounts (GL); ERP quantities = planner projection after each complete day |
 | Relationships | no over-delivery or over-receipt; every delivery from a Sales Order, invoice from a Delivery Note, receipt from a Purchase Order, bill from a Purchase Receipt; returns within delivered and received quantities |
 | Chronology | delivery ≥ order, receipt ≥ order, invoice ≥ delivery, bill ≥ receipt, payment ≥ invoice |
 | Simulation ledger | every submitted transaction document is referenced by the ledger (system-generated reconciliation journals excepted); ledger references exist and are submitted; no document referenced twice; no cancelled ledger entries |
@@ -134,5 +137,6 @@ and not paused, executes at most 120 events per tick and never waits for the eng
 |---|---|
 | `python -m unittest discover -s apps/erp/tests` (35 tests: RNG, calendar, catalogue, scenario, planner determinism, resume, references, chronology, quantities, stock replay, volumes, payments, supplier side, routines; compile and engine-isolation checks; static reference checks with self-tests) | **executed, 35/35 pass** |
 | `python scripts/verification/check_erp_upstream.py` (pinned versions, 13 function signatures, controller methods, every DocType field, child field and Select value the services use, SQL columns, Standard chart accounts, fixtures, app DocTypes, hooks) | **executed, 675 checks, 0 problems** |
-| `portfolio_sim/tests/test_lifecycle.py` (ERPNext `IntegrationTestCase`: setup, opening, document chains, pricing and discount, returns, payments, reconciliation, replay, no duplicates, crash recovery) | **written, not yet executed** (needs the WSL1 runtime) |
+| `portfolio_sim/tests/test_lifecycle.py` (ERPNext `IntegrationTestCase`: setup, opening, document chains, pricing and discount, returns, payments, reconciliation, replay, no duplicates, crash recovery; document counts equal to the plan) | **executed on Linux: 7/7** on real Frappe/ERPNext v16.60.0 (GitHub Actions run 44425817273; 3,068 events, 36 integrity checks at 0, replay exact). Six application defects were found and fixed on the way (TEST_RESULTS "M5 — ERPNext integration on Linux") |
+| WSL1 on the Windows host | **untested** (needs REBOOT; [runbooks/ERP_WSL1_POC.md](runbooks/ERP_WSL1_POC.md)) |
 | ERP browser E2E | not written yet (after the runtime exists) |

@@ -572,4 +572,103 @@ has no Frappe imports): **35/35 pass** (about 18 s).
 - browser E2E (not written yet).
 
 Execution needs the WSL1 runtime ([ERP_WSL1_POC.md](runbooks/ERP_WSL1_POC.md), owner decision REBOOT).
+(Superseded for the Linux runtime by the next section.)
+
+## M5 — ERPNext integration on Linux (GitHub Actions, 2026-11-18/19)
+
+**Scope:** this validates the **application on real Frappe/ERPNext v16.60.0 on Linux**. It does **not** validate WSL1
+on the Windows host, which is untested. Release 1.0, the co-hosted application and the VPS were not touched: the
+runner is a temporary GitHub-hosted machine with throwaway credentials.
+
+**Workflow** (`.github/workflows/erp-integration.yml`, manual trigger):
+- runner: ubuntu-24.04 (4 vCPU), `setup-python` 3.14.10, Node 24;
+- services: MariaDB 11.8 service container (utf8mb4 settings as in ERPNext's CI), `redis-server` from apt;
+- bench: `bench init --frappe-branch v16.60.0`, `bench get-app erpnext --branch v16.60.0`, the app from this
+  repository, a new `test_site` with ERPNext and `portfolio_sim`;
+- tests: `run-tests --module portfolio_sim.tests.test_lifecycle`, then integrity, replay and ledger/GL summaries
+  uploaded as evidence;
+- guards: the JUnit report must show exactly 7 tests with no failures, errors or skips; the history must have at least
+  1,000 executed events with ledger rows = executed count; integrity and replay must exit 0.
+
+**Run history (every failure and fix):**
+
+| Run | Result | Finding | Fix |
+|---|---|---|---|
+| 44410189095 | failed at app install | flit: `pyproject.toml` named a `README.md` that did not exist in the app directory | app README added |
+| 44411077780 | **false pass** | `run-tests --skip-test-records` returns **without running anything** in Frappe v16 (exit 0); integrity "passed" on an empty, un-initialised site | flag removed; JUnit and minimum-history guards; `integrity`/`replay-check` refuse an un-initialised simulation |
+| 44411918611 | setup error | `Could not find Gender: Female`: ERPNext's programmatic setup does not create Gender records (Frappe's interactive wizard does) | setup creates them; `unittest-xml-reporting` installed |
+| 44412742127 | 2/7 | Stock Reconciliation with more than 100 rows is **queued as a background job** instead of submitted. The 280-row opening stock stayed a draft and every delivery hit NegativeStockError | opening stock per warehouse (≤ 96 rows, engine test); `submit` helper raises unless docstatus = 1 |
+| 44414165205 | 2/7 | `Due Date cannot be after …`: mappers compute due dates from today. Also the `bin_vs_stock_ledger` check was wrong (reconciliation entries carry `actual_qty` 0) | explicit due dates from party terms; check compares Bin with the latest entry's `qty_after_transaction` |
+| 44414979203 | 5/7 | the two failing count assertions were wrong expectations (first receipt planned 18 Aug, first supplier payment 11 Sep) | tests now require document counts **exactly equal to the deterministic plan** |
+| 44417258442 | 6/7 | **every order was priced at 0**: server-side, ERPNext fills item fields only when they are `None`, and new rows default to 0, so the Standard Selling price was never fetched. 93/93 payments were "Nothing Due" and there was no Sales Invoice GL. A weak pricing assertion (0 = 0) passed | `price_list_rate` passed, ERPNext computes the discounted rate; 4 new zero-value integrity checks; pricing test requires positive rates = Item Price − discount; ≥ 90 % of payments must post |
+| 44419501627, 44421664339 | 4/7 | (1) 2 system journals reconciling credit notes were dated on the runner's current day: their date comes from the allocation's `debit_or_credit_note_posting_date`, else `today()`. (2) All 26 payment-before-invoice rows were customer **advances** allocated to later invoices (legitimate) | allocation date set to the reconciliation day; advances excluded from that chronology check (rows recorded as evidence first) |
+| **44423743980** | **7/7** | 1,816 events (to 2025-09-12); 36 integrity checks at 0; replay exact | window extended to cover purchase returns |
+| **44425817273** | **7/7 (current)** | see below | — |
+
+**Run 44425817273** (commit `72fd3c4`, about 17 min):
+- **Tests:** JUnit 7/7, with no failures, errors or skips.
+
+| Test | Time |
+|---|---|
+| test_01 master data | 0.05 s |
+| test_02 opening day | 5.3 s |
+| test_03 two weeks | 117 s |
+| test_04 five weeks | 251 s |
+| test_05 replay | 0.2 s |
+| test_06 rerun, no duplicates | 0.01 s |
+| test_07 crash and recovery to 2025-10-03 | 413 s |
+
+- **History:** 3,068 events over 64 business days, from 2025-08-01 to 2025-10-03. Ledger rows = executed = 3,068.
+- **Integrity: 36 checks, all 0.** The general ledger is balanced per voucher and in total. AR and AP agree with the
+  payment ledger. Bin agrees with the stock ledger, and stock value with the Stock accounts. Document
+  relationships, chronology and ledger coverage hold, with no zero-value lines or invoices and nothing dated after
+  the processed point.
+- **Replay:** 3,068 planned = 3,068 recorded; missing, unexpected and mismatched all 0; the planner state matches.
+- **Documents** (each equal to the plan, asserted):
+
+| Document | Count |
+|---|---|
+| Sales Orders | 709 |
+| Delivery Notes | 911 (865 deliveries, 46 returns) |
+| Sales Invoices | 911 (865 invoices, 46 credit notes) |
+| Purchase Orders | 66 |
+| Purchase Receipts | 49 (48 receipts, 1 return) |
+| Purchase Invoices | 41 (40 bills, 1 debit note) |
+| Payment Entries | 306 (288 customer payments, 15 advances, 3 supplier payments) |
+| Stock Entries | 26 |
+| Stock Reconciliations | 5 (3 opening, 2 cycle counts) |
+| Journal Entries | 33 |
+
+  Reconciliation: 37 allocating, 15 with nothing to allocate.
+- **Business behaviour verified on real ERPNext:**
+  - every sales line at the Standard Selling price less the customer discount;
+  - partial deliveries (orders with more than one delivery);
+  - credit notes and returns into the Returns warehouse, plus a purchase return and debit note;
+  - reconciliation of advances and credit notes;
+  - Ohio tax on taxable customers;
+  - opening stock at cost, cleared to equity;
+  - stock valuation consistent with the GL.
+- **Exactly-once on real ERPNext:**
+  - a re-run of the processed window adds no ledger rows and no GL entries;
+  - an injected crash after documents were created rolls back completely, and the next run executes the event once
+    (documents equal the plan).
+- **GL by voucher type** (debit = credit):
+
+| Voucher type | Vouchers | Debit = credit (USD) |
+|---|---|---|
+| Sales Invoice | 911 | 401,515.20 |
+| Delivery Note | 911 | 309,467.98 |
+| Payment Entry | 306 | 312,655.53 |
+| Purchase Receipt | 49 | 199,181.49 |
+| Purchase Invoice | 41 | 157,640.44 |
+| Journal Entry | 33 | 2,144,104.98 |
+| Stock Reconciliation | 5 | 309,035.72 |
+
+- **Throughput:** about 3.9 events/s on the 4-vCPU runner.
+
+**Not covered yet:**
+- Month-end settlement of advance payers was always "Nothing Due" in this window: their advances covered every
+  invoice. The payment path it uses is the same as customer payments, which is exercised 288 times.
+- Browser E2E (not written).
+- WSL1 compatibility (untested).
 
