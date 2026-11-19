@@ -672,3 +672,28 @@ runner is a temporary GitHub-hosted machine with throwaway credentials.
 - Browser E2E (not written).
 - WSL1 compatibility (untested).
 
+## M5 — pre-reboot readiness (2026-11-18, no change to Windows)
+
+No feature was enabled, no service or configuration changed, and there was no reboot.
+
+**`preflight-reboot.ps1 -RunBackups`** (17:16 local): **0 failing**. 33 checks pass; 2 are owner confirmations.
+
+| Area | Result |
+|---|---|
+| Services | Caddy, 7 portfolio services, the co-hosted application's 2 services, sshd, RustDesk, AnyDesk, Jump Desktop and Task Scheduler: Automatic and Running. Remote Desktop enabled |
+| Features | WSL, VirtualMachinePlatform, Hyper-V and HypervisorPlatform: Disabled |
+| Pending reboot | no servicing or Windows Update reboot. Queued file operations: 116 print-spooler driver-cache deletions, 3 Chrome installer leftovers, 1 Edge log rotation (no system files) |
+| Fresh backups | CRM `crm-20261118-171611.dump` (1.3 MB): restore check OK, row counts equal. POS `pos-20261118-171621.sql` (103.6 MB): restore check OK, counts and text checksums equal |
+| Nightly tasks | CRM backup, POS backup and the co-hosted daily backup: last result 0 (within 26 h) |
+| Monitor | 10/10 OK |
+| Git | working tree clean; HEAD = origin/main |
+| Owner confirmations | provider out-of-band console; maintenance window and REBOOT approval |
+
+**`post-reboot-check.ps1 -ExpectWsl Disabled`** (trial in the current state, before any reboot): **25/25 pass**.
+- All Release 1.0, co-hosted and remote-access services Running; monitor OK.
+- POS: simulation lag 15 s, integrity 43/43, no duplicate ledger keys. CRM integrity 22/22.
+- Co-hosted application HTTP 302; Caddyfile hash unchanged; VirtualMachinePlatform, Hyper-V and HypervisorPlatform Disabled.
+
+**`set-db-service-recovery.ps1`** (dry run): the CRM PostgreSQL and POS MariaDB services have no failure actions. The
+proposed restart after 10/30/60 s is **not applied**; that needs owner authorisation.
+

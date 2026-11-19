@@ -3,7 +3,7 @@
   "repository": "https://github.com/Witcher-Geralt-of-Rivia/elite-business-systems-portfolio",
   "updated": "2026-11-18",
   "current_milestone": "M5",
-  "current_task": "M5 ERP: app passes real ERPNext v16.60.0 integration tests on Linux (GitHub Actions); WSL1 PoC awaits owner decision REBOOT",
+  "current_task": "M5 ERP: pre-reboot readiness complete (preflight 0 failing, fresh verified backups); WSL1 PoC S0-S8 waits for owner console confirmation, maintenance window and REBOOT approval",
   "status": "release_1_0_delivered; erp_in_development",
   "last_verified_commit": "7a835a8",
   "milestones": {
@@ -52,7 +52,8 @@
     "M8 integration regression (2026-11-18): CRM E2E 10/10, CRM integrity 22/22, POS 43/43, POS visitor 4/4",
     "M9 Release 1.0 final acceptance and delivery package (2026-11-18)",
     "M5 repository level (2026-11-18): ERP custom app and engine; see TEST_RESULTS M5 section and docs/ERP_DATA_ENGINE.md",
-    "M5 Linux integration validation (2026-11-19): .github/workflows/erp-integration.yml, run 44425817273 7/7; see TEST_RESULTS M5 Linux section"
+    "M5 Linux integration validation (2026-11-19): .github/workflows/erp-integration.yml, run 44425817273 7/7; see TEST_RESULTS M5 Linux section",
+    "M5 pre-reboot readiness (2026-11-18): preflight-reboot.ps1 0 failing with fresh verified CRM/POS backups; post-reboot-check.ps1 trial 25/25; DB recovery actions prepared (dry run)"
   ],
   "pending_tasks": [
     "ERP (M5): owner decision REBOOT (confirm provider out-of-band console, choose window), then WSL1 PoC S0-S8 (docs/runbooks/ERP_WSL1_POC.md)",
@@ -65,15 +66,16 @@
   ],
   "blocked_tasks": [
     {
-      "task": "ERP runtime (WSL1 PoC)",
-      "reason": "Windows reboot not approved by the owner",
+      "task": "ERP runtime (WSL1 PoC S1-S8)",
+      "reason": "owner must confirm provider out-of-band console access, choose a maintenance window and approve REBOOT",
       "decision_ids": [
         "REBOOT"
       ]
     }
   ],
   "owner_decisions_needed": [
-    "REBOOT",
+    "REBOOT (with out-of-band console confirmation and maintenance window)",
+    "DB-RECOVERY (optional: apply set-db-service-recovery.ps1 -Apply)",
     "SEC-ROTATE"
   ],
   "host_facts": {
@@ -114,7 +116,8 @@
     "crm_live_lead": "observed 2026-11-18 20:48:48 UTC (company 501), audit 7 entries, SSE 59 ms",
     "erp_engine_static": "35/35 (python -m unittest discover -s apps/erp/tests)",
     "erp_upstream_static": "868 DocTypes, 692 checks, 0 problems",
-    "erp_integration": "7/7 on Linux, real ERPNext v16.60.0 (GitHub Actions run 44425817273, 3,068 events, 36 integrity 0, replay exact); WSL1 untested"
+    "erp_integration": "7/7 on Linux, real ERPNext v16.60.0 (GitHub Actions run 44425817273, 3,068 events, 36 integrity 0, replay exact); WSL1 untested",
+    "preflight": "2026-11-18 17:16: 0 failing (33 pass, 2 owner confirmations); fresh backups crm-20261118-171611, pos-20261118-171621 restore-verified"
   },
   "deployment_status": {
     "crm": "production at crm.<ip>.sslip.io: M4 build, 13-month synthetic history, live simulation (intensity 3), read-only visitor access; public E2E 10/10",
@@ -122,7 +125,7 @@
     "erp": "not deployed (on hold)",
     "portal": "deployed: portal/site via deploy-portal.ps1 (crm=live, pos=live, erp=planned); /status/crm + /status/pos; strict CSP"
   },
-  "next_action": "Linux integration validation complete. Next: owner decision REBOOT after confirming the provider console; then WSL1 PoC S0-S8. Release 1.0 unchanged.",
+  "next_action": "Wait for owner: confirm out-of-band console, choose window, approve REBOOT. Then S0 (preflight-reboot.ps1 -RunBackups), S1 (WSL feature only + one reboot; post-reboot-check.ps1 within 10 min), S2-S8 sequentially with stop conditions F1-F7. Release 1.0 unchanged.",
   "completed_milestones": [
     "M0",
     "M1",

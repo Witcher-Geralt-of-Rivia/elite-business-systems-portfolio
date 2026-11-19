@@ -2,6 +2,23 @@
 
 Newest first. Every entry states what was **verified**, not just what was written.
 
+## 2026-11-18 — M5: pre-reboot readiness prepared; waiting for the owner's console confirmation and window
+
+- **New scripts:**
+  - `preflight-reboot.ps1` (S0 gate): **0 failing** (33 pass), including fresh CRM and POS backups with restore
+    checks.
+  - `post-reboot-check.ps1` (S1 criterion): trial 25/25 in the current state.
+  - `set-db-service-recovery.ps1`: prepared as a dry run, not applied.
+- **Co-hosted identifiers:** read from a host-side config. Earlier service names and a URL path were removed from the
+  repository text.
+- **Runbook:** WSL1 only, with `wsl --import … --version 1` and never `wsl --install`, VirtualMachinePlatform,
+  Hyper-V or WSL2. Platform smoke P1–P6 (system calls, Redis, workers, scheduler, process recovery, boot autostart)
+  runs before any history. ERP MariaDB stays isolated, and ERPNext private.
+- **Queued file operations at the next boot:** spooler cache cleanup, Chrome leftovers and an Edge log rotation;
+  no system files.
+- **Waiting for the owner:** out-of-band console confirmation, maintenance window, REBOOT approval, and optionally
+  the database recovery actions. Nothing on Windows was changed.
+
 ## 2026-11-19 — M5: ERPNext integration tests pass on Linux (GitHub Actions); WSL1 still untested
 
 - **Workflow:** `.github/workflows/erp-integration.yml`, manually triggered. A real Frappe bench and ERPNext v16.60.0
