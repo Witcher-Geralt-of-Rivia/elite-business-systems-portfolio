@@ -2,6 +2,28 @@
 
 Newest first. Every entry states what was **verified**, not just what was written.
 
+## 2026-11-20 — M5: ERPNext runs natively on Windows, privately; acceptance in progress (D-019)
+
+- **Owner decisions:** ERP-RUNTIME = native Windows, REDIS-WINDOWS = community Redis 8.10.3 build (D-019). QEMU PoC
+  removed with its own cleanup (evidence kept); C: free 28.0 → 40.2 GB.
+- **Runtime:** pinned Frappe/ERPNext v16.60.0 (clean clones, commits verified), uv Python 3.14.10, own MariaDB
+  11.8.10 and two Redis instances (digest/provenance verified), 9 Windows services (LOCAL SERVICE, restart on
+  failure), private entry point 127.0.0.1:8850 (own Caddy instance; host Caddy unchanged). Assets built on Linux CI
+  from the pinned commits, 518 files hash-verified on install.
+- **Verified:** browser E2E 7/7 (Desk, lists, forms, reports incl. a worker-generated prepared report, Socket.IO,
+  permissions); multi-day history 479 events, integrity 36/0, replay exact, ~1.1 events/s; nightly backup with a
+  restore into a separate scratch MariaDB plus the app's integrity checks on the restore; all 9 services recover from
+  a hard kill (0 orphans; graceful stop of the stack 26.8 s); **7 integration tests 7/7 on the native runtime,
+  state hash and GL identical to CI**.
+- **Defects found and fixed on the way:** engine/ERPNext deadlock (event retry, R-018), Socket.IO origin behind the
+  proxy, MSYS2 Redis paths and stop, orphaned venv-launcher processes, minutes-long worker stop, missing site time
+  zone (Frappe fell back to Asia/Kolkata), backup-script variable collision; a debug trace printed the site DB
+  password to the console (rotated).
+- **Prepared, not active:** visitor read-only access, production auth settings, public Caddy site outside the
+  rendered folder, guarded `activate-erp-public.ps1` with rollback, flag-gated portal integration. Public HTTPS needs
+  the owner's ERP-PUBLIC approval.
+- **Running / next:** controlled performance benchmark (gate), full history, live simulation, 24-hour stability.
+
 ## 2026-11-19 — M5: ERPNext on the VPS without WSL or reboot — QEMU-TCG measured, native Windows spiked
 
 - **QEMU-TCG (owner directive):** QEMU 11.1.0 software emulation runs a Debian 13 guest on the VPS (fixes: SMM off,

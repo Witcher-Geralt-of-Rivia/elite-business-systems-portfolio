@@ -880,5 +880,69 @@ the operator console; the password was rotated (MariaDB account and `site_config
 the ERP checks: 12/12 ok. `watch-erp-impact.ps1` (SYSTEM task) logs host/ERP resources and production latency against
 a baseline taken with the ERP idle (CRM 111, portal 124, POS 473, co-hosted 103 ms).
 
-Still to report in this section: recovery test, integration tests on the Windows runtime, full backfill, 24-hour
-stability and the acceptance matrix.
+**Service recovery (`run-erp-recovery.ps1`, SYSTEM task, evidence `recovery-20261120-1244.json` and `-1254.json`).**
+Each service's process was terminated with `Stop-Process -Force` (a crash); the service manager restarted it and the
+health endpoint (DB, both Redis, workers, scheduler, simulation) returned 200 again:
+
+| Service | Restart | Healthy | Note |
+|---|---|---|---|
+| Redis cache / queue | 13.3 / 12.0 s | 14.1 / 12.3 s | queue data survived (AOF) |
+| web | 11.6 s (retest 32.1) | 16.3 s (36.9) | |
+| worker short / long | 30.9 / 11.3 s (retest 62.0 / 32.2) | 31.1 / 11.7 s | |
+| scheduler | 11.7 s (retest 31.8) | 12.0 s | |
+| Socket.IO | 31.4 s | 31.7 s | |
+| private proxy | 12.2 s | 12.6 s | |
+| MariaDB | 16.2 s | 16.4 s | InnoDB crash recovery |
+
+Restart delays follow the configured 10/30/60 s steps (a service that failed earlier within the hour gets the next
+step). Two defects found and fixed, then only the affected tests repeated:
+- **Orphaned interpreters:** a venv's `python.exe` on Windows is a launcher whose real interpreter is a child; after
+  stops/restarts two workers kept running outside service control (the first graceful stop/start found 4 leftover
+  processes). Services now run the base interpreter with `__PYVENV_LAUNCHER__` (one process each). Retest: **0
+  orphans after every kill; 0 leftover processes after a full graceful stop**.
+- **Slow worker stop:** rq's blocking 405 s Redis wait delays the service's Ctrl+C on Windows (stop took 107 s and
+  more; the whole stack 305 s). Idle wait now 10 s. Retest: **graceful stop of all 9 services 26.8 s, healthy 10.6 s
+  after start**.
+After all kills: integrity 36/0 (479 events), no draft transaction documents, no ledger reference used twice.
+
+**Integration tests on the native production runtime** (isolated site `erp-test.portfolio.local`, own database; web,
+workers, Redis and MariaDB are the production services; scheduler off on the test site as on new sites and in CI):
+**JUnit 7/7, 0 failures, errors or skips, 3,651 s** (test_01 0.2 s, test_02 39.2 s, test_03 557.3 s, test_04
+943.3 s, test_05 0.6 s, test_06 0.0 s, test_07 1,899.7 s). Status 3,068 events = 3,068 ledger rows (to 2025-10-03
+17:00); **integrity 36 checks, 0 failing; replay 3,068 = 3,068, 0 missing/unexpected/mismatched, state matches;
+state hash `cc2e118f10671999` identical to CI; GL per voucher type identical to CI to the cent** (7 types, every
+type debit = credit). Evidence: `junit-native.xml`, `itest-*.log`, `itest-gl_by_voucher_type.tsv`.
+
+**Site time zone (defect).** System Settings had no time zone: ERPNext's `setup_complete` (used by
+`portfolio-sim setup`) does not run Frappe's system-settings stage, so `now_datetime()` fell back to Asia/Kolkata and
+the live simulation would have run the Columbus business day ~10 h early. Fixed in `setup.py` (time zone, language,
+country) and on the production site (America/New_York; site clock verified equal to New York time). Historical
+events carry explicit posting dates and are unaffected.
+
+**Controlled performance benchmark** (`run-erp-benchmark.ps1`, 2026-11-20 14:06–15:04, no browser tests or other
+ERP work; watchdog samples every ~27 s, 3 requests per endpoint per sample; analysis `erp-impact-report.ps1`,
+evidence `benchmark-20261120-1406*.json`). Ratios are medians against phase A (the same afternoon, ERP idle) — the
+stricter of the two baselines; against the morning baseline all ratios are lower still.
+
+| Phase | Samples | CRM | Portal | POS | Práctica | Failed requests | ERP events/s | ERP CPU | Host CPU | Available RAM |
+|---|---|---|---|---|---|---|---|---|---|---|
+| A ERP idle (20 min) | 45 | 84 ms | 90 ms | 397 ms | 85 ms | 0/540 | — | 2.4 % | 34.6 % | 4.8 GB |
+| B backfill alone, scheduler off | 28 | 0.93× | 0.87× | 0.82× | 0.93× | 0/336 | **1.92** | 32.7 % | 54.7 % | 4.2 GB |
+| C backfill + scheduler + workers | 56 | 0.95× | 0.91× | 0.81× | 0.94× | 0/672 | **1.93** | 32.4 % | 53.9 % | 5.5 GB |
+
+p90/p99 in C: CRM 100/117 ms, portal 120/150, POS 368/396, Práctica 109/153 (idle p99: 129/134/631/164). Commit
+76–77 %, MariaDB 100–165 MB, Redis 14–17 MB, disk throughput median ~0.3 MB/s; ERP data 685 → 848 MB for ~4,300
+events (≈ 38 KB per event: the full history needs < 1 GB more; 39 GB free). ERP health 503 in B by design (scheduler
+off), 200 in C. **Gate: passed** (≥ 0.35 events/s; no application above 1.25×; no failed request; no
+memory pressure). The production health monitor recorded no failure of CRM, POS, portal, TLS or their services all
+day; only the ERP's own checks failed during setup and the deliberate recovery kills (12:56 onwards all clean).
+
+**Earlier finding that shaped the backfill control.** While the integration tests ran (13:30–14:02) Práctica's
+median was 133 ms = 1.29× its morning baseline (host CPU 69 %, ERP 30 %): the watchdog shed twice. The watchdog now
+protects every application individually (one endpoint over 1.25× for 10 samples is enough), and the history runs
+through `run-erp-backfill.ps1`: chunks of 200 events at below-normal priority, the ERP's MariaDB at below-normal for
+the duration, a hold file written by the watchdog on degradation and released after 10 consecutive healthy samples
+(the runner waits; a killed chunk resumes at the first open event; one runner at a time).
+
+Still to report in this section: full history, live simulation, browser tests on the full data, 24-hour stability
+and the acceptance matrix.
