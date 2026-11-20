@@ -1,0 +1,151 @@
+# Production front-end assets for the native-Windows ERPNext installation (owner decision ERP-RUNTIME, 2026-11-20).
+#
+# Frappe's asset build (esbuild globbing, the Studio Vite build) does not work on Windows, but its output is
+# platform-independent. This job builds it on a temporary GitHub-hosted Ubuntu runner from the exact pinned
+# sources, verifies the commit SHAs, and publishes ONLY the build outputs with a SHA-256 manifest. The Windows
+# host installs them with scripts/provisioning/install-erp-assets.ps1, which checks every hash and the pins.
+# No credentials, no site, no database, no access to the VPS.
+name: ERP assets (ERPNext v16.60.0)
+
+on:
+  workflow_dispatch:
+    inputs:
+      frappe_ref:
+        description: Frappe tag
+        default: v16.60.0
+        required: true
+      frappe_sha:
+        description: Expected Frappe commit
+        default: bf9581a7c1c8c373c2ab514a404e9094609381ee
+        required: true
+      erpnext_ref:
+        description: ERPNext tag
+        default: v16.60.0
+        required: true
+      erpnext_sha:
+        description: Expected ERPNext commit
+        default: 886ab6ae187244e7f1b852393384ab6019d56264
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: erp-assets
+  cancel-in-progress: false
+
+env:
+  DEBIAN_FRONTEND: noninteractive
+  PYTHONUNBUFFERED: "1"
+  BENCH: /home/runner/frappe-bench
+
+jobs:
+  assets:
+    name: bench build --production
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Python 3.14
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Tooling
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libmariadb-dev pkg-config libcups2-dev
+          npm install -g yarn
+          pip install frappe-bench
+          python --version; node --version; yarn --version; bench --version
+
+      - name: Bench with pinned Frappe, ERPNext and portfolio_sim
+        run: |
+          cd /home/runner
+          bench init --skip-assets --skip-redis-config-generation --frappe-branch "${{ inputs.frappe_ref }}" --python "$(which python)" frappe-bench
+          cd "$BENCH"
+          bench get-app --skip-assets --branch "${{ inputs.erpnext_ref }}" erpnext https://github.com/frappe/erpnext
+          rm -rf /tmp/portfolio_sim && cp -r "$GITHUB_WORKSPACE/apps/erp/portfolio_sim" /tmp/portfolio_sim
+          git -C /tmp/portfolio_sim init -q && git -C /tmp/portfolio_sim add -A
+          git -C /tmp/portfolio_sim -c user.name=ci -c user.email=ci@example.org commit -qm "portfolio_sim @ $GITHUB_SHA"
+          bench get-app --skip-assets /tmp/portfolio_sim
+          test "$(git -C apps/frappe rev-parse HEAD)" = "${{ inputs.frappe_sha }}" || { echo "frappe commit mismatch"; exit 1; }
+          test "$(git -C apps/erpnext rev-parse HEAD)" = "${{ inputs.erpnext_sha }}" || { echo "erpnext commit mismatch"; exit 1; }
+          cat sites/apps.txt
+
+      - name: Node requirements
+        run: |
+          cd "$BENCH"
+          bench setup requirements --node
+
+      - name: Build (production)
+        run: |
+          cd "$BENCH"
+          start=$(date +%s)
+          bench build --production
+          echo "build seconds: $(( $(date +%s) - start ))"
+
+      - name: Package build outputs with a SHA-256 manifest
+        run: |
+          cd "$BENCH"
+          mkdir -p /tmp/out
+          # Build outputs = files inside each app repository that git does not track (a fresh clone has none),
+          # minus dependency trees and Python byproducts; plus the real (non-symlink) entries of sites/assets.
+          : > /tmp/out/files.txt
+          for app in $(cat sites/apps.txt); do
+            git -C "apps/$app" ls-files --others --ignored --exclude-standard -z \
+              | tr '\0' '\n' \
+              | grep -vE '(^|/)(node_modules|__pycache__|island-toolchain|\.git)/|\.pyc$|\.egg-info(/|$)|(^|/)\.yarn-integrity$' \
+              | sed "s#^#apps/$app/#" >> /tmp/out/files.txt || true
+            git -C "apps/$app" ls-files --others --exclude-standard -z | tr '\0' '\n' \
+              | grep -vE '(^|/)(node_modules|__pycache__|island-toolchain)/|\.pyc$|\.egg-info(/|$)' \
+              | sed "s#^#apps/$app/#" >> /tmp/out/files.txt || true
+          done
+          find sites/assets -type f -not -path '*/node_modules/*' | while read -r f; do
+            # skip files reached through an app symlink (already listed under apps/)
+            real=$(realpath "$f"); case "$real" in "$BENCH"/apps/*) ;; *) echo "$f" ;; esac
+          done >> /tmp/out/files.txt
+          sort -u -o /tmp/out/files.txt /tmp/out/files.txt
+          find sites/assets -maxdepth 2 -type l -printf '%p\t%l\n' | sed "s#\t$BENCH/#\t#" > /tmp/out/symlinks.tsv
+          echo "files: $(wc -l < /tmp/out/files.txt)"; cat /tmp/out/symlinks.tsv
+          awk -F/ '{print $1"/"$2"/"$3"/"$4"/"$5}' /tmp/out/files.txt | sort | uniq -c | sort -rn | head -40
+          tar -czf /tmp/out/erp-assets.tar.gz -T /tmp/out/files.txt
+          python - <<'PY'
+          import hashlib, json, os, subprocess
+          bench = os.environ["BENCH"]
+          files = [l for l in open("/tmp/out/files.txt").read().splitlines() if l]
+          def sha(p):
+              h = hashlib.sha256()
+              with open(os.path.join(bench, p), "rb") as f:
+                  for b in iter(lambda: f.read(1 << 20), b""):
+                      h.update(b)
+              return h.hexdigest()
+          rev = lambda a: subprocess.check_output(["git", "-C", f"{bench}/apps/{a}", "rev-parse", "HEAD"], text=True).strip()
+          manifest = {
+              "frappe": rev("frappe"), "erpnext": rev("erpnext"),
+              "portfolio_sim_repo_commit": os.environ["GITHUB_SHA"],
+              "symlinks": [l.split("\t") for l in open("/tmp/out/symlinks.tsv").read().splitlines() if l],
+              "files": {p: sha(p) for p in files},
+          }
+          json.dump(manifest, open("/tmp/out/manifest.json", "w"), indent=1, sort_keys=True)
+          tar_sha = hashlib.sha256(open("/tmp/out/erp-assets.tar.gz", "rb").read()).hexdigest()
+          open("/tmp/out/erp-assets.tar.gz.sha256", "w").write(f"{tar_sha}  erp-assets.tar.gz\n")
+          print("files:", len(files), "tar sha256:", tar_sha)
+          PY
+          ls -la /tmp/out
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: erp-assets
+          path: /tmp/out/
+          if-no-files-found: error
+          retention-days: 90
