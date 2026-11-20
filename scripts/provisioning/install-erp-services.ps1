@@ -131,6 +131,9 @@ http://:$ProxyPort {
 	handle /socket.io/* {
 		reverse_proxy 127.0.0.1:$SocketIOPort {
 			header_up X-Frappe-Site-Name $Site
+			# As Frappe's production nginx template does: the engine.io polling handshake is a same-origin GET that
+			# browsers send without an Origin header, and Frappe's realtime auth compares Origin with Host.
+			header_up Origin {scheme}://{hostport}
 		}
 	}
 	handle {

@@ -34,9 +34,12 @@ $env:ERP_E2E_VIEWER_USER = $viewer
 $env:ERP_E2E_VIEWER_PASSWORD = $viewerPw
 Push-Location (Join-Path $repo 'apps\erp\e2e')
 try {
-    $args = @('playwright', 'test') + @($Spec | Where-Object { $_ })
-    & npx.cmd @args
+    $env:FORCE_COLOR = '0'
+    $pwArgs = @('playwright', 'test') + @($Spec | Where-Object { $_ })
+    $ErrorActionPreference = 'Continue'   # npx writes warnings to stderr
+    & npx.cmd @pwArgs 2>&1 | ForEach-Object { "$_" } | Where-Object { $_ -notmatch "NO_COLOR' env is ignored|--trace-warnings" }
     $code = $LASTEXITCODE
+    $ErrorActionPreference = 'Stop'
 } finally {
     Pop-Location
     Remove-Item Env:ERP_E2E_ADMIN_PASSWORD, Env:ERP_E2E_VIEWER_PASSWORD -ErrorAction SilentlyContinue

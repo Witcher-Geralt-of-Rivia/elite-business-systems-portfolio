@@ -16,7 +16,8 @@
 #>
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory, Position = 0)][ValidateSet('start', 'stop', 'restart', 'status', 'frappe', 'health')][string]$Command,
+    [Parameter(Mandatory, Position = 0)][ValidateSet('start', 'stop', 'restart', 'status', 'frappe', 'health', 'job', 'job-status')][string]$Command,
+    [string]$JobName,
     [string]$Root = 'C:\srv\portfolio\erp\runtime',
     [string]$Site = 'erp.portfolio.local',
     [int]$ProxyPort = 8850,
@@ -74,6 +75,38 @@ switch ($Command) {
         $h = Get-Health; Write-Host "health: HTTP $($h.code)"; $h.body | ConvertTo-Json -Depth 5 | Write-Host
     }
     'health' { $h = Get-Health; $h.body | ConvertTo-Json -Depth 5; if ($h.code -ne 200) { exit 1 } }
+    'job' {
+        # Long Frappe commands (backfill, test runs) as a one-off SYSTEM scheduled task, so they do not depend on the
+        # calling console. Output: <Root>\logs\jobs\<name>.log, exit code: <name>.exit. Below-normal priority.
+        if (-not $JobName) { throw '-JobName is required' }
+        $jobs = Join-Path $Root 'logs\jobs'; New-Item -ItemType Directory -Force $jobs | Out-Null
+        $task = "Portfolio - ERP job $JobName"
+        if ((Get-ScheduledTask -TaskName $task -ErrorAction SilentlyContinue).State -eq 'Running') { throw "$task is already running" }
+        Remove-Item (Join-Path $jobs "$JobName.exit") -ErrorAction SilentlyContinue
+        $quoted = ($Rest | Where-Object { $_ -ne '--' } | ForEach-Object { "'" + ($_ -replace "'", "''") + "'" }) -join ' '
+        $siteArg = if ($NoSite) { '-NoSite' } else { "-Site '$Site'" }
+        $script = @"
+`$started = Get-Date
+& '$PSCommandPath' frappe -Root '$Root' $siteArg -LogFile '$jobs\$JobName.log' -- $quoted
+`$code = `$LASTEXITCODE
+"`$code `$([int]((Get-Date) - `$started).TotalSeconds)" | Set-Content '$jobs\$JobName.exit' -Encoding ascii
+"@
+        $runner = Join-Path $jobs "$JobName.ps1"
+        Set-Content $runner $script -Encoding UTF8
+        $action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument "-NoProfile -ExecutionPolicy Bypass -File `"$runner`""
+        $principal = New-ScheduledTaskPrincipal -UserId 'SYSTEM' -LogonType ServiceAccount -RunLevel Highest
+        $settings = New-ScheduledTaskSettingsSet -ExecutionTimeLimit ([TimeSpan]::Zero) -MultipleInstances IgnoreNew -Priority 7
+        Register-ScheduledTask -TaskName $task -Action $action -Principal $principal -Settings $settings -Force `
+            -Description 'Elite Business Systems Portfolio: one-off ERP job started by erp-ctl.ps1 job.' | Out-Null
+        Start-ScheduledTask -TaskName $task
+        Write-Host "started '$task'; log $jobs\$JobName.log; exit code in $jobs\$JobName.exit"
+    }
+    'job-status' {
+        $jobs = Join-Path $Root 'logs\jobs'
+        $task = Get-ScheduledTask -TaskName "Portfolio - ERP job $JobName" -ErrorAction SilentlyContinue
+        $exit = Join-Path $jobs "$JobName.exit"
+        Write-Host "task: $(if ($task) { $task.State } else { 'missing' }); exit: $(if (Test-Path $exit) { Get-Content $exit } else { 'running/none' })"
+    }
     'frappe' {
         $py = Join-Path $bench 'env\Scripts\python.exe'
         $argv = @((Join-Path $Root 'adapt\frappe_win.py'), 'frappe')

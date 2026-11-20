@@ -37,10 +37,18 @@ New-Item -ItemType Directory -Force $logDir, $OutDir | Out-Null
 Start-Transcript -Path (Join-Path $logDir "backup-erp-$(Get-Date -Format yyyyMMdd).log") -Append | Out-Null
 $scratchProc = $null; $scratchDir = $null; $scratchSite = $null
 function Stop-Scratch {
+    # PowerShell 5.1: with 'Stop', a native tool's stderr notice (SSL warning) is a terminating error even with 2>$null.
+    $ErrorActionPreference = 'Continue'
     if ($script:scratchProc -and -not $script:scratchProc.HasExited) {
         $env:MYSQL_PWD = $script:scratchPw
         & (Join-Path $bin 'mariadb-admin.exe') -u root -h 127.0.0.1 -P $ScratchPort --protocol=TCP shutdown 2>$null | Out-Null
         if (-not $script:scratchProc.WaitForExit(60000)) { $script:scratchProc.Kill() }
+    }
+    # Fallback: any mariadbd still serving this run's scratch data directory.
+    if ($script:scratchDir) {
+        $pattern = [regex]::Escape($script:scratchDir)
+        Get-CimInstance Win32_Process -Filter "Name='mariadbd.exe'" | Where-Object { $_.CommandLine -match $pattern } |
+            ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue; Start-Sleep -Seconds 2 }
     }
     if ($script:scratchSite -and (Test-Path $script:scratchSite)) { Remove-Item $script:scratchSite -Recurse -Force -ErrorAction SilentlyContinue }
     if ($script:scratchDir -and (Test-Path $script:scratchDir)) { Remove-Item $script:scratchDir -Recurse -Force -ErrorAction SilentlyContinue }
@@ -54,6 +62,7 @@ $siteDir = Join-Path $sites $Site
 $siteConfig = Get-Content (Join-Path $siteDir 'site_config.json') -Raw | ConvertFrom-Json
 $common = Get-Content (Join-Path $sites 'common_site_config.json') -Raw | ConvertFrom-Json
 $db = $siteConfig.db_name
+$dbUser = if ($siteConfig.db_user) { $siteConfig.db_user } else { $db }
 $port = if ($siteConfig.db_port) { $siteConfig.db_port } else { $common.db_port }
 $stamp = Get-Date -Format yyyyMMdd-HHmmss
 $dest = Join-Path $OutDir "erp-$stamp"
@@ -96,7 +105,7 @@ $checks = [ordered]@{
 
 # --- 1. Consistent dump (--single-transaction: one InnoDB snapshot; the live site keeps running).
 $sql = Join-Path $dest 'database.sql'
-$conn = @('-u', $db, '-h', '127.0.0.1', '-P', "$port", '--protocol=TCP')
+$conn = @('-u', $dbUser, '-h', '127.0.0.1', '-P', "$port", '--protocol=TCP')
 $t0 = Get-Date
 Invoke-Exe (Join-Path $bin 'mariadb-dump.exe') ($conn + @('--single-transaction', '--quick', '--routines', '--triggers', '--hex-blob', '--default-character-set=utf8mb4', "--result-file=$sql", $db)) $siteConfig.db_password | Out-Null
 $dumpSeconds = [int]((Get-Date) - $t0).TotalSeconds
@@ -126,7 +135,7 @@ $commits = [ordered]@{}
 foreach ($app in 'frappe', 'erpnext') { $commits[$app] = (Get-Content (Join-Path $Root "bench\apps\$app\.git\HEAD") -Raw).Trim() }
 $simFile = Join-Path $Root 'bench\apps\portfolio_sim\.deployed-commit'
 $commits['portfolio_sim'] = if (Test-Path $simFile) { (Get-Content $simFile -Raw).Trim() } else { 'unknown' }
-$live = [ordered]@{}; foreach ($k in $checks.Keys) { $live[$k] = (Get-Rows $port $siteConfig.db_password $db $db $checks[$k]) -join '' }
+$live = [ordered]@{}; foreach ($k in $checks.Keys) { $live[$k] = (Get-Rows $port $siteConfig.db_password $dbUser $db $checks[$k]) -join '' }
 $manifest = [ordered]@{
     created = (Get-Date).ToString('o'); site = $Site; db_name = $db; dump_seconds = $dumpSeconds; commits = $commits
     sha256 = [ordered]@{ 'database.sql.gz' = Get-Sha "$sql.gz"; 'files.zip' = Get-Sha $filesZip; 'site_config.json' = Get-Sha (Join-Path $dest 'site_config.json') }
@@ -168,12 +177,13 @@ performance_schema=OFF
     $restoreSql = Join-Path $scratchDir 'database.sql'
     Expand-Gzip "$sql.gz" $restoreSql
     if ((Get-Sha $restoreSql) -ne (Get-Sha $sql)) { throw 'gzip round trip changed the dump' }
-    $root = @('-u', 'root', '-h', '127.0.0.1', '-P', "$ScratchPort", '--protocol=TCP')
-    Invoke-Exe (Join-Path $bin 'mariadb.exe') ($root + @('-e', "CREATE DATABASE ``$db`` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; CREATE USER '$db'@'%' IDENTIFIED BY '$($siteConfig.db_password)'; GRANT ALL PRIVILEGES ON ``$db``.* TO '$db'@'%'; FLUSH PRIVILEGES;")) $script:scratchPw | Out-Null
+    # (not $root: PowerShell names are case-insensitive and $Root is the [string] runtime path)
+    $scratchRoot = @('-u', 'root', '-h', '127.0.0.1', '-P', "$ScratchPort", '--protocol=TCP')
+    Invoke-Exe (Join-Path $bin 'mariadb.exe') ($scratchRoot + @('-e', "CREATE DATABASE ``$db`` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; CREATE USER '$dbUser'@'%' IDENTIFIED BY '$($siteConfig.db_password)'; GRANT ALL PRIVILEGES ON ``$db``.* TO '$dbUser'@'%'; FLUSH PRIVILEGES;")) $script:scratchPw | Out-Null
     $t1 = Get-Date
-    Invoke-Exe (Join-Path $bin 'mariadb.exe') ($root + @('--default-character-set=utf8mb4', $db, '-e', "source $($restoreSql.Replace('\', '/'))")) $script:scratchPw | Out-Null
+    Invoke-Exe (Join-Path $bin 'mariadb.exe') ($scratchRoot + @('--default-character-set=utf8mb4', $db, '-e', "source $($restoreSql.Replace('\', '/'))")) $script:scratchPw | Out-Null
     $restoreSeconds = [int]((Get-Date) - $t1).TotalSeconds
-    $restored = [ordered]@{}; foreach ($k in $checks.Keys) { $restored[$k] = (Get-Rows $ScratchPort $siteConfig.db_password $db $db $checks[$k]) -join '' }
+    $restored = [ordered]@{}; foreach ($k in $checks.Keys) { $restored[$k] = (Get-Rows $ScratchPort $siteConfig.db_password $dbUser $db $checks[$k]) -join '' }
     $problems = @()
     foreach ($k in $checks.Keys) {
         $rc = [long]($restored[$k].Split(':')[0]); $lc = [long]($live[$k].Split(':')[0])
@@ -184,7 +194,7 @@ performance_schema=OFF
     if ([long]($restored['sim_ledger'].Split(':')[0]) -eq 0 -and [long]($live['sim_ledger'].Split(':')[0]) -gt 0) { $problems += 'restored ledger is empty' }
     # Internal consistency of the snapshot: the engine commits each event's documents, its ledger row and the
     # executed counter in one transaction, so in any consistent snapshot they agree exactly.
-    $executed = (Get-Rows $ScratchPort $siteConfig.db_password $db $db "select coalesce(max(value),0) from tabSingles where doctype = 'Distribution Sim Settings' and field = 'events_executed'") -join ''
+    $executed = (Get-Rows $ScratchPort $siteConfig.db_password $dbUser $db "select coalesce(max(value),0) from tabSingles where doctype = 'Distribution Sim Settings' and field = 'events_executed'") -join ''
     $ledgerRows = [long]($restored['sim_ledger'].Split(':')[0])
     if ([long]$executed -ne $ledgerRows) { $problems += "restored events_executed=$executed but ledger rows=$ledgerRows" }
     Write-Host "  restored snapshot: events_executed=$executed ledger_rows=$ledgerRows"

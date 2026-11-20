@@ -21,8 +21,16 @@ test.describe("ERPNext permissions (Sales User)", () => {
     await deskRoute(page, "/desk/sales-order");
     await expect(page.locator(".list-row-container, .list-row").first()).toBeVisible({ timeout: 60_000 });
 
-    // Refused by the server: purchase invoices, users, GL entries.
-    for (const doctype of ["Purchase Invoice", "User", "GL Entry"]) {
+    // Users: Frappe lets everyone query the User list, filtered to what they may see - here only themselves.
+    const users = await call<any[]>(page, "frappe.client.get_list", { doctype: "User", fields: ["name"], limit_page_length: 50 });
+    expect(users.map((u) => u.name)).toEqual([VIEWER_USER]);
+
+    // Refused by the server: purchasing, the general ledger, administration.
+    // Settings (a single-record doctype) through the document API.
+    const settings = await page.evaluate(async () =>
+      (await fetch("/api/method/frappe.client.get?doctype=System%20Settings&name=System%20Settings", { headers: { Accept: "application/json" } })).status);
+    expect(settings, "System Settings").toBe(403);
+    for (const doctype of ["Purchase Invoice", "GL Entry", "Error Log", "Scheduled Job Type"]) {
       const status = await page.evaluate(async (dt) => {
         const r = await fetch(`/api/resource/${encodeURIComponent(dt)}?limit_page_length=1`, { headers: { Accept: "application/json" } });
         return r.status;

@@ -75,6 +75,7 @@ Add-Content $csv ("time,host_cpu_pct,avail_mb,commit_pct,erp_cpu_pct,erp_ws_mb,e
 $lowMem = 0; $slow = 0; $prev = @{}; $prevT = $null; $end = (Get-Date).AddHours($MaxHours); $diskMb = 0; $diskAt = [datetime]::MinValue
 Write-Event "watchdog started: $csv (baseline $(($targets.Keys | ForEach-Object { "$_=$($base[$_])" }) -join ' '); min available $MinAvailableMB MB, max commit $MaxCommitPct %, latency x$LatencyLimit, shed=$(-not $NoShed))"
 while ((Get-Date) -lt $end) {
+  try {
     $c = (Get-Counter '\Processor(_Total)\% Processor Time', '\Memory\Available MBytes', '\Memory\Committed Bytes', '\Memory\Commit Limit' -SampleInterval 2 -MaxSamples 1).CounterSamples
     $hostCpu = [math]::Round($c[0].CookedValue, 1); $avail = [int]$c[1].CookedValue; $commit = [math]::Round(100 * $c[2].CookedValue / $c[3].CookedValue, 1)
     $now = Get-Date; $cpuNow = @{}; $ws = 0; $priv = 0
@@ -116,6 +117,10 @@ while ((Get-Date) -lt $end) {
         $slow = 0; $lowMem = 0
     }
     Add-Content $csv ("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11}" -f (Get-Date -Format s), $hostCpu, $avail, $commit, $erpCpu, [int]($ws / 1MB), [int]($priv / 1MB), $diskMb, $ping, $health, ($lat.Values -join ','), $action)
+  } catch {
+    # One bad sample (e.g. an invalid performance-counter read) must not end a multi-day watch.
+    Write-Event "sample error (continuing): $($_.Exception.Message) at line $($_.InvocationInfo.ScriptLineNumber)"
+  }
     Start-Sleep -Seconds ([math]::Max(1, $IntervalSec - 10))
 }
 Write-Event 'watchdog stopped'

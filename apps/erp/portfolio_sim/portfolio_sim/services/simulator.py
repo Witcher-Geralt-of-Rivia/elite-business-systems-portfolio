@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import time as _time
 import traceback
 from datetime import datetime, time, timedelta
 
@@ -27,6 +28,7 @@ from .executor import Executor
 from .setup import get_scenario
 
 LOCK = "portfolio_sim_engine"
+MAX_ATTEMPTS = 5  # per event, for transient lock conflicts (deadlock, lock-wait timeout)
 
 
 def _settings():
@@ -77,23 +79,35 @@ def advance(until: datetime, max_events: int | None = None, respect_pause: bool 
 			at = get_datetime(f"{ev['date']} {ev['time']}")
 			if at > until or (max_events is not None and executed >= max_events):
 				break
-			try:
-				if frappe.db.exists("Distribution Sim Event", ev["key"]):
-					skipped += 1  # executed in an earlier run whose pending-list update was lost
-				else:
-					_record(ev, executor.run(ev))
-					executed += 1
-				pending.pop(0)
-				frappe.db.set_single_value("Distribution Sim Settings", {"pending_events": json.dumps(pending),
-					"processed_until": at, "events_executed": int(st.events_executed or 0) + executed,
-					"last_run_at": now_datetime(), "last_error": None})
-				frappe.db.commit()
-			except Exception:
-				frappe.db.rollback()
-				frappe.db.set_single_value("Distribution Sim Settings", {"last_error": f"{ev['key']}: {traceback.format_exc(limit=3)}"[:2000],
-					"last_run_at": now_datetime()})
-				frappe.db.commit()
-				raise
+			attempt = 0
+			while True:
+				attempt += 1
+				try:
+					if frappe.db.exists("Distribution Sim Event", ev["key"]):
+						done = 0  # executed in an earlier run whose pending-list update was lost
+					else:
+						_record(ev, executor.run(ev))
+						done = 1
+					pending.pop(0)
+					frappe.db.set_single_value("Distribution Sim Settings", {"pending_events": json.dumps(pending),
+						"processed_until": at, "events_executed": int(st.events_executed or 0) + executed + done,
+						"last_run_at": now_datetime(), "last_error": None})
+					frappe.db.commit()
+					executed += done
+					skipped += 1 - done
+					break
+				except Exception as e:
+					frappe.db.rollback()
+					# A deadlock or lock-wait timeout against concurrent ERPNext work (e.g. the hourly stock
+					# revaluation job) is transient: the whole event was rolled back, so it is retried from scratch,
+					# as Frappe retries background jobs (frappe.utils.background_jobs.execute_job).
+					if attempt < MAX_ATTEMPTS and (frappe.db.is_deadlocked(e) or frappe.db.is_timedout(e)):
+						_time.sleep(attempt * 2)
+						continue
+					frappe.db.set_single_value("Distribution Sim Settings", {"last_error": f"{ev['key']}: {traceback.format_exc(limit=3)}"[:2000],
+						"last_run_at": now_datetime()})
+					frappe.db.commit()
+					raise
 		return {"executed": executed, "skipped_already_done": skipped, "planned_day": str(st.planned_day),
 			"pending_today": len(pending)}
 

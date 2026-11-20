@@ -36,10 +36,24 @@ test.describe("ERPNext Desk (Administrator)", () => {
     const errors = watchErrors(page);
     await login(page, "Administrator", ADMIN_PASSWORD);
 
-    // List views render rows from the simulated history.
-    for (const doctype of ["sales-invoice", "purchase-invoice", "payment-entry", "delivery-note", "item", "customer"]) {
-      await deskRoute(page, `/desk/${doctype}`);
-      await expect(page.locator(".list-row-container, .list-row").first()).toBeVisible({ timeout: 60_000 });
+    // List views render the simulated history: the list's record count equals the server's count, and documents
+    // that exist show rows. Sales documents, items and customers must exist at any point of the history.
+    const lists: Array<[string, string, boolean]> = [
+      ["sales-order", "Sales Order", true], ["delivery-note", "Delivery Note", true], ["sales-invoice", "Sales Invoice", true],
+      ["item", "Item", true], ["customer", "Customer", true], ["purchase-order", "Purchase Order", false],
+      ["purchase-invoice", "Purchase Invoice", false], ["payment-entry", "Payment Entry", false], ["stock-entry", "Stock Entry", false],
+    ];
+    for (const [route, doctype, required] of lists) {
+      const count = await call<number>(page, "frappe.client.get_count", { doctype });
+      if (required) expect(count, doctype).toBeGreaterThan(0);
+      await deskRoute(page, `/desk/${route}`);
+      await page.waitForFunction((dt) => (window as any).cur_list?.doctype === dt, doctype, { timeout: 60_000 });
+      if (count > 0) {
+        await page.waitForFunction(() => ((window as any).cur_list?.data || []).length > 0, null, { timeout: 60_000 });
+        await expect(page.locator(".list-row-container, .list-row").first()).toBeVisible({ timeout: 60_000 });
+      }
+      const [shown, pageLength] = await page.evaluate(() => [(window as any).cur_list.data.length, (window as any).cur_list.page_length]);
+      expect(shown, `${doctype} rows shown`).toBe(Math.min(count, pageLength));
     }
 
     // Open a submitted Sales Invoice form: status, customer, items table, totals and the GL connection.
@@ -57,7 +71,10 @@ test.describe("ERPNext Desk (Administrator)", () => {
     expect(doc.customer).toBe(inv[0].customer);
     expect(doc.items).toBeGreaterThan(0);
     expect(doc.grand_total).toBeCloseTo(inv[0].grand_total, 2);
-    await expect(page.locator(".indicator-pill").first()).toBeVisible();
+    // The form shows the document's status (Unpaid / Overdue / Paid / ... as computed by ERPNext).
+    const status = await page.evaluate(() => (window as any).cur_frm.doc.status);
+    expect(status).toBeTruthy();
+    await expect(page.getByText(status, { exact: true }).first()).toBeVisible();
     await expectNoErrors(errors);
   });
 
@@ -78,15 +95,43 @@ test.describe("ERPNext Desk (Administrator)", () => {
   });
 
   test("reports and dashboards", async ({ page }) => {
+    test.setTimeout(420_000);
     const errors = watchErrors(page);
     await login(page, "Administrator", ADMIN_PASSWORD);
 
-    // Script report (General Ledger) and query report (Accounts Receivable) render data rows.
-    for (const report of ["General Ledger", "Accounts Receivable", "Stock Balance"]) {
-      await deskRoute(page, `/desk/query-report/${encodeURIComponent(report)}`);
-      await page.waitForFunction(() => (window as any).frappe.query_report?.report_name, null, { timeout: 60_000 });
+    // Reports over the simulated period (the defaults cover the current month, outside the simulated history).
+    const company = await call<string>(page, "frappe.client.get_value", { doctype: "Company", filters: {}, fieldname: "name" }).then((r: any) => r.name);
+    const edge = async (order: string) =>
+      (await call<any[]>(page, "frappe.client.get_list", { doctype: "GL Entry", fields: ["posting_date"], order_by: `posting_date ${order}`, limit_page_length: 1 }))[0].posting_date;
+    const range = { from_date: await edge("asc"), to_date: await edge("desc") };
+    const reports: Array<[string, Record<string, unknown>]> = [
+      ["General Ledger", { company, ...range, group_by: "Group by Voucher (Consolidated)" }],
+      ["Accounts Receivable", { company, report_date: range.to_date }],
+      ["Stock Balance", { company, ...range }],
+      ["Sales Analytics", { company, ...range, range: "Weekly" }],
+    ];
+    for (const [report, filters] of reports) {
+      const t0 = Date.now();
+      // Filters as URL parameters (route options), the way Desk links open reports.
+      const qs = new URLSearchParams(Object.entries(filters).map(([k, v]) => [k, String(v)])).toString();
+      await deskRoute(page, `/desk/query-report/${encodeURIComponent(report)}?${qs}`);
+      await page.waitForFunction((r) => (window as any).frappe.query_report?.report_name === r, report, { timeout: 60_000 });
+      if (await page.evaluate(() => !!(window as any).frappe.query_report.prepared_report)) {
+        // Prepared report (e.g. Stock Balance): generated by a background worker; the page is told over Socket.IO
+        // when the job finishes and then loads the result.
+        // The button reads "Generate New Report" (first time) or "Rebuild" (a result for these filters exists).
+        const done = () => call<number>(page, "frappe.client.get_count", { doctype: "Prepared Report", filters: { report_name: report, status: "Completed" } });
+        const before = await done();
+        await page.getByRole("button", { name: /^(Generate New Report|Rebuild)$/ }).first().click();
+        await expect.poll(done, { timeout: 240_000, intervals: [3_000] }).toBeGreaterThan(before);
+        await page.waitForFunction(() => ((window as any).frappe.query_report.data || []).length > 0, null, { timeout: 120_000 });
+      }
       await page.waitForFunction(() => ((window as any).frappe.query_report.data || []).length > 0, null, { timeout: 90_000 });
+      const applied = await page.evaluate(() => (window as any).frappe.query_report.get_filter_values?.() ?? {});
+      expect(applied.company, `${report} company filter`).toBe(company);
       await expect(page.locator(".dt-row").first()).toBeVisible({ timeout: 60_000 });
+      const rows = await page.evaluate(() => (window as any).frappe.query_report.data.length);
+      console.log(`report ${report}: ${rows} rows in ${((Date.now() - t0) / 1000).toFixed(1)} s`);
     }
 
     // Accounting dashboard charts load from the server.
