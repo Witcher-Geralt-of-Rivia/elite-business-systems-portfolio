@@ -94,8 +94,12 @@
         <div class="app-text">
           <p class="tag">ERP · built on ERPNext</p>
           <h3>Wholesale electronics distributor</h3>
-          <p>Multi-warehouse purchasing, inventory, sales orders and accounting for a fictional distributor. This
-            application is being prepared and will appear here when it runs with the same standard as the others.</p>
+          <p>Multi-warehouse purchasing, inventory, sales orders and accounting for a fictional distributor.
+            <span data-show-when="erp:not-live">This application is being prepared and will appear here when it runs
+              with the same standard as the others.</span>
+            <span data-show-when="erp:live" hidden>Fifteen months of simulated history and a live simulation; explore
+              the ERPNext desk read-only, without an account.</span></p>
+          <a class="btn primary small" data-app-link="erp" data-show-when="erp:live" hidden href="#">Open the read-only demo</a>
           <span class="avail" data-avail="erp"></span>
         </div>
         <figure class="shot placeholder" aria-hidden="true"><div>ERP · in preparation</div></figure>

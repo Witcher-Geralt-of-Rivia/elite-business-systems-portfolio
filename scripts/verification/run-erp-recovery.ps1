@@ -58,10 +58,14 @@ foreach ($svc in $Services) {
         Start-Sleep -Milliseconds 500
     }
     $healthy = Wait-Healthy $t0
-    $r = [pscustomobject]@{ service = $svc; killed_pid = $old; new_pid = $new; restart_s = $restart; healthy_s = $healthy
-        result = if ($restart -and $healthy) { 'recovered' } else { 'FAILED' } }
+    # No process of the ERP may outlive its service (orphans would keep consuming jobs outside service control).
+    $all = Get-CimInstance Win32_Process
+    $orphans = @($all | Where-Object { ($_.ExecutablePath -like 'C:\srv\portfolio\erp\runtime\*' -or $_.CommandLine -match 'realtime_win') -and
+            $_.Name -ne 'mariadbd.exe' -and $_.ProcessId -ne $old -and -not ($all.ProcessId -contains $_.ParentProcessId) })
+    $r = [pscustomobject]@{ service = $svc; killed_pid = $old; new_pid = $new; restart_s = $restart; healthy_s = $healthy; orphans = $orphans.Count
+        result = if ($restart -and $healthy -and $orphans.Count -eq 0) { 'recovered' } else { 'FAILED' } }
     $results += $r
-    Write-Host ("{0,-28} killed {1,6} -> {2,6}  restart {3,6} s  healthy {4,6} s  {5}" -f $svc, $old, $new, $restart, $healthy, $r.result)
+    Write-Host ("{0,-28} killed {1,6} -> {2,6}  restart {3,6} s  healthy {4,6} s  orphans {5}  {6}" -f $svc, $old, $new, $restart, $healthy, $orphans.Count, $r.result)
     Start-Sleep -Seconds 15   # let workers re-register and the scheduler tick before the next kill
 }
 if ($Graceful) {

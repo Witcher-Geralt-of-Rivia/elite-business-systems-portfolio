@@ -39,6 +39,15 @@ portfolio.__PUBLIC_IP__.sslip.io {
 		}
 	}
 	# @end-if
+	# @if-flag erp.public-enabled
+	handle /status/erp {
+		header Cache-Control "no-store"
+		rewrite * /api/method/portfolio_sim.health.status
+		reverse_proxy 127.0.0.1:8850 {
+			header_down -Set-Cookie
+		}
+	}
+	# @end-if
 	handle /status/* {
 		header Cache-Control "no-store"
 		respond 404

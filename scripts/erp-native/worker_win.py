@@ -24,6 +24,13 @@ RESTART_EXIT_CODE = 3
 class WindowsWorker(FrappeWorkerNoFork):
 	death_penalty_class = TimerDeathPenalty
 
+	@property
+	def dequeue_timeout(self) -> int:
+		# rq waits for jobs with a blocking Redis read of worker_ttl - 15 = 405 s. On Windows a console Ctrl+C (the
+		# service stop) is only handled when that read returns, so a stop took minutes (measured: 107 s and more).
+		# A short wait keeps an idle worker responsive to a stop; heartbeats and job timeouts are unchanged.
+		return 10
+
 	def request_force_stop(self, signum, frame):
 		# rq.Worker's cold shutdown kills a forked "horse" process; without fork there is none: just leave.
 		self.log.warning("Worker %s: cold shutdown requested; exiting", self.name)

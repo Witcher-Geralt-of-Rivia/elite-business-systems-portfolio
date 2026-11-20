@@ -11,7 +11,10 @@
 param(
     [string]$BaseUrl = 'http://127.0.0.1:8850',
     [string]$Site = 'erp.portfolio.local',
-    [string[]]$Spec
+    [string[]]$Spec,
+    [string]$Project,
+    # Turn the site's visitor flag on for this run only (portfolio_visitor_enabled), then off again.
+    [switch]$Visitor
 )
 $ErrorActionPreference = 'Stop'
 $repo = Resolve-Path (Join-Path $PSScriptRoot '..\..')
@@ -28,6 +31,10 @@ $log = Join-Path $env:TEMP 'erp-e2e-user.log'
 if ($LASTEXITCODE -ne 0) { Get-Content $log | Select-Object -Last 10; throw 'set-password failed' }
 & $ctl frappe -Site $Site -LogFile $log -- execute frappe.client.set_value --kwargs "{'doctype':'User','name':'$viewer','fieldname':'enabled','value':1}" | Out-Null
 
+if ($Visitor) {
+    & $ctl frappe -Site $Site -LogFile $log -- set-config portfolio_visitor_enabled 1 --parse | Out-Null
+    $env:ERP_E2E_VISITOR = '1'
+}
 $env:ERP_E2E_BASE_URL = $BaseUrl
 $env:ERP_E2E_ADMIN_PASSWORD = $secret.admin_password
 $env:ERP_E2E_VIEWER_USER = $viewer
@@ -35,14 +42,15 @@ $env:ERP_E2E_VIEWER_PASSWORD = $viewerPw
 Push-Location (Join-Path $repo 'apps\erp\e2e')
 try {
     $env:FORCE_COLOR = '0'
-    $pwArgs = @('playwright', 'test') + @($Spec | Where-Object { $_ })
+    $pwArgs = @('playwright', 'test') + @($Spec | Where-Object { $_ }) + @(if ($Project) { "--project=$Project" })
     $ErrorActionPreference = 'Continue'   # npx writes warnings to stderr
     & npx.cmd @pwArgs 2>&1 | ForEach-Object { "$_" } | Where-Object { $_ -notmatch "NO_COLOR' env is ignored|--trace-warnings" }
     $code = $LASTEXITCODE
     $ErrorActionPreference = 'Stop'
 } finally {
     Pop-Location
-    Remove-Item Env:ERP_E2E_ADMIN_PASSWORD, Env:ERP_E2E_VIEWER_PASSWORD -ErrorAction SilentlyContinue
+    Remove-Item Env:ERP_E2E_ADMIN_PASSWORD, Env:ERP_E2E_VIEWER_PASSWORD, Env:ERP_E2E_VISITOR -ErrorAction SilentlyContinue
+    if ($Visitor) { & $ctl frappe -Site $Site -LogFile $log -- set-config portfolio_visitor_enabled 0 --parse | Out-Null }
     & $ctl frappe -Site $Site -LogFile $log -- execute frappe.client.set_value --kwargs "{'doctype':'User','name':'$viewer','fieldname':'enabled','value':0}" | Out-Null
 }
 exit $code

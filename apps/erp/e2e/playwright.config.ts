@@ -22,5 +22,9 @@ export default defineConfig({
     actionTimeout: 30_000,
     navigationTimeout: 60_000,
   },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } } }],
+  projects: [
+    { name: "chromium", use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } } },
+    // Phone layout (Chromium with a Pixel 7 viewport, touch and user agent).
+    { name: "mobile", use: { ...devices["Pixel 7"] } },
+  ],
 });

@@ -1,0 +1,45 @@
+# Elite Business Systems Portfolio — ERPNext public site. INACTIVE: needs the owner's separate approval (ERP-PUBLIC).
+#
+# This file is deliberately NOT in infrastructure/proxy/sites: render-caddy-sites.ps1 renders every template there,
+# so any portal or POS deployment would otherwise publish the ERP. Only
+#   scripts/provisioning/activate-erp-public.ps1 -OwnerApproved
+# writes it (with __PUBLIC_IP__ substituted) to C:\srv\portfolio\caddy\erp.caddy after its preflight and backup,
+# validates the whole host Caddyfile and reloads Caddy gracefully; -Rollback deletes it and reloads again.
+#
+# Routing: TLS ends here; everything goes to the ERP's own loopback entry point (127.0.0.1:8850, private Caddy
+# instance), which serves /assets and /files, forwards /socket.io to the realtime server and the rest to waitress.
+
+erp.__PUBLIC_IP__.sslip.io {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		X-Robots-Tag "noindex, nofollow"
+		-Server
+	}
+
+	request_body {
+		max_size 25MB
+	}
+
+	# Monitoring endpoint and the realtime test probe stay loopback-only (the portal uses its own /status/erp).
+	@internal path /api/method/portfolio_sim.health.*
+	respond @internal 404
+
+	reverse_proxy 127.0.0.1:8850 {
+		transport http {
+			read_timeout 300s
+		}
+	}
+
+	log {
+		output file C:/srv/portfolio/logs/caddy-erp-access.log {
+			roll_size 10MiB
+			roll_keep 5
+		}
+	}
+}

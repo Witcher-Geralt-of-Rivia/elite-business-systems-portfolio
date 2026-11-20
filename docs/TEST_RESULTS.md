@@ -812,3 +812,73 @@ stopped after the spike. No upstream file modified: the adaptations are in `scri
 paths) and the Studio sub-app's Vite build hung; assets are platform-independent and can be built on Linux (CI or the
 guest) or taken from Frappe's prebuilt release assets. Also not yet done natively: scheduler and socket.io processes,
 Windows services, backups (Frappe's backup code uses shell pipelines), monitoring, browser E2E.
+
+## M5 — Native Windows ERPNext (private), 2026-11-20 (owner decisions ERP-RUNTIME / REDIS-WINDOWS, D-019)
+
+Private installation on the existing VPS: no WSL/Hyper-V/OS change/reboot, nothing public, host Caddy untouched,
+CRM/POS/portal/Práctica not modified. Runbook: [ERP_NATIVE_WINDOWS.md](runbooks/ERP_NATIVE_WINDOWS.md). This is a
+project-maintained compatibility adaptation, not a platform Frappe supports (R-016).
+
+**Disk (directive item 7).** C: free before cleanup **27.98 GB** → after the QEMU cleanup (`erp-vm.ps1 -Action cleanup
+-All`, guest stopped and task inactive verified first; evidence and logs kept under `qemu-poc\evidence`) **36.96 GB**
+→ after removing the spike's Yarn download cache (3.07 GB, created 2026-11-19, reproducible) **40.19 GB**. The
+remaining unexplained growth was investigated read-only and is not ERP-related: the system-managed page file is
+17.5 GB (peak use 13.1 GB), a desktop AI application update installed a second 2.3 GB version beside the old one on
+2026-11-19, plus browser-updater cache and logs. Nothing unknown was deleted.
+
+**Provenance.** MariaDB 11.8.10 zip = mariadb.org `sha256sums.txt`. Redis 8.10.3 MSYS2 zip
+`af16df34…` = GitHub's asset digest = the hash in the release notes; built by redis-windows' public Actions run
+40432509982 from the official `redis/redis` tag 8.10.3 (`1a2574c`); unsigned binaries. Licence: Redis 8 is
+RSALv2/SSPLv1/AGPLv3 (used unmodified as a private backing service), packaging Apache-2.0. uv 0.13.9 = release
+`.sha256`. Frappe `bf9581a` / ERPNext `886ab6a` cloned with `core.autocrlf=false`, commit and clean tree verified
+(the spike's clone had 35 files converted to CRLF).
+
+**Front-end assets.** `erp-assets.yml` run 44793257170 built the pinned commits on Ubuntu (`bench build --production`,
+70 s); 518 output files with a SHA-256 manifest (archive `7d6a7c5f…`). `install-erp-assets.ps1` refused any commit
+mismatch, extracted and re-hashed all 518 files (0 mismatches), created the asset junctions; all 83 bundles in
+`assets.json` resolve; the pinned working trees stay clean.
+
+**Services.** 9 Windows services (LOCAL SERVICE, delayed automatic start, restart on failure 10/30/60 s, non-crash
+failures count), every listener on 127.0.0.1 (verified: 0 non-loopback listeners on the ERP ports). Defects found and
+fixed while bringing them up:
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| Redis services restart-looping | MSYS2 build reads `C:\...\redis.conf` as a relative POSIX path | config passed relative to the instance directory, `dir ./` |
+| Redis stop killed after the 30 s timeout | the wrapper's Ctrl+C does not reach the MSYS2 process; a `redis-cli` stop command did not shut it down either | `redis_stop.py` (AUTH + SHUTDOWN, password read from `redis.conf`): stop 1.4 s / 2.1 s with AOF fsync + RDB |
+| Desk Socket.IO "Invalid origin" | the engine.io polling handshake is a same-origin GET without `Origin`; Frappe compares Origin with Host | proxy sets `Origin` on `/socket.io`, as Frappe's production nginx template does |
+| long-cache header missing on hashed bundles | Caddy path matcher does not support a middle wildcard | `path_regexp` |
+| watchdog task ended / skipped samples | an interactive `tail -f` on its CSV blocked the appends (operator error) | sample loop tolerates errors; CSV read only with one-shot reads |
+
+Redis persistence: a key written to the queue instance survived a graceful stop/start and a hard kill (AOF).
+
+**Engine defect found on the native install (R-018).** The first multi-day backfill stopped with an InnoDB deadlock:
+the engine's Delivery Note submit vs ERPNext's hourly `repost_item_valuation` job (`tabBin`). CI never ran with the
+scheduler on. The engine behaved as designed (rollback, `last_error`, 74 events = 74 ledger rows). Fix: the event is
+retried after a deadlock or lock-wait timeout (full rollback, up to 5 attempts, as Frappe retries background jobs).
+
+**Production site (`erp.portfolio.local`).** `new-site` with ERPNext 495 s, `portfolio-sim setup` 265 s (96 items,
+150 customers, 12 suppliers, 24 employees). Multi-day history 2025-08-01 → 2025-08-15 with the scheduler and workers
+running: **479 events = 479 ledger rows; integrity 36 checks, 0 failing; replay 479 = 479, state matches.**
+Throughput after the opening-stock batches: **1.06–1.2 events/s** (requirement 0.35).
+
+**Browser E2E (Playwright/Chromium, `apps/erp/e2e`, `run-erp-e2e.ps1`): 7/7 pass** (3.8 min): Desk login, boot and
+every page asset 200; nine list views equal the server's counts; a submitted Sales Invoice form (status, customer,
+items, totals); create/save/delete a draft; reports General Ledger 731 rows, Accounts Receivable 130, Sales
+Analytics 91, Stock Balance 289 (a prepared report generated by the background worker); Socket.IO delivers a message
+published by a background job; a Sales User gets sales data, is refused Purchase Invoice, GL Entry, Error Log,
+Scheduled Job Type and System Settings (403) and sees only its own User; guests get no data.
+
+**Backup and restore.** `backup-erp.ps1 -DeepVerify` as the SYSTEM task: dump 17.3 MB (1.7 MB gz) in 16–21 s from a
+consistent snapshot, files and site config; restored into a separate temporary MariaDB instance (own data directory
+and port) in 64 s; 8 table checksums identical to live, executed events = ledger rows (479); the application's
+`portfolio-sim status` and `integrity` (36/0) pass on the restored copy through a throwaway site; scratch instance and
+site removed. Task total 201 s, result 0. A debug trace during development printed the site's database password to
+the operator console; the password was rotated (MariaDB account and `site_config.json`), health 200 afterwards.
+
+**Monitoring.** `monitor-portfolio.ps1` adds `erp.services`, `erp.health` and `backup.erp`; first run as before plus
+the ERP checks: 12/12 ok. `watch-erp-impact.ps1` (SYSTEM task) logs host/ERP resources and production latency against
+a baseline taken with the ERP idle (CRM 111, portal 124, POS 473, co-hosted 103 ms).
+
+Still to report in this section: recovery test, integration tests on the Windows runtime, full backfill, 24-hour
+stability and the acceptance matrix.

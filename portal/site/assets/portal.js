@@ -5,7 +5,7 @@
   var cfg = window.PORTAL_CONFIG || { apps: { crm: "live", pos: "preparing", erp: "planned" } };
   var host = location.hostname;
   var base = /^portfolio\./.test(host) ? host.replace(/^portfolio\./, "") : null;
-  var entry = { crm: "/", pos: "/sign-in" };
+  var entry = { crm: "/", pos: "/sign-in", erp: "/api/method/portfolio_sim.visitor.enter" };
   var labels = { live: "Live — read-only demo, no sign-up", preparing: "Being finalised — opens soon", planned: "In preparation" };
 
   function appUrl(app) { return base ? location.protocol + "//" + app + "." + base + (entry[app] || "/") : null; }
@@ -56,5 +56,18 @@
     if (sim.paused) return ["warn", "operational · simulation paused"];
     return ["ok", "operational · simulation " + (sim.lag_seconds < 300 ? "live" : "synced " + ago(sim.processed_until))];
   });
-  setStatus("erp", "off", "in preparation");
+  // ERP: /status/erp exists only after the owner-approved public activation (approval flag on the host).
+  probe("erp", "/status/erp", function (j) {
+    var h = j.message || {};
+    if (!h.ok) return ["warn", "degraded"];
+    var sim = h.simulation || {};
+    if (sim.paused) return ["warn", "operational · simulation paused"];
+    return ["ok", "operational · simulation " + (sim.live ? "live" : "idle")];
+  });
+  document.querySelectorAll("[data-show-when]").forEach(function (el) {
+    var want = el.getAttribute("data-show-when").split(":");
+    var hide = (cfg.apps[want[0]] === "live") !== (want[1] === "live");
+    el.hidden = hide;
+    el.style.display = hide ? "none" : "";
+  });
 })();

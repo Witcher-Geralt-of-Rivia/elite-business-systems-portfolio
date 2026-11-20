@@ -147,4 +147,31 @@ def replay_cmd(context):
 		frappe.destroy()
 
 
+@portfolio_sim.command("visitor-setup")
+@pass_context
+def visitor_setup_cmd(context):
+	"""Create the read-only "Portfolio Visitor" role and visitor user (access stays off until the site config flag
+	`portfolio_visitor_enabled` is set at public activation)."""
+	frappe = _connect(context)
+	try:
+		from .visitor import setup_visitor
+
+		_print(setup_visitor())
+	finally:
+		frappe.destroy()
+
+
+@portfolio_sim.command("public-settings")
+@pass_context
+def public_settings_cmd(context):
+	"""Apply the production-safe authentication settings used for public access (idempotent)."""
+	frappe = _connect(context)
+	try:
+		from .public import apply_public_settings
+
+		_print(apply_public_settings())
+	finally:
+		frappe.destroy()
+
+
 commands = [portfolio_sim]

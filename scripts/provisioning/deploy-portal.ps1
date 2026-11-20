@@ -31,10 +31,12 @@ robocopy (Join-Path $repo 'portal\site') $stage /E /NFL /NDL /NJH /NJS /NP | Out
 if ($LASTEXITCODE -ge 8) { throw "robocopy failed ($LASTEXITCODE)" }
 $crm = if ((Get-Service portfolio-crm-api -ErrorAction SilentlyContinue).Status -eq 'Running') { 'live' } else { 'preparing' }
 $pos = if (Test-Path 'C:\srv\portfolio\caddy\pos.public-enabled') { 'live' } else { 'preparing' }
+# ERP: "live" only after activate-erp-public.ps1 -OwnerApproved has passed and written its approval flag.
+$erp = if (Test-Path 'C:\srv\portfolio\caddy\erp.public-enabled') { 'live' } else { 'planned' }
 $config = @"
 // Written by scripts/provisioning/deploy-portal.ps1 on $(Get-Date -Format 'yyyy-MM-dd HH:mm').
 window.PORTAL_CONFIG = {
-  apps: { crm: "$crm", pos: "$pos", erp: "planned" },
+  apps: { crm: "$crm", pos: "$pos", erp: "$erp" },
   repo: "https://github.com/Witcher-Geralt-of-Rivia/elite-business-systems-portfolio",
 };
 "@
@@ -70,6 +72,9 @@ try {
     if ($crm -eq 'live' -and $status -notmatch '"status":"ok"') { $fail += "status/crm: $status" }
     $posCode = (& curl.exe -s -m 20 -o NUL -w '%{http_code}' "https://$hostName/status/pos")
     if ($pos -ne 'live' -and $posCode -ne '404') { $fail += "status/pos should be 404 while private (got $posCode)" }
+    $erpCode = (& curl.exe -s -m 30 -o NUL -w '%{http_code}' "https://$hostName/status/erp")
+    if ($erp -ne 'live' -and $erpCode -ne '404') { $fail += "status/erp should be 404 while private (got $erpCode)" }
+    if ($erp -eq 'live' -and $erpCode -ne '200') { $fail += "status/erp: HTTP $erpCode" }
     foreach ($a in 'assets/portal.css', 'assets/portal.js', 'assets/shots/crm.jpg', 'assets/shots/pos.jpg') {
         $c = (& curl.exe -s -m 20 -o NUL -w '%{http_code}' "https://$hostName/$a")
         if ($c -ne '200') { $fail += "$a -> $c" }

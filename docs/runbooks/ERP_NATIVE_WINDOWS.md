@@ -42,7 +42,8 @@ Administrator passwords; Administrators/SYSTEM only). The host Caddy is not invo
 | Jinja template names built with `\` | normalised to `/` | `frappe_win.py` |
 | `preexec_fn` in `frappe.commands.popen` | below-normal creation flag | `frappe_win.py` |
 | gunicorn | waitress (loopback only, trusted proxy 127.0.0.1) | `serve_win.py` |
-| forking RQ worker, SIGALRM timeouts | `FrappeWorkerNoFork` + RQ `TimerDeathPenalty`; unrequested end of the work loop (job limit, job timeout) exits 3 so the service restarts it | `worker_win.py` |
+| forking RQ worker, SIGALRM timeouts | `FrappeWorkerNoFork` + RQ `TimerDeathPenalty`; unrequested end of the work loop (job limit, job timeout) exits 3 so the service restarts it; 10 s idle Redis wait instead of 405 s (Windows handles the service's Ctrl+C only when the blocking read returns) | `worker_win.py` |
+| a venv's `python.exe` on Windows is a launcher with the real interpreter as a child (orphaned workers after stops) | services run the base interpreter with `__PYVENV_LAUNCHER__` = the venv's `python.exe`: one process per service | `install-erp-services.ps1` |
 | scheduler process exits when another holds the lock (supervisor restarts it on Linux) | retry loop instead of exit | `scheduler_win.py` |
 | realtime server listens on all interfaces | listener pinned to 127.0.0.1 | `realtime_win.js` |
 | MariaDB on Windows lower-cases table names | `lower_case_table_names=2` at data-directory creation | `install-erp-runtime.ps1` |

@@ -37,12 +37,18 @@ param(
     [switch]$Remove
 )
 $ErrorActionPreference = 'Stop'
-$bench = Join-Path $Root 'bench'; $sites = Join-Path $bench 'sites'; $py = Join-Path $bench 'env\Scripts\python.exe'
+$bench = Join-Path $Root 'bench'; $sites = Join-Path $bench 'sites'; $venvPy = Join-Path $bench 'env\Scripts\python.exe'
+# On Windows a venv's python.exe is a launcher that starts the real interpreter as a CHILD process. Under the service
+# wrapper that left orphaned interpreters running after a stop/restart (measured 2026-11-20: two orphaned workers kept
+# consuming jobs) and made a kill hit the launcher only. The services run the base interpreter directly and set
+# __PYVENV_LAUNCHER__, exactly as the launcher does, so each service is ONE process with the venv's sys.prefix.
+$pyHome = ((Get-Content (Join-Path $bench 'env\pyvenv.cfg') | Where-Object { $_ -match '^home\s*=' }) -split '=', 2)[1].Trim()
+$py = Join-Path $pyHome 'python.exe'
 $svcDir = Join-Path $Root 'services'; $logs = Join-Path $Root 'logs'; $adapt = Join-Path $Root 'adapt'
 $acct = 'NT AUTHORITY\LOCAL SERVICE'
 $node = (Get-Command node.exe).Source
 $deps = @('portfolio-erp-mariadb', 'portfolio-erp-redis-cache', 'portfolio-erp-redis-queue')
-$pyEnv = @{ PYTHONUTF8 = '1'; PYTHONUNBUFFERED = '1'; PATH = "$Root\mariadb\bin;%PATH%" }
+$pyEnv = @{ PYTHONUTF8 = '1'; PYTHONUNBUFFERED = '1'; PATH = "$Root\mariadb\bin;%PATH%"; '__PYVENV_LAUNCHER__' = $venvPy }
 
 $services = [ordered]@{
     # The MSYS2 build resolves Windows paths with backslashes as relative POSIX paths: the config is passed relative
@@ -205,7 +211,11 @@ $depXml
     New-Item -ItemType Directory -Force (Join-Path $logs $id) | Out-Null
     $installed = [bool](Get-Service $id -ErrorAction SilentlyContinue)
     if ($installed) { Stop-Service $id -Force -ErrorAction SilentlyContinue; (Get-Service $id).WaitForStatus('Stopped', '00:03:30') }
-    Copy-Item $WinSW $exe -Force
+    # The wrapper exe stays locked for a moment after the service reports Stopped.
+    for ($try = 1; ; $try++) {
+        try { Copy-Item $WinSW $exe -Force -ErrorAction Stop; break }
+        catch { if ($try -ge 15) { throw }; Start-Sleep -Seconds 2 }
+    }
     if (-not $installed) { Invoke-Native "install $id" { & $exe install } | Out-Null }
     # A wrapper that exits with an error code is a failure for the service manager, too (not only crashes).
     Invoke-Native "failureflag $id" { sc.exe failureflag $id 1 } | Out-Null
