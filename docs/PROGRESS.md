@@ -2,6 +2,19 @@
 
 Newest first. Every entry states what was **verified**, not just what was written.
 
+## 2026-11-19 — M5: ERPNext on the VPS without WSL or reboot — QEMU-TCG measured, native Windows spiked
+
+- **QEMU-TCG (owner directive):** QEMU 11.1.0 software emulation runs a Debian 13 guest on the VPS (fixes: SMM off,
+  Task Scheduler launch). Real Frappe/ERPNext v16.60.0 + portfolio_sim installed in the guest. Linux platform
+  checks pass. Throughput ~0.05 events/s (requirement 0.35): **not practical for permanent operation**. Production
+  latency unaffected at below-normal priority (watchdog evidence). Integration run 1 was invalidated by the dev
+  supervisor (Redis stopped after a worker exit); run 2 on a fresh site with per-process systemd units is running.
+- **Native Windows spike (failure handling 9.6):** the same pinned sources on Windows-native Python 3.14 with ten
+  runtime adaptations and no upstream edits: **7/7 integration tests, integrity 36/0, replay exact, state hash and
+  GL identical to CI, 1.3–1.4 events/s**; web (waitress) and worker (no fork, timer timeouts) verified. Desk asset
+  build on Windows not working yet.
+- **Waiting for the owner:** ERP-RUNTIME (native Windows recommended) and REDIS-WINDOWS. Release 1.0 untouched.
+
 ## 2026-11-18 — M5: pre-reboot readiness prepared; waiting for the owner's console confirmation and window
 
 - **New scripts:**

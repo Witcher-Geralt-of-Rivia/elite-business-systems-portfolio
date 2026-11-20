@@ -697,3 +697,110 @@ No feature was enabled, no service or configuration changed, and there was no re
 **`set-db-service-recovery.ps1`** (dry run): the CRM PostgreSQL and POS MariaDB services have no failure actions. The
 proposed restart after 10/30/60 s is **not applied**; that needs owner authorisation.
 
+
+## M5 — ERPNext under QEMU-TCG on the Windows VPS (2026-11-19, owner directive "no WSL, no reboot")
+
+No reboot, no Windows feature, no WSL/Hyper-V; Release 1.0 and the co-hosted application were not modified, stopped
+or reconfigured. Everything runs from `C:\srv\portfolio\erp\qemu-poc` (removable). Tooling: `scripts/erp-qemu/`;
+runbook: [ERP_QEMU_TCG_POC.md](runbooks/ERP_QEMU_TCG_POC.md).
+
+**Stage A — host (measured).** Xeon Gold 6230R, 3 logical CPUs, no VT-x exposed, 12 GB RAM, 48 GB free.
+Available memory 0.6–6.2 GB and commit 72–96 % over the day; the pressure comes from interactive desktop
+applications, not from production (production services ≈ 1.3 GB). Guest limits chosen: 1 vCPU, 1.5 GB then 2 GB.
+
+**Stage B — environment.** QEMU 11.1.0 (official Windows build, SHA-512 verified; its Authenticode certificate
+expired in 2023) extracted, never installed; Debian 13 genericcloud image (SHA-512 verified) as a read-only backing
+file; loopback-only forwards; scheduled-task launch at below-normal priority. Defects found and fixed:
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| No kernel output after 10 min | SeaBIOS loops in System Management Mode under TCG (q35 and pc) | `-machine pc,smm=off` |
+| QEMU died with the agent shell | child of the shell's process tree | launched by Task Scheduler |
+| QEMU exited after ~27 min | process created through WMI ended with its WMI provider host | launched by Task Scheduler |
+| Watchdog paused the guest with no guest load | latency baseline from a different probe method (warm back-to-back requests) | same-method calibration with the guest paused (`-Calibrate`) |
+
+**Stage C — Linux platform: passed.** Boot to SSH 157–328 s; clean ACPI shutdown and restart with state intact;
+fork, subprocess, flock/fcntl, Unix sockets, Redis 8.0.2, worker with SIGTERM, MariaDB 11.8.6, fsync all work.
+Speed: 69 forks/s, 46 spawns/s, Redis ~1,500 req/s; CPU-bound Python **13–23× slower** than the same code natively
+on the host (`bench-cpu.py`). `-cpu max` is ~1.8× faster than `-cpu Nehalem` on the interpreter loop.
+
+**Stage D — real ERPNext: installed.** Frappe 16.60.0 (`bf9581a`), ERPNext 16.60.0 (`886ab6a`), portfolio_sim;
+Python 3.14.10, Node 24.22.3, MariaDB 11.8.6 and Redis 8.0.2 inside the guest. Durations: base provisioning ~10 min,
+`bench init` 809 s, `get-app` ~40 min, `new-site` with ERPNext 5,540 s (first run; ~55 min for the DocTypes on the
+rerun). Warm API `ping` 0.2 s. Fixes: yarn network timeout, MariaDB admin for `127.0.0.1` (`skip-name-resolve`),
+partial bench/site recovery, `bench serve --noreload` (the stat reloader used as much CPU as the tests), one systemd
+unit per process (see run 1).
+
+**Stage E — integration tests in the guest.**
+- **Run 1: invalid (infrastructure).** JUnit 7 tests: 3 passed (test_01 4.3 s, test_02 478 s, test_05), then Redis
+  `Connection refused`. Cause: after a 38-minute operator pause the RQ worker exited cleanly; `bench start` (honcho)
+  then stopped every process including both Redis instances, and the unit (`Restart=on-failure`) did not restart a
+  clean exit. Integrity and replay of the executed part still exited 0. Fix: one systemd unit per process with
+  `Restart=always`; no operator pauses during the run.
+- **Run 2:** in progress on a freshly created site (results to be added).
+
+**Stage F — throughput (guest).** ~0.05 events/s in the CPU-bound test phases (57 → 185 ledger events in 42 min);
+CI's runner does 3.9 events/s. The guest is CPU-bound (vmstat: 0 % idle, 0 % I/O wait; CPU pressure ~60 %); QEMU got
+71–94 % of one host core. **Requirement 0.35 events/s: not met (≈ 7× short).** A second vCPU (MTTCG) could at most
+double this and would take the host's remaining core.
+
+**Production impact (watchdog, same probe method, medians).**
+
+| Window | Host CPU | CRM | Portal | POS | Co-hosted app |
+|---|---|---|---|---|---|
+| Guest paused (control, n=23) | 32 % | 80 ms | 101 ms | 437 ms | 109 ms |
+| Guest running apt (QEMU ≈ 86 % of a core, n=44) | 54 % | 84 ms | 102 ms | 401 ms | 98 ms |
+| ERPNext install (n=93) | 50 % | 72 ms | 80 ms | 370 ms | 83 ms |
+| Native-Windows spike installs at **normal** priority (n=29) | 68 % | 108 ms | 132 ms | 429 ms | 127 ms |
+
+QEMU at below-normal priority had no measurable effect; the only latency excursion was caused by spike work at normal
+priority (the watchdog paused the guest, as designed; all later spike work ran below normal). The watchdog's memory
+rule also fired once, when interactive applications took available memory to 590 MB (commit 95.8 %): clean guest
+shutdown, production unaffected. Monitor 10/10 throughout.
+
+**Guest resources.** QEMU private 1.9–2.5 GB (guest RAM + 256 MB translation cache), working set 0.3–0.95 GB;
+overlay disk 7.3 GB; base image 0.34 GB; QEMU files 1.2 GB.
+
+**Conclusion (QEMU-TCG).** Technically works — real ERPNext on the same VPS without WSL or a reboot — but the
+software-emulated CPU (13–23× on Python, ~75× end-to-end) makes it **not practical for permanent operation**: about
+7× below the 0.35 events/s requirement, install steps take hours, the full 15½-month history would take weeks.
+
+## M5 — Native Windows spike (failure-handling item 9.6, 2026-11-19)
+
+Same pinned sources (Frappe `bf9581a`, ERPNext `886ab6a`) on **Windows-native** Python 3.14.10 (uv), an isolated
+MariaDB 11.8.10 (own zip, own data directory, 127.0.0.1 only, not a service), Redis 8.10.3 (community MSYS2 build,
+digest-verified, two loopback instances), all under `C:\srv\portfolio\erp\native-spike` at below-normal priority;
+stopped after the spike. No upstream file modified: the adaptations are in `scripts/erp-native/`.
+
+| Unix assumption found | Adaptation |
+|---|---|
+| `signal.SIGKILL` etc. referenced at import | constants defined (sitecustomize) |
+| `os.register_at_fork`, `faulthandler.register`, `os.nice` | no-ops (no fork; priority is set per process) |
+| `import resource` (prepared reports' peak memory) | `resource.getrusage` from psutil's peak working set |
+| `mysqlclient` 2.2.7 has no cp314 Windows wheel | built with MSVC against the MariaDB client headers/DLL |
+| DB restore through a bash pipeline with unquoted Windows paths | `restore_database` streams the SQL to `mariadb.exe` (same filters) |
+| text files opened without an encoding (cp1252) | `PYTHONUTF8=1` |
+| Jinja template names built with `\` | normalised to `/` |
+| `preexec_fn` in `frappe.commands.popen` | below-normal creation flag |
+| gunicorn; RQ's forking worker and SIGALRM timeouts | waitress; Frappe's `FrappeWorkerNoFork` with RQ `TimerDeathPenalty` |
+| MariaDB on Windows lower-cases table names | `lower_case_table_names=2` (set when the data directory is created) |
+
+**Results.**
+- Import probe: 3,431 modules, 13 failures, of which only `resource` (8) was a platform gap (fixed).
+- `new-site` with ERPNext: **270 s** (guest: 5,540 s).
+- **Integration tests: JUnit 7/7, no failures, errors or skips, 2,190 s** (test_02 12.9 s, test_03 315 s, test_04
+  662 s, test_07 1,118 s).
+- Status 3,068 events = 3,068 ledger rows, processed to 2025-10-03; **integrity 36 checks, 0 failing; replay 3,068 =
+  3,068, nothing missing/unexpected/mismatched; state hash `cc2e118f10671999` identical to CI run 44425817273**; GL
+  per voucher type identical to CI to the cent (7 types).
+- Throughput **1.3–1.4 events/s** at below-normal priority (≈ 4× the requirement; ≈ 28× the guest).
+- Production during the native test run (guest paused): CRM 77 ms, portal 88 ms, POS 349 ms, co-hosted 106 ms —
+  within baseline.
+- Web (waitress): ping 9–100 ms, login 1.3–2.9 s, 20-row invoice list API 0.65 s.
+- Worker: a real job returned 911 (the invoice count); a failing job was recorded as failed; a 3 s timeout raised
+  `JobTimeoutException` without SIGALRM.
+
+**Not working yet:** desk front-end assets. Frappe's esbuild globbing found no entry points on Windows (backslash
+paths) and the Studio sub-app's Vite build hung; assets are platform-independent and can be built on Linux (CI or the
+guest) or taken from Frappe's prebuilt release assets. Also not yet done natively: scheduler and socket.io processes,
+Windows services, backups (Frappe's backup code uses shell pipelines), monitoring, browser E2E.

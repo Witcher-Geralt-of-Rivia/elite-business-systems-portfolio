@@ -1,153 +1,154 @@
 {
-  "project": "elite-business-systems-portfolio",
-  "repository": "https://github.com/Witcher-Geralt-of-Rivia/elite-business-systems-portfolio",
-  "updated": "2026-11-18",
-  "current_milestone": "M5",
-  "current_task": "M5 ERP: pre-reboot readiness complete (preflight 0 failing, fresh verified backups); WSL1 PoC S0-S8 waits for owner console confirmation, maintenance window and REBOOT approval",
-  "status": "release_1_0_delivered; erp_in_development",
-  "last_verified_commit": "c6acb5a",
-  "milestones": {
-    "M0": "done",
-    "M1": "done",
-    "M2": "done (D-008/D-009 owner decisions; ERP WSL1 reboot pending separate approval)",
-    "M3": "done for CRM (HTTPS route, WinSW service, rolling logs, nightly verified backups); POS/ERP parts added with their runtimes",
-    "M4": "done 2026-11-17: production deployment + public E2E 10/10; first live lead in a production business window observed 2026-11-18 (TEST_RESULTS M8 item 11)",
-    "M5": "in_progress 2026-11-19: apps/erp/portfolio_sim; engine+static 35/35; static vs pinned v16.60.0 692/0; ERPNext integration 7/7 on Linux (GitHub Actions run 44425817273: 3,068 events, 36 integrity checks 0, replay exact); 6 app defects found+fixed on real ERPNext; NOT deployed on the host; WSL1 untested; browser E2E not written",
-    "M6": "done 2026-11-18: publicly deployed and verified (D-017). Activation preflight 43/43, backup+restore check, graceful reload, HTTPS/HSTS/secure-cookie smoke, public visitor E2E 4/4 (0 visitor records), portal switched to live; local acceptance evidence (dataset, replay, worker, admin E2E 8/8 on clone) in TEST_RESULTS",
-    "M7": "done 2026-11-18: portal live with CRM and POS links + live status; ERP \"in preparation\"; hero corrected in M9; no contact section (KNOWN_LIMITATIONS L13)",
-    "M8": "technically_complete 2026-11-18 for CRM + POS + portal (no open deployment/core-workflow failures, audits clean, monitoring live); owner-side R-014 host remediation (SEC-ROTATE) still open",
-    "M9": "done 2026-11-18 for Release 1.0 (CRM + POS + portal): delivery package (FINAL_DELIVERY, ACCEPTANCE_MATRIX, OPERATIONS_HANDBOOK, RECOVERY_GUIDE, KNOWN_LIMITATIONS), final acceptance in TEST_RESULTS M9; ERP delivery remains with M5"
-  },
-  "pins": {
-    "erpnext": "v16.60.0 (886ab6a)",
-    "frappe": "v16.60.0 (bf9581a)",
-    "nexopos": "v6.3.0 (PHP dependencies security-updated 2026-11-18 within upstream constraints: laravel/framework 12.73.0; composer audit clean)",
-    "atomic_crm": "main@22f38f0f5918187a9c559e75dcc4cd4a329f9af2",
-    "frappe_docker_reference": "main@0ad1a1152f93b1285104bcd0a8059e036dc5bd3d"
-  },
-  "completed_tasks": [
-    "M0 repo created and verified (public, main, issues, actions, push)",
-    "M0 tracking structure pushed (16dc51f)",
-    "M1 upstream audit: licenses, pins, extension points, schemas, simulator APIs (docs/UPSTREAM_AUDIT.md)",
-    "M2 read-only host inspection: OS, CPU, RAM, disk, virtualization (none), runtimes, sslip.io DNS, existing Caddy + HTTPS",
-    "Consolidation: 4 unrelated sites retired (routes removed, 3 services stopped+Disabled), backups + restore script on host, verified unreachable",
-    "M3: host Caddyfile reduced to global options + portfolio import; portfolio.<ip>.sslip.io/healthz 200 with trusted cert",
-    "CRM: Supabase migration inventory (docs/CRM_SUPABASE_MIGRATION.md)",
-    "CRM PoC backend: Fastify API + dedicated PG16 cluster (D-010) + session auth + RBAC + audit; 14/14 tests pass",
-    "CRM PoC frontend: upstream snapshot + portfolio providers; deployed at crm.<ip>.sslip.io; Playwright 2/2 live",
-    "CRM deploy script + WinSW service (LocalService) + least-privilege secrets split (api vs migrate env)",
-    "CRM nightly backup with restore verification (scheduled task, SYSTEM)",
-    "Security investigation: confirmed malware (2026-10-07), evidence preserved, sanitized report committed",
-    "CRM M4: search, team/invitations, password links, merge, attachments, SSE, Supabase removed (2b11d5f)",
-    "CRM M4: data engine (deterministic backfill + live worker, 22 integrity checks)",
-    "CRM M4: read-only visitor access (D-014)",
-    "CRM production rollout with backup/restore check; public E2E 10/10 (c92a55f)",
-    "POS runtime: PHP 8.3.36 + MariaDB 11.8.10 service + NexoPOS v6.3.0 setup + php-cgi workers + loopback Caddy site (550e7e8)",
-    "M6 local acceptance (2026-11-18): see docs/TEST_RESULTS.md POS M6 section",
-    "M7 portal deployed (2026-11-18): see docs/TEST_RESULTS.md M7 section",
-    "M6 public activation (2026-11-18, D-017): see docs/TEST_RESULTS.md POS M6 public activation section",
-    "M8 part 1 (2026-11-18): see docs/TEST_RESULTS.md M8 section",
-    "M8 part 2 (2026-11-18): dependency security update, licence review, health monitor; see TEST_RESULTS M8 items 8-10",
-    "CRM live-lead observation closed (2026-11-18): lead 501 at planned time, audited, SSE delivered",
-    "M8 integration regression (2026-11-18): CRM E2E 10/10, CRM integrity 22/22, POS 43/43, POS visitor 4/4",
-    "M9 Release 1.0 final acceptance and delivery package (2026-11-18)",
-    "M5 repository level (2026-11-18): ERP custom app and engine; see TEST_RESULTS M5 section and docs/ERP_DATA_ENGINE.md",
-    "M5 Linux integration validation (2026-11-19): .github/workflows/erp-integration.yml, run 44425817273 7/7; see TEST_RESULTS M5 Linux section",
-    "M5 pre-reboot readiness (2026-11-18): preflight-reboot.ps1 0 failing with fresh verified CRM/POS backups; post-reboot-check.ps1 trial 25/25; DB recovery actions prepared (dry run)"
+ "project": "elite-business-systems-portfolio",
+ "repository": "https://github.com/Witcher-Geralt-of-Rivia/elite-business-systems-portfolio",
+ "updated": "2026-11-18",
+ "current_milestone": "M5",
+ "current_task": "M5 ERP: QEMU-TCG PoC executed on the VPS (no WSL, no reboot): real ERPNext v16.60.0 installed in a software-emulated Debian guest; ~0.05 events/s, below the 0.35 events/s requirement -> not practical for permanent operation. Guest Stage E rerun (fresh site) in progress. Native-Windows spike: same pinned ERPNext passes 7/7 integration tests, integrity 36/0, replay exact, state hash identical to CI, 1.3-1.4 events/s.",
+ "status": "release_1_0_delivered; erp_in_development",
+ "last_verified_commit": "c6acb5a",
+ "milestones": {
+  "M0": "done",
+  "M1": "done",
+  "M2": "done (D-008/D-009 owner decisions; ERP WSL1 reboot pending separate approval)",
+  "M3": "done for CRM (HTTPS route, WinSW service, rolling logs, nightly verified backups); POS/ERP parts added with their runtimes",
+  "M4": "done 2026-11-17: production deployment + public E2E 10/10; first live lead in a production business window observed 2026-11-18 (TEST_RESULTS M8 item 11)",
+  "M5": "in_progress 2026-11-19: apps/erp/portfolio_sim; engine+static 35/35; static vs pinned v16.60.0 692/0; ERPNext integration 7/7 on Linux (GitHub Actions run 44425817273: 3,068 events, 36 integrity checks 0, replay exact); 6 app defects found+fixed on real ERPNext; NOT deployed on the host; WSL1 untested; browser E2E not written",
+  "M6": "done 2026-11-18: publicly deployed and verified (D-017). Activation preflight 43/43, backup+restore check, graceful reload, HTTPS/HSTS/secure-cookie smoke, public visitor E2E 4/4 (0 visitor records), portal switched to live; local acceptance evidence (dataset, replay, worker, admin E2E 8/8 on clone) in TEST_RESULTS",
+  "M7": "done 2026-11-18: portal live with CRM and POS links + live status; ERP \"in preparation\"; hero corrected in M9; no contact section (KNOWN_LIMITATIONS L13)",
+  "M8": "technically_complete 2026-11-18 for CRM + POS + portal (no open deployment/core-workflow failures, audits clean, monitoring live); owner-side R-014 host remediation (SEC-ROTATE) still open",
+  "M9": "done 2026-11-18 for Release 1.0 (CRM + POS + portal): delivery package (FINAL_DELIVERY, ACCEPTANCE_MATRIX, OPERATIONS_HANDBOOK, RECOVERY_GUIDE, KNOWN_LIMITATIONS), final acceptance in TEST_RESULTS M9; ERP delivery remains with M5"
+ },
+ "pins": {
+  "erpnext": "v16.60.0 (886ab6a)",
+  "frappe": "v16.60.0 (bf9581a)",
+  "nexopos": "v6.3.0 (PHP dependencies security-updated 2026-11-18 within upstream constraints: laravel/framework 12.73.0; composer audit clean)",
+  "atomic_crm": "main@22f38f0f5918187a9c559e75dcc4cd4a329f9af2",
+  "frappe_docker_reference": "main@0ad1a1152f93b1285104bcd0a8059e036dc5bd3d"
+ },
+ "completed_tasks": [
+  "M0 repo created and verified (public, main, issues, actions, push)",
+  "M0 tracking structure pushed (16dc51f)",
+  "M1 upstream audit: licenses, pins, extension points, schemas, simulator APIs (docs/UPSTREAM_AUDIT.md)",
+  "M2 read-only host inspection: OS, CPU, RAM, disk, virtualization (none), runtimes, sslip.io DNS, existing Caddy + HTTPS",
+  "Consolidation: 4 unrelated sites retired (routes removed, 3 services stopped+Disabled), backups + restore script on host, verified unreachable",
+  "M3: host Caddyfile reduced to global options + portfolio import; portfolio.<ip>.sslip.io/healthz 200 with trusted cert",
+  "CRM: Supabase migration inventory (docs/CRM_SUPABASE_MIGRATION.md)",
+  "CRM PoC backend: Fastify API + dedicated PG16 cluster (D-010) + session auth + RBAC + audit; 14/14 tests pass",
+  "CRM PoC frontend: upstream snapshot + portfolio providers; deployed at crm.<ip>.sslip.io; Playwright 2/2 live",
+  "CRM deploy script + WinSW service (LocalService) + least-privilege secrets split (api vs migrate env)",
+  "CRM nightly backup with restore verification (scheduled task, SYSTEM)",
+  "Security investigation: confirmed malware (2026-10-07), evidence preserved, sanitized report committed",
+  "CRM M4: search, team/invitations, password links, merge, attachments, SSE, Supabase removed (2b11d5f)",
+  "CRM M4: data engine (deterministic backfill + live worker, 22 integrity checks)",
+  "CRM M4: read-only visitor access (D-014)",
+  "CRM production rollout with backup/restore check; public E2E 10/10 (c92a55f)",
+  "POS runtime: PHP 8.3.36 + MariaDB 11.8.10 service + NexoPOS v6.3.0 setup + php-cgi workers + loopback Caddy site (550e7e8)",
+  "M6 local acceptance (2026-11-18): see docs/TEST_RESULTS.md POS M6 section",
+  "M7 portal deployed (2026-11-18): see docs/TEST_RESULTS.md M7 section",
+  "M6 public activation (2026-11-18, D-017): see docs/TEST_RESULTS.md POS M6 public activation section",
+  "M8 part 1 (2026-11-18): see docs/TEST_RESULTS.md M8 section",
+  "M8 part 2 (2026-11-18): dependency security update, licence review, health monitor; see TEST_RESULTS M8 items 8-10",
+  "CRM live-lead observation closed (2026-11-18): lead 501 at planned time, audited, SSE delivered",
+  "M8 integration regression (2026-11-18): CRM E2E 10/10, CRM integrity 22/22, POS 43/43, POS visitor 4/4",
+  "M9 Release 1.0 final acceptance and delivery package (2026-11-18)",
+  "M5 repository level (2026-11-18): ERP custom app and engine; see TEST_RESULTS M5 section and docs/ERP_DATA_ENGINE.md",
+  "M5 Linux integration validation (2026-11-19): .github/workflows/erp-integration.yml, run 44425817273 7/7; see TEST_RESULTS M5 Linux section",
+  "M5 pre-reboot readiness (2026-11-18): preflight-reboot.ps1 0 failing with fresh verified CRM/POS backups; post-reboot-check.ps1 trial 25/25; DB recovery actions prepared (dry run)"
+ ],
+ "pending_tasks": [
+  "ERP (M5): owner decision REBOOT (confirm provider out-of-band console, choose window), then WSL1 PoC S0-S8 (docs/runbooks/ERP_WSL1_POC.md)",
+  "ERP (M5): WSL1-specific work listed in the PoC runbook (uv Python 3.14, separate Windows MariaDB with utf8mb4 my.ini, Redis/gunicorn/RQ under WSL1, bench autostart without systemd, ERP backups/monitoring)",
+  "ERP (M5): browser E2E for the ERPNext desk (after a runtime exists); optional: exercise month-end settlement with smaller advances",
+  "Owner (recommendation): restart-on-failure recovery actions for the database services (not changed)",
+  "Owner: SEC-ROTATE (R-014/R-015)",
+  "Owner (optional): portal contact channel (L13); off-host backups (L14)",
+  "Review NexoPOS scheduler jobs on a clone before enabling schedule:run (L21)"
+ ],
+ "blocked_tasks": [
+  {
+   "task": "ERP runtime choice and production build-out (services, backups, monitoring, assets, browser E2E, guarded public activation)",
+   "reason": "QEMU-TCG fails the throughput requirement; the native-Windows route works in a spike but changes the implementation approach and adds a community Redis build and runtime adaptations - owner decision",
+   "decision_ids": [
+    "ERP-RUNTIME"
+   ]
+  }
+ ],
+ "owner_decisions_needed": [
+  "ERP-RUNTIME: continue with the native-Windows route (recommended; spike passes 7/7 at 1.3-1.4 events/s) or keep QEMU-TCG as a slow private demo only",
+  "REDIS-WINDOWS: accept a community Redis 8 build for Windows (redis-windows, MSYS2) or Microsoft Garnet as the ERP cache/queue (only if ERP-RUNTIME = native)",
+  "DB-RECOVERY (optional: apply set-db-service-recovery.ps1 -Apply)",
+  "SEC-ROTATE"
+ ],
+ "host_facts": {
+  "os": "Windows Server 2025 Standard 26100",
+  "is_vm_guest": true,
+  "nested_virtualization": false,
+  "logical_cpus": 3,
+  "ram_gb": 12,
+  "free_ram_gb_at_inspection": 5.8,
+  "free_disk_gb_at_inspection": 18,
+  "wsl_installed": false,
+  "docker_installed": false,
+  "runtimes_present": [
+   "node 24.19",
+   "python 3.13"
   ],
-  "pending_tasks": [
-    "ERP (M5): owner decision REBOOT (confirm provider out-of-band console, choose window), then WSL1 PoC S0-S8 (docs/runbooks/ERP_WSL1_POC.md)",
-    "ERP (M5): WSL1-specific work listed in the PoC runbook (uv Python 3.14, separate Windows MariaDB with utf8mb4 my.ini, Redis/gunicorn/RQ under WSL1, bench autostart without systemd, ERP backups/monitoring)",
-    "ERP (M5): browser E2E for the ERPNext desk (after a runtime exists); optional: exercise month-end settlement with smaller advances",
-    "Owner (recommendation): restart-on-failure recovery actions for the database services (not changed)",
-    "Owner: SEC-ROTATE (R-014/R-015)",
-    "Owner (optional): portal contact channel (L13); off-host backups (L14)",
-    "Review NexoPOS scheduler jobs on a clone before enabling schedule:run (L21)"
-  ],
-  "blocked_tasks": [
-    {
-      "task": "ERP runtime (WSL1 PoC S1-S8)",
-      "reason": "owner must confirm provider out-of-band console access, choose a maintenance window and approve REBOOT",
-      "decision_ids": [
-        "REBOOT"
-      ]
-    }
-  ],
-  "owner_decisions_needed": [
-    "REBOOT (with out-of-band console confirmation and maintenance window)",
-    "DB-RECOVERY (optional: apply set-db-service-recovery.ps1 -Apply)",
-    "SEC-ROTATE"
-  ],
-  "host_facts": {
-    "os": "Windows Server 2025 Standard 26100",
-    "is_vm_guest": true,
-    "nested_virtualization": false,
-    "logical_cpus": 3,
-    "ram_gb": 12,
-    "free_ram_gb_at_inspection": 5.8,
-    "free_disk_gb_at_inspection": 18,
-    "wsl_installed": false,
-    "docker_installed": false,
-    "runtimes_present": [
-      "node 24.19",
-      "python 3.13"
-    ],
-    "existing_reverse_proxy": "caddy windows service, per-site blocks, sslip.io TLS working",
-    "sslip_dns_verified": true,
-    "free_ram_gb_after_consolidation": 3.9,
-    "free_disk_gb_after_consolidation": 17.6,
-    "cpu_load_pct": "73-97 (interactive tooling)"
-  },
-  "last_test_results": {
-    "crm_backend": "42/42 (2026-11-18 release run, crm_test)",
-    "crm_public_e2e": "10/10 (2026-11-18, cleanup: 0 loginable test accounts)",
-    "crm_production_integrity": "22 checks, 0 failing (2026-11-18 release)",
-    "pos_integrity": "43/43 (2026-11-18 release; paid sales 872053.27 = dashboard)",
-    "pos_replay": "366 days 26754/26754",
-    "pos_recovery_suite": "passed (clone)",
-    "pos_e2e_admin_isolated": "9/9 (twice, 2026-11-18 after M8 fixes)",
-    "pos_e2e_visitor": "4/4 public HTTPS (twice after M8 fixes), 0 visitor records, 0 failed responses while browsing",
-    "pos_backup_restore": "verified as SYSTEM (counts + text checksums); activation backup 10:30 verified",
-    "portal": "release check desktop+phone 0 errors; statuses crm/pos operational, erp in preparation",
-    "pos_installed_race": "before: 1/348 parallel API calls redirected to /do-setup; after: 0/623, 0 fallback hits",
-    "resources": "2026-11-18 11:40, 10 min: hosted services <1.5% of one core; POS public /sign-in 336 ms median; CRM/portal/Practica 55-70 ms",
-    "pos_dependency_audit": "composer audit clean after update (2026-11-18); npm audit clean (CRM backend/frontend, POS e2e)",
-    "monitor": "10/10 checks ok as SYSTEM; failure/recovery events verified",
-    "crm_live_lead": "observed 2026-11-18 20:48:48 UTC (company 501), audit 7 entries, SSE 59 ms",
-    "erp_engine_static": "35/35 (python -m unittest discover -s apps/erp/tests)",
-    "erp_upstream_static": "868 DocTypes, 692 checks, 0 problems",
-    "erp_integration": "7/7 on Linux, real ERPNext v16.60.0 (GitHub Actions run 44425817273, 3,068 events, 36 integrity 0, replay exact); WSL1 untested",
-    "preflight": "2026-11-18 17:16: 0 failing (33 pass, 2 owner confirmations); fresh backups crm-20261118-171611, pos-20261118-171621 restore-verified"
-  },
-  "deployment_status": {
-    "crm": "production at crm.<ip>.sslip.io: M4 build, 13-month synthetic history, live simulation (intensity 3), read-only visitor access; public E2E 10/10",
-    "pos": "production at pos.<ip>.sslip.io (D-017): HarborPine module, 12-month dataset, live worker service, read-only visitor showcase; registration disabled; rollback: activate-pos-public.ps1 -Rollback",
-    "erp": "not deployed (on hold)",
-    "portal": "deployed: portal/site via deploy-portal.ps1 (crm=live, pos=live, erp=planned); /status/crm + /status/pos; strict CSP"
-  },
-  "next_action": "Wait for owner: confirm out-of-band console, choose window, approve REBOOT. Then S0 (preflight-reboot.ps1 -RunBackups), S1 (WSL feature only + one reboot; post-reboot-check.ps1 within 10 min), S2-S8 sequentially with stop conditions F1-F7. Release 1.0 unchanged.",
-  "completed_milestones": [
-    "M0",
-    "M1",
-    "M2",
-    "M3",
-    "M4",
-    "M6",
-    "M7",
-    "M9 (Release 1.0 scope)"
-  ],
-  "pending_observations": [],
-  "security": {
-    "incident": "R-014 confirmed historical malware execution (2026-10-07); documented in docs/SECURITY_INVESTIGATION.md",
-    "status": "open (credential rotation and host remediation are owner actions); does not block repository development (D-013)",
-    "constraints": "no unnecessary new secrets; public exposure only as authorized (CRM D-014, POS D-017); host not declared clean"
-  },
-  "running_jobs": [
-    "POS live simulation: Windows service portfolio-pos-sim (hp:worker)",
-    "CRM live simulation inside portfolio-crm-api",
-    "Portfolio - health monitor (every 15 min, SYSTEM)",
-    "Nightly backups: CRM 03:15, POS 03:45 (SYSTEM)"
-  ],
-  "shared_hosting": "Since 2026-11-18 the host Caddy also serves the owner's Práctica app (D-016, owner-authorized). Touch only portfolio site files; validate the whole host Caddyfile; caddy reload only, never restart.",
-  "release": "Elite Business Systems Portfolio - CRM + POS + Portal, Release 1.0 (2026-11-18, D-018); ERP not included"
+  "existing_reverse_proxy": "caddy windows service, per-site blocks, sslip.io TLS working",
+  "sslip_dns_verified": true,
+  "free_ram_gb_after_consolidation": 3.9,
+  "free_disk_gb_after_consolidation": 17.6,
+  "cpu_load_pct": "73-97 (interactive tooling)"
+ },
+ "last_test_results": {
+  "crm_backend": "42/42 (2026-11-18 release run, crm_test)",
+  "crm_public_e2e": "10/10 (2026-11-18, cleanup: 0 loginable test accounts)",
+  "crm_production_integrity": "22 checks, 0 failing (2026-11-18 release)",
+  "pos_integrity": "43/43 (2026-11-18 release; paid sales 872053.27 = dashboard)",
+  "pos_replay": "366 days 26754/26754",
+  "pos_recovery_suite": "passed (clone)",
+  "pos_e2e_admin_isolated": "9/9 (twice, 2026-11-18 after M8 fixes)",
+  "pos_e2e_visitor": "4/4 public HTTPS (twice after M8 fixes), 0 visitor records, 0 failed responses while browsing",
+  "pos_backup_restore": "verified as SYSTEM (counts + text checksums); activation backup 10:30 verified",
+  "portal": "release check desktop+phone 0 errors; statuses crm/pos operational, erp in preparation",
+  "pos_installed_race": "before: 1/348 parallel API calls redirected to /do-setup; after: 0/623, 0 fallback hits",
+  "resources": "2026-11-18 11:40, 10 min: hosted services <1.5% of one core; POS public /sign-in 336 ms median; CRM/portal/Practica 55-70 ms",
+  "pos_dependency_audit": "composer audit clean after update (2026-11-18); npm audit clean (CRM backend/frontend, POS e2e)",
+  "monitor": "10/10 checks ok as SYSTEM; failure/recovery events verified",
+  "crm_live_lead": "observed 2026-11-18 20:48:48 UTC (company 501), audit 7 entries, SSE 59 ms",
+  "erp_engine_static": "35/35 (python -m unittest discover -s apps/erp/tests)",
+  "erp_upstream_static": "868 DocTypes, 692 checks, 0 problems",
+  "erp_integration": "7/7 on Linux, real ERPNext v16.60.0 (GitHub Actions run 44425817273, 3,068 events, 36 integrity 0, replay exact); WSL1 untested",
+  "preflight": "2026-11-18 17:16: 0 failing (33 pass, 2 owner confirmations); fresh backups crm-20261118-171611, pos-20261118-171621 restore-verified"
+ },
+ "deployment_status": {
+  "crm": "production at crm.<ip>.sslip.io: M4 build, 13-month synthetic history, live simulation (intensity 3), read-only visitor access; public E2E 10/10",
+  "pos": "production at pos.<ip>.sslip.io (D-017): HarborPine module, 12-month dataset, live worker service, read-only visitor showcase; registration disabled; rollback: activate-pos-public.ps1 -Rollback",
+  "erp": "not deployed (on hold)",
+  "portal": "deployed: portal/site via deploy-portal.ps1 (crm=live, pos=live, erp=planned); /status/crm + /status/pos; strict CSP"
+ },
+ "next_action": "Record QEMU Stage E run 2 results when the guest finishes (monitor via scripts/erp-qemu). Then wait for ERP-RUNTIME. If native: Windows services (WinSW) for MariaDB/Redis/web/worker/scheduler, asset build on Linux, backups without shell pipelines, monitoring, browser E2E, private first, guarded public activation later. WSL1/reboot plan (S0-S8) superseded by the owner's no-reboot directive; Release 1.0 unchanged.",
+ "completed_milestones": [
+  "M0",
+  "M1",
+  "M2",
+  "M3",
+  "M4",
+  "M6",
+  "M7",
+  "M9 (Release 1.0 scope)"
+ ],
+ "pending_observations": [],
+ "security": {
+  "incident": "R-014 confirmed historical malware execution (2026-10-07); documented in docs/SECURITY_INVESTIGATION.md",
+  "status": "open (credential rotation and host remediation are owner actions); does not block repository development (D-013)",
+  "constraints": "no unnecessary new secrets; public exposure only as authorized (CRM D-014, POS D-017); host not declared clean"
+ },
+ "running_jobs": [
+  "POS live simulation: Windows service portfolio-pos-sim (hp:worker)",
+  "CRM live simulation inside portfolio-crm-api",
+  "Portfolio - health monitor (every 15 min, SYSTEM)",
+  "Nightly backups: CRM 03:15, POS 03:45 (SYSTEM)"
+ ],
+ "shared_hosting": "Since 2026-11-18 the host Caddy also serves the owner's Práctica app (D-016, owner-authorized). Touch only portfolio site files; validate the whole host Caddyfile; caddy reload only, never restart.",
+ "release": "Elite Business Systems Portfolio - CRM + POS + Portal, Release 1.0 (2026-11-18, D-018); ERP not included"
 }

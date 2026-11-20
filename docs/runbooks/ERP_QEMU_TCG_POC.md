@@ -53,6 +53,33 @@ Performance: 69 forks/s, 46 subprocess spawns/s, Redis ~1,500 req/s; CPU-bound P
 same code natively on the host** (`bench-cpu.py`: loop 1.81 s vs 0.14 s, json 1.63 s vs 0.07 s, sort 3.66 s vs
 0.18 s). `-cpu max` beats `-cpu Nehalem` (no AVX) by ~1.8× on the interpreter loop, so `max` is kept.
 
-**Stage D — ERPNext install (in progress).** `bench init` 809 s; `get-app erpnext` + `portfolio_sim` ~40 min
-(mostly yarn); fixes on the way: yarn `network-timeout` (ESOCKETTIMEDOUT), MariaDB admin account for `127.0.0.1`
-(error 1130 with `skip-name-resolve`), recovery of a partial bench or site.
+**Stage D — ERPNext install (passed).** `bench init` 809 s; `get-app erpnext` + `portfolio_sim` ~40 min (mostly
+yarn); `new-site` with ERPNext 5,540 s. Fixes: yarn `network-timeout` (ESOCKETTIMEDOUT), MariaDB admin account for
+`127.0.0.1` (error 1130 with `skip-name-resolve`), recovery of a partial bench or site, web without the stat reloader,
+and `guest/systemd-units.sh`: one unit per process (Redis cache, Redis queue, gunicorn web, worker, scheduler) with
+`Restart=always` instead of `bench start`, whose supervisor stops every process when one exits.
+
+**Stage E — integration tests.** Run 1 was invalidated by infrastructure (see TEST_RESULTS: worker exit after a long
+operator pause → the dev supervisor stopped Redis). Run 2 on a fresh site: see TEST_RESULTS.
+
+**Stage F — throughput: failed.** ~0.05 events/s against the 0.35 events/s requirement; the guest is purely
+CPU-bound (no I/O wait) and already gets most of one host core. Production latency was not affected while QEMU ran
+at below-normal priority.
+
+## Conclusion
+
+QEMU-TCG runs real ERPNext on this VPS without WSL or a reboot, but software CPU emulation makes it about 75× slower
+than a native Linux runner end to end: **not practical for permanent operation**. Stage G (production readiness) was
+therefore not built on QEMU.
+
+Failure-handling item 9.6 (native Windows) was investigated with a spike: the same pinned Frappe/ERPNext run on
+Windows-native Python with ten narrowly scoped runtime adaptations (no upstream file changed,
+`scripts/erp-native/`) and pass the same 7 integration tests with results identical to CI, at 1.3–1.4 events/s.
+That route needs an owner decision before any further build-out (see `state/checkpoint.json`).
+
+## Stop / remove
+
+```powershell
+scripts\erp-qemu\erp-vm.ps1 -Action stop        # clean guest shutdown
+scripts\erp-qemu\erp-vm.ps1 -Action cleanup -All # removes the task and C:\srv\portfolio\erp\qemu-poc entirely
+```

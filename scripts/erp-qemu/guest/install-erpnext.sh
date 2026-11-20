@@ -24,7 +24,9 @@ init_bench() {
   cd "$HOME"
   bench init --skip-assets --frappe-branch "$REF" --python "$PY" frappe-bench
   cd "$BENCH"
-  sed -i 's/^watch:/# watch:/' Procfile
+  # No asset watcher; no code reloader on the web process: under emulation werkzeug's stat reloader alone used as
+  # much CPU as the test runner (measured: 23 CPU-minutes each in the first hour).
+  sed -i 's/^watch:/# watch:/; s/^web: bench serve  *--port \([0-9]*\)$/web: bench serve --port \1 --noreload/' Procfile
   git -C apps/frappe describe --tags
 }
 get_apps() {
