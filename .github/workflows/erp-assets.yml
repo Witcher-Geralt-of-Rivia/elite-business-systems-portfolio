@@ -113,7 +113,9 @@ jobs:
             # skip files reached through an app symlink (already listed under apps/)
             real=$(realpath "$f"); case "$real" in "$BENCH"/apps/*) ;; *) echo "$f" ;; esac
           done >> /tmp/out/files.txt
-          sort -u -o /tmp/out/files.txt /tmp/out/files.txt
+          # Regular files only: build-time symlinks (e.g. <app>/public/node_modules -> ../node_modules) are not outputs.
+          sort -u /tmp/out/files.txt | while read -r f; do [ -f "$f" ] && [ ! -L "$f" ] && echo "$f"; done > /tmp/out/files.sorted
+          mv /tmp/out/files.sorted /tmp/out/files.txt
           find sites/assets -maxdepth 2 -type l -printf '%p\t%l\n' | sed "s#\t$BENCH/#\t#" > /tmp/out/symlinks.tsv
           echo "files: $(wc -l < /tmp/out/files.txt)"; cat /tmp/out/symlinks.tsv
           awk -F/ '{print $1"/"$2"/"$3"/"$4"/"$5}' /tmp/out/files.txt | sort | uniq -c | sort -rn | head -40
