@@ -9,6 +9,9 @@
     - TLS certificate lifetime of each public host (Caddy renews automatically; < 14 days means renewal failed);
     - portfolio Windows services running;
     - latest CRM/POS backup younger than 26 h with its .sha256 file, and the backup tasks' last result 0;
+    - ERP (once installed; private, loopback): all portfolio-erp-* services running, the health endpoint
+      (portfolio_sim.health.status: DB, both Redis, workers, scheduler, live simulation) returning 200, and the
+      latest verified ERP backup younger than 26 h (once its task exists);
     - free space on C: (R-004 alarm threshold 3 GB).
   Every run appends one JSON line to C:\srv\portfolio\logs\monitor-<yyyyMM>.jsonl (12 months kept). When a check
   changes state (fails or recovers), an entry is written to the Windows Application event log, source
@@ -96,6 +99,31 @@ foreach ($b in @(@{ app = 'crm'; filter = 'crm-*.dump'; task = 'Portfolio - CRM 
         $sha = Test-Path "$($latest.FullName).sha256"
         $taskOk = $info -and $info.LastTaskResult -eq 0
         Add-Result "backup.$($b.app)" ($age -le $MaxBackupAgeHours -and $sha -and $taskOk) "latest $age h old; sha256=$sha; task result=$(if ($info) { $info.LastTaskResult } else { 'missing' })"
+    }
+}
+
+# ERP (native Windows, private): checked once its services are installed
+if (Get-Service 'portfolio-erp-web' -ErrorAction SilentlyContinue) {
+    Test-Check 'erp.services' {
+        $all = @(Get-Service 'portfolio-erp-*')
+        $down = @($all | Where-Object Status -ne 'Running' | ForEach-Object { "$($_.Name)=$($_.Status)" })
+        Add-Result 'erp.services' ($down.Count -eq 0 -and $all.Count -ge 9) $(if ($down) { $down -join ', ' } else { "$($all.Count) running" })
+    }
+    Test-Check 'erp.health' {
+        # Private entry point on loopback; 200 only when DB, both Redis, workers, scheduler and the live simulation are ok.
+        $r = Get-Url 'http://127.0.0.1:8850/api/method/portfolio_sim.health.status'
+        $h = ($r.Body | ConvertFrom-Json).message
+        $bad = @(foreach ($k in 'db', 'redis_cache', 'redis_queue', 'workers', 'scheduler', 'simulation') { if (-not $h.$k.ok) { $k } })
+        Add-Result 'erp.health' ($r.Code -eq '200' -and $h.ok) "HTTP $($r.Code)$(if ($bad) { '; failing: ' + ($bad -join ', ') }); workers=$($h.workers.count) scheduler_age=$($h.scheduler.last_enqueue_age_s)s sim_overdue=$($h.simulation.overdue_s)s"
+    }
+    if (Get-ScheduledTask -TaskName 'Portfolio - ERP nightly backup' -ErrorAction SilentlyContinue) {
+        Test-Check 'backup.erp' {
+            $latest = Get-ChildItem 'C:\srv\portfolio\backups\erp' -Directory -Filter 'erp-*' -ErrorAction SilentlyContinue | Where-Object { Test-Path (Join-Path $_.FullName 'manifest.json') } | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+            $info = Get-ScheduledTask -TaskName 'Portfolio - ERP nightly backup' | Get-ScheduledTaskInfo
+            if (-not $latest) { Add-Result 'backup.erp' $false 'no backup found'; return }
+            $age = [math]::Round(((Get-Date) - $latest.LastWriteTime).TotalHours, 1)
+            Add-Result 'backup.erp' ($age -le $MaxBackupAgeHours -and $info.LastTaskResult -eq 0) "latest $age h old; task result=$($info.LastTaskResult)"
+        }
     }
 }
 

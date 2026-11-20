@@ -164,3 +164,20 @@ Format: ID · date · decision · alternatives rejected · status.
 - **Preserved for M5:** ERP pins (v16.60.0), runtime research (R-001, R-002, R-011, D-007), the upstream audit and
   the WSL1 runbook. No WSL enablement or reboot without the owner's REBOOT decision.
 
+## D-019 — ERPNext runs natively on Windows; community Redis build (2026-11-20, owner decisions ERP-RUNTIME, REDIS-WINDOWS)
+
+- **Decision ERP-RUNTIME:** native Windows. The QEMU-TCG proof of concept is closed (it works but runs ~0.07 events/s
+  against 0.35 required; installation removed with its own cleanup, evidence kept). The native spike becomes a
+  private installation: Python 3.14 (uv), pinned Frappe/ERPNext v16.60.0, a dedicated MariaDB 11.8 instance,
+  waitress, the non-forking worker. All compatibility adaptations stay outside the upstream source trees
+  (`scripts/erp-native/`). The seven integration tests and 36 integrity checks are the baseline.
+- **Decision REDIS-WINDOWS:** the community Redis 8.10.3 build (redis-windows/redis-windows, MSYS2), subject to
+  provenance, checksum, licence, persistence and service-recovery verification; loopback only; dedicated to ERPNext;
+  separate cache and queue instances. Microsoft Garnet is not substituted without proof of compatibility.
+- **Support status:** a project-maintained compatibility adaptation, **not** a deployment platform Frappe supports
+  (R-016). Every upstream upgrade re-runs the integration, import-probe and browser tests first.
+- **Constraints kept:** no WSL/Hyper-V/OS change/reboot/paid infrastructure; CRM, POS, portal, Práctica, their
+  databases, simulation engines and backups are not modified; the host Caddy configuration is not changed; ERPNext
+  stays on 127.0.0.1 (its own private Caddy instance on loopback). **Public HTTPS needs a separate owner approval.**
+- **Not implied:** the host-security incident (R-014, SEC-ROTATE) stays open and separate.
+- Runbook: [runbooks/ERP_NATIVE_WINDOWS.md](runbooks/ERP_NATIVE_WINDOWS.md).
