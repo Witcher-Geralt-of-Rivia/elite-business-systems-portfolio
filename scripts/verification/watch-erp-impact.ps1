@@ -11,8 +11,10 @@
     endpoints: CRM API health, portal health, POS health and the co-hosted application (URL from host-only config).
   Safety action "shed" (logged, never automatic resume):
     - available memory < -MinAvailableMB for 3 consecutive samples, or commit > -MaxCommitPct;
-    - at least two production endpoints' rolling median (last 10 samples) above -LatencyLimit x baseline for 10
-      consecutive samples.
+    - any ONE production endpoint's rolling median (last 10 samples) above -LatencyLimit x baseline for 10
+      consecutive samples (every existing application, Práctica included, gets the same protection).
+  Extra columns: per-endpoint failed requests (no response or HTTP >= 500, of 3), MariaDB and Redis working set,
+  free space on C:, disk throughput (KB/s) and the production site's ledger row count (ERP throughput).
     Shedding pauses the live simulation (portfolio-sim pause) and terminates running backfill processes (safe:
     every event is committed exactly once with its ledger row; a new backfill resumes at the first open event).
     The ERP web, workers and databases keep running.
@@ -48,7 +50,16 @@ $ctl = Join-Path $PSScriptRoot '..\maintenance\erp-ctl.ps1'
 
 function Get-Median([double[]]$x) { $s = $x | Sort-Object; return $s[[int][math]::Floor(($s.Count - 1) / 2)] }
 function Write-Event([string]$msg) { $line = "$(Get-Date -Format o) $msg"; Add-Content (Join-Path $EvidenceDir 'events.log') $line; Write-Host $line }
-function Get-Probe([string]$url) { $t = @(1..3 | ForEach-Object { [double](& curl.exe -s -o NUL -m 20 -w '%{time_total}' $url) * 1000 }); return [int](Get-Median $t) }
+function Get-Probe([string]$url) {
+    # 3 requests; median time, and how many failed (no response, or HTTP status >= 500).
+    $t = @(); $bad = 0
+    foreach ($i in 1..3) {
+        $o = (& curl.exe -s -o NUL -m 20 -w '%{time_total} %{http_code}' $url) -split ' '
+        $t += [double]$o[0] * 1000
+        if ($o.Count -lt 2 -or [int]$o[1] -eq 0 -or [int]$o[1] -ge 500) { $bad++ }
+    }
+    return [pscustomobject]@{ ms = [int](Get-Median $t); errors = $bad }
+}
 function Get-ErpProcesses {
     $rootPattern = [regex]::Escape($Root)
     Get-CimInstance Win32_Process -Filter "Name='python.exe' OR Name='mariadbd.exe' OR Name='redis-server.exe' OR Name='caddy.exe' OR Name='node.exe'" |
@@ -59,7 +70,7 @@ if ($Calibrate) {
     $running = @(Get-ErpProcesses | Where-Object { $_.CommandLine -match 'backfill|run-tests' })
     if ($running) { throw 'calibration needs the ERP load absent (backfill/test processes are running)' }
     for ($i = 0; $i -lt $Samples; $i++) {
-        foreach ($k in $targets.Keys) { $hist[$k].Add((Get-Probe $targets[$k])) }
+        foreach ($k in $targets.Keys) { $hist[$k].Add((Get-Probe $targets[$k]).ms) }
         Start-Sleep -Seconds ([math]::Max(1, $IntervalSec - 8))
     }
     $b = [ordered]@{ time = (Get-Date).ToString('o'); samples = $Samples; method = '3 requests per sample, median'; erp_services = @(Get-Service portfolio-erp-* -ErrorAction SilentlyContinue | Where-Object Status -eq 'Running').Count }
@@ -71,12 +82,15 @@ $baseline = Get-Content $BaselineFile -Raw | ConvertFrom-Json
 $base = @{}; foreach ($k in $targets.Keys) { $base[$k] = [double]$baseline.$k }
 
 $csv = Join-Path $EvidenceDir ("watch-{0:yyyyMMdd-HHmmss}.csv" -f (Get-Date))
-Add-Content $csv ("time,host_cpu_pct,avail_mb,commit_pct,erp_cpu_pct,erp_ws_mb,erp_private_mb,erp_disk_mb,erp_ping_ms,erp_health," + (($targets.Keys | ForEach-Object { "${_}_ms" }) -join ',') + ',action')
+Add-Content $csv ("time,host_cpu_pct,avail_mb,commit_pct,erp_cpu_pct,erp_ws_mb,erp_private_mb,erp_disk_mb,erp_ping_ms,erp_health," + (($targets.Keys | ForEach-Object { "${_}_ms" }) -join ',') + ',action,' +
+    (($targets.Keys | ForEach-Object { "${_}_err" }) -join ',') + ',mariadb_ws_mb,redis_ws_mb,disk_free_gb,disk_kb_s,erp_events')
+$dbRoot = (Get-Content 'C:\srv\portfolio\secrets\erp-runtime.json' -Raw | ConvertFrom-Json).db_root_password
+$prodDb = (Get-Content (Join-Path $Root 'bench\sites\erp.portfolio.local\site_config.json') -Raw | ConvertFrom-Json).db_name
 $lowMem = 0; $slow = 0; $prev = @{}; $prevT = $null; $end = (Get-Date).AddHours($MaxHours); $diskMb = 0; $diskAt = [datetime]::MinValue
 Write-Event "watchdog started: $csv (baseline $(($targets.Keys | ForEach-Object { "$_=$($base[$_])" }) -join ' '); min available $MinAvailableMB MB, max commit $MaxCommitPct %, latency x$LatencyLimit, shed=$(-not $NoShed))"
 while ((Get-Date) -lt $end) {
   try {
-    $c = (Get-Counter '\Processor(_Total)\% Processor Time', '\Memory\Available MBytes', '\Memory\Committed Bytes', '\Memory\Commit Limit' -SampleInterval 2 -MaxSamples 1).CounterSamples
+    $c = (Get-Counter '\Processor(_Total)\% Processor Time', '\Memory\Available MBytes', '\Memory\Committed Bytes', '\Memory\Commit Limit', '\PhysicalDisk(_Total)\Disk Bytes/sec' -SampleInterval 2 -MaxSamples 1).CounterSamples
     $hostCpu = [math]::Round($c[0].CookedValue, 1); $avail = [int]$c[1].CookedValue; $commit = [math]::Round(100 * $c[2].CookedValue / $c[3].CookedValue, 1)
     $now = Get-Date; $cpuNow = @{}; $ws = 0; $priv = 0
     foreach ($w in Get-ErpProcesses) {
@@ -98,12 +112,29 @@ while ((Get-Date) -lt $end) {
     }
     $ping = [int]([double](& curl.exe -s -o NUL -m 20 -w '%{time_total}' "http://127.0.0.1:$ProxyPort/api/method/ping") * 1000)
     $health = & curl.exe -s -o NUL -m 30 -w '%{http_code}' "http://127.0.0.1:$ProxyPort/api/method/portfolio_sim.health.status"
-    $lat = [ordered]@{}
-    foreach ($k in $targets.Keys) { $lat[$k] = Get-Probe $targets[$k]; $hist[$k].Add($lat[$k]); if ($hist[$k].Count -gt 10) { $hist[$k].RemoveAt(0) } }
+    $lat = [ordered]@{}; $errs = [ordered]@{}
+    foreach ($k in $targets.Keys) {
+        $pr = Get-Probe $targets[$k]; $lat[$k] = $pr.ms; $errs[$k] = $pr.errors
+        $hist[$k].Add($lat[$k]); if ($hist[$k].Count -gt 10) { $hist[$k].RemoveAt(0) }
+    }
+    # Database, Redis, disk and ERP progress
+    $mdb = 0; $rds = 0
+    foreach ($w in Get-ErpProcesses) {
+        $p = Get-Process -Id $w.ProcessId -ErrorAction SilentlyContinue
+        if ($p -and $w.Name -eq 'mariadbd.exe') { $mdb += $p.WorkingSet64 } elseif ($p -and $w.Name -eq 'redis-server.exe') { $rds += $p.WorkingSet64 }
+    }
+    $freeGb = [math]::Round((Get-PSDrive C).Free / 1GB, 2)
+    $events = ''
+    try {
+        $env:MYSQL_PWD = $dbRoot
+        # PowerShell 5.1: a native stderr notice is terminating under 'Stop' even with 2>$null.
+        $events = & { $ErrorActionPreference = 'Continue'; (& "$Root\mariadb\bin\mariadb.exe" -u root -h 127.0.0.1 -P 3408 --protocol=TCP -N -B $prodDb -e 'select count(*) from `tabDistribution Sim Event`' 2>$null | Where-Object { $_ -is [string] }) -join '' }
+    } catch {} finally { Remove-Item Env:MYSQL_PWD -ErrorAction SilentlyContinue }
     $action = ''
     $lowMem = if ($avail -lt $MinAvailableMB) { $lowMem + 1 } else { 0 }
+    # Every existing application has the same protection: ONE endpoint over the limit is enough.
     $over = @($targets.Keys | Where-Object { $hist[$_].Count -ge 10 -and (Get-Median $hist[$_].ToArray()) -gt $LatencyLimit * $base[$_] })
-    $slow = if ($over.Count -ge 2) { $slow + 1 } else { 0 }
+    $slow = if ($over.Count -ge 1) { $slow + 1 } else { 0 }
     $reason = if ($lowMem -ge 3 -or $commit -gt $MaxCommitPct) { "memory: available $avail MB (x$lowMem), commit $commit %" } elseif ($slow -ge 10) { "latency over x$LatencyLimit on $($over -join ', ') for 10 samples" }
     if ($reason) {
         $action = if ($NoShed) { 'alert' } else { 'shed' }
@@ -116,7 +147,8 @@ while ((Get-Date) -lt $end) {
         }
         $slow = 0; $lowMem = 0
     }
-    Add-Content $csv ("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11}" -f (Get-Date -Format s), $hostCpu, $avail, $commit, $erpCpu, [int]($ws / 1MB), [int]($priv / 1MB), $diskMb, $ping, $health, ($lat.Values -join ','), $action)
+    Add-Content $csv ("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12},{13},{14},{15},{16},{17}" -f (Get-Date -Format s), $hostCpu, $avail, $commit, $erpCpu, [int]($ws / 1MB), [int]($priv / 1MB), $diskMb, $ping, $health,
+        ($lat.Values -join ','), $action, ($errs.Values -join ','), [int]($mdb / 1MB), [int]($rds / 1MB), $freeGb, [int]($c[4].CookedValue / 1KB), $events)
   } catch {
     # One bad sample (e.g. an invalid performance-counter read) must not end a multi-day watch.
     Write-Event "sample error (continuing): $($_.Exception.Message) at line $($_.InvocationInfo.ScriptLineNumber)"

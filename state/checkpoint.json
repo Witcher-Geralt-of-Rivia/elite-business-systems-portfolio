@@ -1,10 +1,10 @@
 {
  "project": "elite-business-systems-portfolio",
  "repository": "https://github.com/Witcher-Geralt-of-Rivia/elite-business-systems-portfolio",
- "updated": "2026-11-18",
+ "updated": "2026-11-20",
  "current_milestone": "M5",
- "current_task": "M5 ERP: QEMU-TCG PoC complete - real ERPNext v16.60.0 in a software-emulated guest passes 7/7 integration tests (12.6 h; integrity 36/0, replay exact, state hash and GL identical to CI) but runs ~0.07 events/s against the 0.35 requirement -> not practical; guest shut down. Native-Windows spike passes the same 7/7 at 1.3-1.4 events/s. Waiting for owner decision ERP-RUNTIME.",
- "status": "release_1_0_delivered; erp_in_development",
+ "current_task": "M5 ERP: native-Windows ERPNext private acceptance (D-019). Done: runtime + 9 services, assets, private proxy, browser E2E 7/7, backup/restore with scratch-instance check, service recovery (all 9; 0 orphans; graceful 26.8 s), multi-day history 479 events integrity 36/0, site time zone fixed (America/New_York). Running: 7 integration tests on the isolated test site; then performance gate, full history, live simulation, 24 h stability. Public activation prepared but NOT authorized (ERP-PUBLIC).",
+ "status": "release_1_0_delivered; erp_private_acceptance_in_progress",
  "last_verified_commit": "c6acb5a",
  "milestones": {
   "M0": "done",
@@ -12,7 +12,7 @@
   "M2": "done (D-008/D-009 owner decisions; ERP WSL1 reboot pending separate approval)",
   "M3": "done for CRM (HTTPS route, WinSW service, rolling logs, nightly verified backups); POS/ERP parts added with their runtimes",
   "M4": "done 2026-11-17: production deployment + public E2E 10/10; first live lead in a production business window observed 2026-11-18 (TEST_RESULTS M8 item 11)",
-  "M5": "in_progress 2026-11-19: apps/erp/portfolio_sim; engine+static 35/35; static vs pinned v16.60.0 692/0; ERPNext integration 7/7 on Linux (GitHub Actions run 44425817273: 3,068 events, 36 integrity checks 0, replay exact); 6 app defects found+fixed on real ERPNext; NOT deployed on the host; WSL1 untested; browser E2E not written",
+  "M5": "in_progress 2026-11-20: native Windows ERPNext running privately (D-019); acceptance in progress (see TEST_RESULTS \"M5 - Native Windows ERPNext (private)\")",
   "M6": "done 2026-11-18: publicly deployed and verified (D-017). Activation preflight 43/43, backup+restore check, graceful reload, HTTPS/HSTS/secure-cookie smoke, public visitor E2E 4/4 (0 visitor records), portal switched to live; local acceptance evidence (dataset, replay, worker, admin E2E 8/8 on clone) in TEST_RESULTS",
   "M7": "done 2026-11-18: portal live with CRM and POS links + live status; ERP \"in preparation\"; hero corrected in M9; no contact section (KNOWN_LIMITATIONS L13)",
   "M8": "technically_complete 2026-11-18 for CRM + POS + portal (no open deployment/core-workflow failures, audits clean, monitoring live); owner-side R-014 host remediation (SEC-ROTATE) still open",
@@ -56,27 +56,27 @@
   "M5 pre-reboot readiness (2026-11-18): preflight-reboot.ps1 0 failing with fresh verified CRM/POS backups; post-reboot-check.ps1 trial 25/25; DB recovery actions prepared (dry run)"
  ],
  "pending_tasks": [
-  "ERP (M5): owner decision REBOOT (confirm provider out-of-band console, choose window), then WSL1 PoC S0-S8 (docs/runbooks/ERP_WSL1_POC.md)",
-  "ERP (M5): WSL1-specific work listed in the PoC runbook (uv Python 3.14, separate Windows MariaDB with utf8mb4 my.ini, Redis/gunicorn/RQ under WSL1, bench autostart without systemd, ERP backups/monitoring)",
-  "ERP (M5): browser E2E for the ERPNext desk (after a runtime exists); optional: exercise month-end settlement with smaller advances",
-  "Owner (recommendation): restart-on-failure recovery actions for the database services (not changed)",
+  "ERP (M5): 7 integration tests on erp-test.portfolio.local (native runtime)",
+  "ERP (M5): controlled performance benchmark (A idle, B backfill, C backfill + scheduler/workers) - gate for the full history",
+  "ERP (M5): full 15.5-month history (~26,461 events) by idempotent continuation; integrity/replay/reconciliation",
+  "ERP (M5): live simulation on; exactly-once, pause/resume, catch-up; desktop + mobile + visitor browser tests",
+  "ERP (M5): 24-hour stability observation (real time)",
   "Owner: SEC-ROTATE (R-014/R-015)",
   "Owner (optional): portal contact channel (L13); off-host backups (L14)",
   "Review NexoPOS scheduler jobs on a clone before enabling schedule:run (L21)"
  ],
  "blocked_tasks": [
   {
-   "task": "ERP runtime choice and production build-out (services, backups, monitoring, assets, browser E2E, guarded public activation)",
-   "reason": "QEMU-TCG fails the throughput requirement; the native-Windows route works in a spike but changes the implementation approach and adds a community Redis build and runtime adaptations - owner decision",
+   "task": "ERP public HTTPS activation (activate-erp-public.ps1 -OwnerApproved)",
+   "reason": "requires separate owner approval after private acceptance",
    "decision_ids": [
-    "ERP-RUNTIME"
+    "ERP-PUBLIC"
    ]
   }
  ],
  "owner_decisions_needed": [
-  "ERP-RUNTIME: continue with the native-Windows route (recommended; spike passes 7/7 at 1.3-1.4 events/s) or keep QEMU-TCG as a slow private demo only",
-  "REDIS-WINDOWS: accept a community Redis 8 build for Windows (redis-windows, MSYS2) or Microsoft Garnet as the ERP cache/queue (only if ERP-RUNTIME = native)",
-  "DB-RECOVERY (optional: apply set-db-service-recovery.ps1 -Apply)",
+  "ERP-PUBLIC: public HTTPS activation of ERPNext (only after private acceptance is complete)",
+  "DB-RECOVERY (optional: apply set-db-service-recovery.ps1 -Apply for the CRM/POS databases)",
   "SEC-ROTATE"
  ],
  "host_facts": {
@@ -117,16 +117,16 @@
   "crm_live_lead": "observed 2026-11-18 20:48:48 UTC (company 501), audit 7 entries, SSE 59 ms",
   "erp_engine_static": "35/35 (python -m unittest discover -s apps/erp/tests)",
   "erp_upstream_static": "868 DocTypes, 692 checks, 0 problems",
-  "erp_integration": "7/7 on Linux, real ERPNext v16.60.0 (GitHub Actions run 44425817273, 3,068 events, 36 integrity 0, replay exact); WSL1 untested",
+  "erp_integration": "7/7 on Linux (CI run 44425817273); native Windows spike 7/7; native production runtime: running",
   "preflight": "2026-11-18 17:16: 0 failing (33 pass, 2 owner confirmations); fresh backups crm-20261118-171611, pos-20261118-171621 restore-verified"
  },
  "deployment_status": {
   "crm": "production at crm.<ip>.sslip.io: M4 build, 13-month synthetic history, live simulation (intensity 3), read-only visitor access; public E2E 10/10",
   "pos": "production at pos.<ip>.sslip.io (D-017): HarborPine module, 12-month dataset, live worker service, read-only visitor showcase; registration disabled; rollback: activate-pos-public.ps1 -Rollback",
-  "erp": "not deployed (on hold)",
+  "erp": "private (127.0.0.1 only): native Windows services, site erp.portfolio.local; not public",
   "portal": "deployed: portal/site via deploy-portal.ps1 (crm=live, pos=live, erp=planned); /status/crm + /status/pos; strict CSP"
  },
- "next_action": "Wait for ERP-RUNTIME (and REDIS-WINDOWS). If native: Windows services (WinSW) for MariaDB/Redis/web/worker/scheduler, assets built on Linux, backups without shell pipelines, monitoring, browser E2E, private first, guarded public activation only with separate approval. QEMU guest stopped (C:\\srv\\portfolio\\erp\\qemu-poc kept; cleanup -All removes it). Release 1.0 unchanged.",
+ "next_action": "Collect the integration test results (job itests); run the controlled performance benchmark; if it passes, start the full-history backfill as an erp-ctl job under the impact watchdog.",
  "completed_milestones": [
   "M0",
   "M1",
@@ -147,8 +147,26 @@
   "POS live simulation: Windows service portfolio-pos-sim (hp:worker)",
   "CRM live simulation inside portfolio-crm-api",
   "Portfolio - health monitor (every 15 min, SYSTEM)",
-  "Nightly backups: CRM 03:15, POS 03:45 (SYSTEM)"
+  "Nightly backups: CRM 03:15, POS 03:45 (SYSTEM)",
+  "ERP: 9 Windows services portfolio-erp-* (private)",
+  "ERP: Portfolio - ERP impact watchdog (SYSTEM task)",
+  "ERP: Portfolio - ERP nightly backup 04:15 (SYSTEM)"
  ],
  "shared_hosting": "Since 2026-11-18 the host Caddy also serves the owner's Práctica app (D-016, owner-authorized). Touch only portfolio site files; validate the whole host Caddyfile; caddy reload only, never restart.",
- "release": "Elite Business Systems Portfolio - CRM + POS + Portal, Release 1.0 (2026-11-18, D-018); ERP not included"
+ "release": "Elite Business Systems Portfolio - CRM + POS + Portal, Release 1.0 (2026-11-18, D-018); ERP not included",
+ "decisions_closed": [
+  "REBOOT/WSL1 (superseded by the no-reboot directive; runbooks kept as history)",
+  "ERP-RUNTIME = native Windows (D-019, 2026-11-20)",
+  "REDIS-WINDOWS = community Redis 8.10.3 build (D-019)",
+  "QEMU-TCG route closed; installation removed 2026-11-20, evidence kept"
+ ],
+ "erp_native": {
+  "runtime": "C:\\srv\\portfolio\\erp\\runtime (host only)",
+  "services": 9,
+  "entry_point": "127.0.0.1:8850 (private Caddy instance)",
+  "e2e": "7/7 desktop (2026-11-20)",
+  "recovery": "all 9 services recovered; 0 orphans; graceful stop 26.8 s",
+  "backup": "nightly 04:15, scratch-instance restore + app integrity on the restore: OK",
+  "multi_day": "479 events, integrity 36/0, replay exact"
+ }
 }
