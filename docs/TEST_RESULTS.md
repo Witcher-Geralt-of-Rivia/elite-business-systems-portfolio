@@ -737,7 +737,15 @@ unit per process (see run 1).
   then stopped every process including both Redis instances, and the unit (`Restart=on-failure`) did not restart a
   clean exit. Integrity and replay of the executed part still exited 0. Fix: one systemd unit per process with
   `Restart=always`; no operator pauses during the run.
-- **Run 2:** in progress on a freshly created site (results to be added).
+- **Run 2 (fresh site, per-process systemd units): PASS. JUnit 7/7, no failures, errors or skips, 45,463 s (12.6 h,
+  including a ~30-minute watchdog pause on a transient latency spike).** test_01 3.0 s, test_02 286 s, test_03
+  6,374 s, test_04 13,430 s, test_05 8.8 s, test_06 0.5 s, test_07 25,930 s. Status 3,068 events = 3,068 ledger rows,
+  processed to 2025-10-03; **integrity 36 checks, 0 failing; replay 3,068 = 3,068, nothing missing/unexpected/
+  mismatched; state hash `cc2e118f10671999` and GL per voucher type identical to CI** (and to the native-Windows
+  run). Redis and the worker survived the pause under the per-process units. Evidence:
+  `C:\srv\portfolio\erp\qemu-poc\evidence\stage-e-run2` (host only). Overall ≈ 0.07 events/s.
+- After the run the guest was shut down cleanly (failure handling: QEMU is not used for permanent operation);
+  monitor 10/10 afterwards. Disk and tooling are kept; `erp-vm.ps1 -Action cleanup -All` removes everything.
 
 **Stage F — throughput (guest).** ~0.05 events/s in the CPU-bound test phases (57 → 185 ledger events in 42 min);
 CI's runner does 3.9 events/s. The guest is CPU-bound (vmstat: 0 % idle, 0 % I/O wait; CPU pressure ~60 %); QEMU got

@@ -8,7 +8,8 @@ Newest first. Every entry states what was **verified**, not just what was writte
   Task Scheduler launch). Real Frappe/ERPNext v16.60.0 + portfolio_sim installed in the guest. Linux platform
   checks pass. Throughput ~0.05 events/s (requirement 0.35): **not practical for permanent operation**. Production
   latency unaffected at below-normal priority (watchdog evidence). Integration run 1 was invalidated by the dev
-  supervisor (Redis stopped after a worker exit); run 2 on a fresh site with per-process systemd units is running.
+  supervisor (Redis stopped after a worker exit); **run 2 on a fresh site with per-process systemd units: 7/7 in
+  12.6 h, integrity 36/0, replay exact, state hash and GL identical to CI.** Guest shut down cleanly afterwards.
 - **Native Windows spike (failure handling 9.6):** the same pinned sources on Windows-native Python 3.14 with ten
   runtime adaptations and no upstream edits: **7/7 integration tests, integrity 36/0, replay exact, state hash and
   GL identical to CI, 1.3–1.4 events/s**; web (waitress) and worker (no fork, timer timeouts) verified. Desk asset

@@ -3,7 +3,7 @@
  "repository": "https://github.com/Witcher-Geralt-of-Rivia/elite-business-systems-portfolio",
  "updated": "2026-11-18",
  "current_milestone": "M5",
- "current_task": "M5 ERP: QEMU-TCG PoC executed on the VPS (no WSL, no reboot): real ERPNext v16.60.0 installed in a software-emulated Debian guest; ~0.05 events/s, below the 0.35 events/s requirement -> not practical for permanent operation. Guest Stage E rerun (fresh site) in progress. Native-Windows spike: same pinned ERPNext passes 7/7 integration tests, integrity 36/0, replay exact, state hash identical to CI, 1.3-1.4 events/s.",
+ "current_task": "M5 ERP: QEMU-TCG PoC complete - real ERPNext v16.60.0 in a software-emulated guest passes 7/7 integration tests (12.6 h; integrity 36/0, replay exact, state hash and GL identical to CI) but runs ~0.07 events/s against the 0.35 requirement -> not practical; guest shut down. Native-Windows spike passes the same 7/7 at 1.3-1.4 events/s. Waiting for owner decision ERP-RUNTIME.",
  "status": "release_1_0_delivered; erp_in_development",
  "last_verified_commit": "c6acb5a",
  "milestones": {
@@ -126,7 +126,7 @@
   "erp": "not deployed (on hold)",
   "portal": "deployed: portal/site via deploy-portal.ps1 (crm=live, pos=live, erp=planned); /status/crm + /status/pos; strict CSP"
  },
- "next_action": "Record QEMU Stage E run 2 results when the guest finishes (monitor via scripts/erp-qemu). Then wait for ERP-RUNTIME. If native: Windows services (WinSW) for MariaDB/Redis/web/worker/scheduler, asset build on Linux, backups without shell pipelines, monitoring, browser E2E, private first, guarded public activation later. WSL1/reboot plan (S0-S8) superseded by the owner's no-reboot directive; Release 1.0 unchanged.",
+ "next_action": "Wait for ERP-RUNTIME (and REDIS-WINDOWS). If native: Windows services (WinSW) for MariaDB/Redis/web/worker/scheduler, assets built on Linux, backups without shell pipelines, monitoring, browser E2E, private first, guarded public activation only with separate approval. QEMU guest stopped (C:\\srv\\portfolio\\erp\\qemu-poc kept; cleanup -All removes it). Release 1.0 unchanged.",
  "completed_milestones": [
   "M0",
   "M1",

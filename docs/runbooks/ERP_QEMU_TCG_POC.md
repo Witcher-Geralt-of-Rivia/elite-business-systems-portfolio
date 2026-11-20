@@ -1,6 +1,6 @@
 # Runbook: ERPNext in a QEMU-TCG Linux guest on the Windows VPS (no WSL, no Hyper-V, no reboot)
 
-**Status:** in progress (owner directive 2026-11-19). Evidence and measurements: [TEST_RESULTS.md](../TEST_RESULTS.md),
+**Status:** completed 2026-11-20 — works, too slow for permanent operation; guest shut down (owner directive 2026-11-19). Evidence and measurements: [TEST_RESULTS.md](../TEST_RESULTS.md),
 section "M5 — ERPNext under QEMU-TCG".
 
 ## Design
@@ -60,7 +60,8 @@ and `guest/systemd-units.sh`: one unit per process (Redis cache, Redis queue, gu
 `Restart=always` instead of `bench start`, whose supervisor stops every process when one exits.
 
 **Stage E — integration tests.** Run 1 was invalidated by infrastructure (see TEST_RESULTS: worker exit after a long
-operator pause → the dev supervisor stopped Redis). Run 2 on a fresh site: see TEST_RESULTS.
+operator pause → the dev supervisor stopped Redis). **Run 2 on a fresh site: 7/7 in 12.6 h; integrity 36/0, replay
+exact, state hash and GL identical to CI.** The guest was then shut down cleanly.
 
 **Stage F — throughput: failed.** ~0.05 events/s against the 0.35 events/s requirement; the guest is purely
 CPU-bound (no I/O wait) and already gets most of one host core. Production latency was not affected while QEMU ran
