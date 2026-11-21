@@ -71,6 +71,9 @@ def setup(seed: int, start: date) -> dict:
 	system = {"time_zone": c["timezone"], "language": "en", "country": c["country"]}
 	if any(frappe.db.get_single_value("System Settings", k) != v for k, v in system.items()):
 		frappe.db.set_single_value("System Settings", system)
+	# Frappe's wizard also sets the standard users' time zone (setup_wizard.set_timezone); otherwise the Desk shows
+	# Administrator's times labelled with the old default zone.
+	frappe.db.set_value("User", {"time_zone": ("!=", c["timezone"])}, "time_zone", c["timezone"], update_modified=False)
 	fill("Company", frappe.get_doc("Company", company), {"reconciliation_takes_effect_on": "Oldest Of Invoice Or Advance",
 		"default_bank_account": bank, "enable_perpetual_inventory": 1}).save()
 	fill("Stock Settings", frappe.get_single("Stock Settings"), {"allow_negative_stock": 0, "valuation_method": "FIFO",

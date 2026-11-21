@@ -58,7 +58,7 @@ test.describe("ERPNext Desk (Administrator)", () => {
 
     // Open a submitted Sales Invoice form: status, customer, items table, totals and the GL connection.
     const inv = await call<any[]>(page, "frappe.client.get_list", {
-      doctype: "Sales Invoice", filters: { docstatus: 1 }, fields: ["name", "customer", "grand_total"], limit_page_length: 1, order_by: "posting_date desc",
+      doctype: "Sales Invoice", filters: { docstatus: 1, is_return: 0 }, fields: ["name", "customer", "grand_total"], limit_page_length: 1, order_by: "posting_date desc",
     });
     expect(inv.length).toBe(1);
     await deskRoute(page, `/desk/sales-invoice/${encodeURIComponent(inv[0].name)}`);
@@ -74,7 +74,13 @@ test.describe("ERPNext Desk (Administrator)", () => {
     // The form shows the document's status (Unpaid / Overdue / Paid / ... as computed by ERPNext).
     const status = await page.evaluate(() => (window as any).cur_frm.doc.status);
     expect(status).toBeTruthy();
-    await expect(page.getByText(status, { exact: true }).first()).toBeVisible();
+    // Desktop: the status badge in the page header. Phones: v16 shows no status badge in the compact header (only the
+    // truncated title and the actions), so the header title must be visible instead.
+    const phone = (page.viewportSize()?.width ?? 1440) < 768;
+    if (!phone) await expect(page.locator(".page-head").getByText(status, { exact: true }).first()).toBeVisible();
+    else await expect(page.locator(".page-head .title-text, .page-head .page-title").first()).toBeVisible();
+    // Times are shown in the site's zone (America/New_York), not another default.
+    expect(await page.evaluate(() => (window as any).frappe.boot.time_zone?.system ?? (window as any).frappe.boot.time_zone)).toContain("America/New_York");
     await expectNoErrors(errors);
   });
 

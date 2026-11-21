@@ -116,6 +116,13 @@ if (Get-Service 'portfolio-erp-web' -ErrorAction SilentlyContinue) {
         $bad = @(foreach ($k in 'db', 'redis_cache', 'redis_queue', 'workers', 'scheduler', 'simulation') { if (-not $h.$k.ok) { $k } })
         Add-Result 'erp.health' ($r.Code -eq '200' -and $h.ok) "HTTP $($r.Code)$(if ($bad) { '; failing: ' + ($bad -join ', ') }); workers=$($h.workers.count) scheduler_age=$($h.scheduler.last_enqueue_age_s)s sim_overdue=$($h.simulation.overdue_s)s"
     }
+    if (-not (Test-Path 'C:\srv\portfolio\caddy\erp.public-enabled')) {
+        Test-Check 'erp.visitor_closed' {
+            # While ERPNext is private, the credential-free visitor entry must be refused (site flag off).
+            $code = (Get-Url 'http://127.0.0.1:8850/api/method/portfolio_sim.visitor.enter').Code
+            Add-Result 'erp.visitor_closed' ($code -eq '403') "visitor entry HTTP $code (expected 403 while private)"
+        }
+    }
     if (Get-ScheduledTask -TaskName 'Portfolio - ERP nightly backup' -ErrorAction SilentlyContinue) {
         Test-Check 'backup.erp' {
             $latest = Get-ChildItem 'C:\srv\portfolio\backups\erp' -Directory -Filter 'erp-*' -ErrorAction SilentlyContinue | Where-Object { Test-Path (Join-Path $_.FullName 'manifest.json') } | Sort-Object LastWriteTime -Descending | Select-Object -First 1

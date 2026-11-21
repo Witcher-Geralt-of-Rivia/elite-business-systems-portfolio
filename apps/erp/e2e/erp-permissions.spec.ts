@@ -21,9 +21,20 @@ test.describe("ERPNext permissions (Sales User)", () => {
     await deskRoute(page, "/desk/sales-order");
     await expect(page.locator(".list-row-container, .list-row").first()).toBeVisible({ timeout: 60_000 });
 
-    // Users: Frappe lets everyone query the User list, filtered to what they may see - here only themselves.
-    const users = await call<any[]>(page, "frappe.client.get_list", { doctype: "User", fields: ["name"], limit_page_length: 50 });
-    expect(users.map((u) => u.name)).toEqual([VIEWER_USER]);
+    // Users: Frappe shows every desk user the user directory (for mentions and assignments) without Administrator
+    // and Guest; it must not be possible to change another user.
+    const users = (await call<any[]>(page, "frappe.client.get_list", { doctype: "User", fields: ["name"], limit_page_length: 50 })).map((u) => u.name);
+    expect(users).toContain(VIEWER_USER);
+    expect(users).not.toContain("Administrator");
+    const editOther = await page.evaluate(async () => {
+      const r = await fetch("/api/method/frappe.client.set_value", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json", "X-Frappe-CSRF-Token": (window as any).frappe.csrf_token },
+        body: JSON.stringify({ doctype: "User", name: "visitor@sableridge.example", fieldname: "first_name", value: "x" }),
+      });
+      return r.status;
+    });
+    expect([403, 404]).toContain(editOther);
 
     // Refused by the server: purchasing, the general ledger, administration.
     // Settings (a single-record doctype) through the document API.

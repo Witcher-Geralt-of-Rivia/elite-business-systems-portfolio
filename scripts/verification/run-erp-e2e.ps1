@@ -50,7 +50,16 @@ try {
 } finally {
     Pop-Location
     Remove-Item Env:ERP_E2E_ADMIN_PASSWORD, Env:ERP_E2E_VIEWER_PASSWORD, Env:ERP_E2E_VISITOR -ErrorAction SilentlyContinue
-    if ($Visitor) { & $ctl frappe -Site $Site -LogFile $log -- set-config portfolio_visitor_enabled 0 --parse | Out-Null }
+    if ($Visitor) {
+        & $ctl frappe -Site $Site -LogFile $log -- set-config portfolio_visitor_enabled 0 --parse | Out-Null
+        # Frappe caches the site config for up to 60 s in long-running processes: wait until entry is refused again.
+        $closed = $false
+        for ($i = 0; $i -lt 30 -and -not $closed; $i++) {
+            $closed = (& curl.exe -s -o NUL -w '%{http_code}' "$BaseUrl/api/method/portfolio_sim.visitor.enter") -eq '403'
+            if (-not $closed) { Start-Sleep -Seconds 3 }
+        }
+        if (-not $closed) { Write-Error 'VISITOR ACCESS STILL OPEN after the test run: check portfolio_visitor_enabled' } else { Write-Host 'visitor access closed again (403)' }
+    }
     & $ctl frappe -Site $Site -LogFile $log -- execute frappe.client.set_value --kwargs "{'doctype':'User','name':'$viewer','fieldname':'enabled','value':0}" | Out-Null
 }
 exit $code

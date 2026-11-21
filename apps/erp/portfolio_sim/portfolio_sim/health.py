@@ -65,8 +65,10 @@ def status() -> dict:
 
 		last = frappe.db.get_value("Scheduled Job Type", {"method": TICK_JOB}, "last_execution")
 		age = _age(last)
+		# A negative age is a clock problem (e.g. a site time-zone change leaves last_execution in the future, and
+		# Frappe then treats every job as not due): unhealthy, not "fresh". Found 2026-11-20.
 		out["scheduler"] = {
-			"ok": not is_scheduler_disabled(verbose=False) and age is not None and age < SCHEDULER_MAX_AGE_S,
+			"ok": not is_scheduler_disabled(verbose=False) and age is not None and -60 <= age < SCHEDULER_MAX_AGE_S,
 			"enabled": not is_scheduler_disabled(verbose=False),
 			"last_enqueue_age_s": age,
 		}
