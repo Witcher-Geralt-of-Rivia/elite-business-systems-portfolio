@@ -121,6 +121,26 @@ chronological order, so no later postings exist when a document is submitted.
 | Chronology | delivery ≥ order, receipt ≥ order, invoice ≥ delivery, bill ≥ receipt, payment ≥ invoice |
 | Simulation ledger | every submitted transaction document is referenced by the ledger (system-generated reconciliation journals excepted); ledger references exist and are submitted; no document referenced twice; no cancelled ledger entries |
 
+## Owners' funding (added 2026-11-20)
+
+The first complete history (26,598 events, 2025-08-01 → 2026-11-20) failed one integrity check:
+`bank_balance_negative_days = 57`. The scenario is not profitable: over 15½ months sales were $2.82M, cost of goods
+sold $2.29M (18.6 % gross margin) and operating expenses about $3.1M (salaries $1.92M for 24 staff, rent $0.70M,
+freight $0.24M). The $1.4M opening capital ran out at the end of August 2026 and the operating account reached
+−$277,583. The Linux CI runs covered only two months and could not show it.
+
+Correction, through ERPNext's own documents and inside the deterministic plan (no SQL change, no regenerated history):
+from 2026-08-01 the owners contribute **$200,000 on the first business day of each month** (Journal Entry: operating
+bank account to Capital Stock; event kind `capital_contribution`, 07:15). The rule draws no random numbers, so every
+other event is unchanged (verified: replay before the amendment showed exactly the 4 new events missing, 26,598
+existing events matching, state equal). `portfolio-sim amend` executed those 4 events on their planned dates (exactly
+once, ledger primary key); new days include the rule automatically. Lowest balance after the correction: $117,027
+(2026-07-31, before the rule starts).
+
+**Known limitation (owner decision SIM-ECONOMICS):** the company remains loss-making; the funding keeps the books
+consistent but is not a realistic business model. Recalibrating revenue against costs would change the plan from the
+first day and therefore needs a regenerated history.
+
 ## Commands
 
 ```text
@@ -128,6 +148,8 @@ bench --site <site> portfolio-sim setup [--seed 20261119 --start 2025-08-01]
 bench --site <site> portfolio-sim backfill [--until <iso>] [--max-events N]
 bench --site <site> portfolio-sim status | integrity [--only a,b] | replay-check
 bench --site <site> portfolio-sim live on|off | pause | resume
+bench --site <site> portfolio-sim amend [--dry-run]   # events an additive rule placed on already-processed days
+bench --site <site> portfolio-sim visitor-setup | public-settings
 ```
 
 The scheduler runs `portfolio_sim.services.worker.tick` every minute. It does nothing unless the simulation is live

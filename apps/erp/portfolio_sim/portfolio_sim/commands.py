@@ -147,6 +147,36 @@ def replay_cmd(context):
 		frappe.destroy()
 
 
+@portfolio_sim.command("reconcile")
+@pass_context
+def reconcile_cmd(context):
+	"""Read-only: ERPNext's own reports (Trial Balance, AR/AP, Stock Balance, Sales Register) vs the ledgers."""
+	frappe = _connect(context)
+	try:
+		from .services.reconcile import run
+
+		result = run()
+		_print(result)
+		if result["failing"]:
+			raise SystemExit(1)
+	finally:
+		frappe.destroy()
+
+
+@portfolio_sim.command("amend")
+@click.option("--dry-run", is_flag=True, help="Only list the planned events that would be executed.")
+@pass_context
+def amend_cmd(context, dry_run):
+	"""Execute events that an additive planner rule placed on already-processed days (owners' funding)."""
+	frappe = _connect(context)
+	try:
+		from .services.simulator import amend
+
+		_print(amend(dry_run=dry_run))
+	finally:
+		frappe.destroy()
+
+
 @portfolio_sim.command("visitor-setup")
 @pass_context
 def visitor_setup_cmd(context):

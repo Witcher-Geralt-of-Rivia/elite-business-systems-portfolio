@@ -120,6 +120,38 @@ def status() -> dict:
 		"ledger_rows": frappe.db.count("Distribution Sim Event"), "state_hash": st.state_hash, "last_error": st.last_error}
 
 
+AMENDABLE_KINDS = ("capital_contribution",)
+
+
+def amend(kinds: tuple[str, ...] = AMENDABLE_KINDS, dry_run: bool = False) -> dict:
+	"""Execute planned events that a planner rule added to days that were already processed.
+
+	A rule that only ADDS events without drawing random numbers (FUNDING_FROM in engine.planner) leaves every existing
+	event unchanged, but its events on days before the processed point were never executed. They are executed here in
+	chronological order, exactly once (ledger primary key), with their planned date; only `kinds` are allowed, and only
+	events whose day is already fully planned. Afterwards replay-check matches again."""
+	if any(k not in AMENDABLE_KINDS for k in kinds):
+		frappe.throw(f"only {AMENDABLE_KINDS} can be amended")
+	with resolve("filelock")(LOCK, timeout=30):
+		st = _settings()
+		scenario = _scenario(st)
+		events, _ = plan_range(Planner(scenario), initial_state(scenario), scenario.start, getdate(st.planned_day))
+		pending = {e["key"] for e in json.loads(st.pending_events or "[]")}
+		todo = [e for e in events if e.kind in kinds and e.key not in pending and not frappe.db.exists("Distribution Sim Event", e.key)]
+		if dry_run:
+			return {"to_execute": [e.key for e in todo]}
+		executor = Executor(scenario)
+		done = []
+		for e in todo:
+			ev = e.to_dict()
+			_record(ev, executor.run(ev))
+			frappe.db.set_single_value("Distribution Sim Settings", {"events_executed": int(_settings().events_executed or 0) + 1,
+				"last_run_at": now_datetime()})
+			frappe.db.commit()
+			done.append(e.key)
+		return {"executed": done, "count": len(done)}
+
+
 def replay_check() -> dict:
 	"""Re-plan from the scenario start through the planned day (read-only) and compare with the ledger:
 	every planned event up to the processed point must be in the ledger with the same kind and date, nothing else

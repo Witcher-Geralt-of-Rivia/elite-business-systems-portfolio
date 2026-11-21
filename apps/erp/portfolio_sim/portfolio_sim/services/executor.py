@@ -92,6 +92,13 @@ class Executor:
 				{"account": account("Capital Stock", self.abbr), "credit_in_account_currency": p["amount"], "cost_center": self.cost_center}]})
 		return self._done(submit(je), amount=p["amount"])
 
+	def _capital_contribution(self, p: dict, d, t) -> dict:
+		je = new_doc("Journal Entry", {"voucher_type": "Journal Entry", "company": self.company, "posting_date": d,
+			"user_remark": "Owners' monthly working-capital contribution", "accounts": [
+				{"account": self.bank, "debit_in_account_currency": p["amount"], "cost_center": self.cost_center},
+				{"account": account("Capital Stock", self.abbr), "credit_in_account_currency": p["amount"], "cost_center": self.cost_center}]})
+		return self._done(submit(je), amount=p["amount"])
+
 	def _opening_stock(self, p: dict, d, t) -> dict:
 		items = [{"item_code": code, "warehouse": self.wh[p["warehouse"]], "qty": qty, "valuation_rate": self.s.item(code).cost}
 			for code, qty in p["lines"].items()]

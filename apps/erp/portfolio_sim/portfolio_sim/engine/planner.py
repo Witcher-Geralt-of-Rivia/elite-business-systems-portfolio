@@ -28,9 +28,18 @@ from .scenario import Scenario
 SELLING_WAREHOUSES = ("DC", "CLE", "CIN")
 EMA_ALPHA = 0.05
 
+# Owners' working-capital funding (added 2026-11-20 after the full-history run): the scenario's operating costs exceed
+# its gross profit, so the opening capital is used up by the end of August 2026 and the operating bank account would
+# go negative (integrity check bank_balance_negative_days). From FUNDING_FROM on, the owners contribute
+# FUNDING_MONTHLY on the first business day of every month. The rule draws no random numbers, so every other event
+# (and every key and amount) of the plan is unchanged; days before FUNDING_FROM are not affected at all.
+FUNDING_FROM = date(2026, 8, 1)
+FUNDING_MONTHLY = 200_000.0
+
 # Time of day per kind: the order in which a day's events are executed.
 TIMES = {
 	"opening_capital": "07:00:00", "opening_stock": "07:05:00", "opening_clearing": "07:10:00",
+	"capital_contribution": "07:15:00",
 	"purchase_receipt": "08:00:00", "purchase_return": "08:30:00", "stock_transfer": "09:00:00",
 	"delivery_note": "09:30:00", "sales_invoice": "09:35:00", "purchase_invoice": "11:00:00",
 	"customer_advance": "12:30:00", "customer_payment": "13:00:00", "sales_return": "14:00:00",
@@ -207,6 +216,7 @@ class Planner:
 		d = self._d
 		if d == self.s.start:
 			self._opening()
+		self._funding()
 		self._receipts(rng)
 		self._supplier_invoices(rng)
 		self._purchase_returns()
@@ -233,6 +243,16 @@ class Planner:
 			if lines:
 				self._emit("opening_stock", {"warehouse": w, "lines": lines, "valuation": "cost"})
 		self._emit("opening_clearing", {})
+
+	def _funding(self) -> None:
+		d = self._d
+		if d < FUNDING_FROM:
+			return
+		first = date(d.year, d.month, 1)
+		while not cal.is_business_day(first):
+			first += timedelta(days=1)
+		if d == first:
+			self._emit("capital_contribution", {"amount": FUNDING_MONTHLY})
 
 	def _receipts(self, rng: Rng) -> None:
 		today = self._d.isoformat()
