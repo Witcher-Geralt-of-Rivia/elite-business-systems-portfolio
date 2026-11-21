@@ -944,5 +944,58 @@ through `run-erp-backfill.ps1`: chunks of 200 events at below-normal priority, t
 the duration, a hold file written by the watchdog on degradation and released after 10 consecutive healthy samples
 (the runner waits; a killed chunk resumes at the first open event; one runner at a time).
 
-Still to report in this section: full history, live simulation, browser tests on the full data, 24-hour stability
-and the acceptance matrix.
+**Full history** (`run-erp-backfill.ps1` as a SYSTEM task, 2026-11-20 15:04–18:19, until 2026-11-20 18:04 New York
+time): **21,814 events in 111 chunks, 1.87 events/s, 0 failed chunks, 0 holds**; ledger 4,784 → 26,598 events
+(2025-08-01 → 2026-11-20 17:00). Production over the 441 samples (vs the idle afternoon medians): CRM 0.90×, portal
+0.93×, POS 0.84×, Práctica 0.98× (0.68–0.81× vs the morning baseline); **0 failed requests of 1,323 per application**;
+available RAM 2.9–5.0 GB, commit ≤ 77.3 %, MariaDB ≤ 414 MB, Redis ≤ 29 MB, ERP data 1.1–1.3 GB, C: ≥ 36.8 GB free.
+
+**Dataset verification.**
+- First integrity run on the complete history: 35/36 — `bank_balance_negative_days = 57`. Cause: the scenario is
+  loss-making (sales $2.82M, COGS $2.29M = 18.6 % gross margin, operating expenses ≈ $3.1M); the $1.4M opening capital
+  ran out at the end of August 2026 (low −$277,583). CI's two-month window could not show it. Correction inside the
+  deterministic plan through ERPNext Journal Entries: owners contribute $200,000 on the first business day of each
+  month from 2026-08-01 (no random draws). Replay before the amendment: exactly the 4 new events missing, 26,598
+  existing events matching, state equal; `portfolio-sim amend` executed them exactly once. (Owner decision
+  SIM-ECONOMICS: the business remains unprofitable; a recalibration would need a regenerated history.)
+- **Final: 26,602 events; integrity 36/36 (0 failing); replay 26,602 = 26,602, 0 missing/unexpected/mismatched,
+  state matches.** Documents: 5,122 sales orders, 6,611 deliveries and invoices, 570 purchase orders, 605 receipts,
+  597 bills, 5,959 payments, 199 stock entries, 18 stock reconciliations, 227 journal entries.
+- **Reconciliation of ERPNext's own reports with the ledgers (`portfolio-sim reconcile`): 9/9** — GL debit = credit
+  $21,112,640.74; Trial Balance FY 2026 closing balanced and period debits = GL (with ERPNext's "show unclosed fiscal
+  year's P&L" option; without it the gap equals FY 2025's net loss, $830,964.93, exactly, because no period closing
+  voucher exists); Accounts Receivable = payment ledger (−$503,740.55, unallocated customer advances); Accounts Payable
+  = payment ledger ($223,375.48); Stock Balance = stock ledger = GL stock accounts ($261,449.72, 276 rows); Sales
+  Register = submitted invoices ($2,924,159.90, 6,611 rows); no zero-value invoices.
+
+**Scheduler clock (defect, found and fixed).** After the site time zone moved from Asia/Kolkata to America/New_York,
+all 40 `Scheduled Job Type.last_execution` values lay ~10 h in the future and Frappe ran no scheduled job (no live
+tick, no ERPNext housekeeping) from ~14:00; the health check accepted the negative age. Reset to the site time (40
+rows, through Frappe's API); ticks run again every minute (worker logs); health now flags a negative age. Users'
+time zones (Administrator, test user) set to America/New_York as Frappe's wizard would.
+
+**Repost backlog (ERPNext behaviour, measured).** ERPNext's item-based reposting queued 4,978 Repost Item Valuation
+entries during the backfill: every Tuesday two transfers leave the DC at the same 09:00 timestamp, and the second
+finds the first's ledger entries "at the same time". Each repost re-values the item/warehouse up to today (one DC
+item: 501 stock entries and 4,948 vouchers' GL, ~18 min). Measured as value no-ops: after three reposts every one of
+the 377 item-warehouse aggregates (count, quantity, value, absolute value, rate sum) and every GL total were
+unchanged. ERPNext refuses to cancel queued reposts; its supported control was used instead: reposting limited to
+21:00–07:00 site time (ERPNext enforces ≥ 10 h). While the backlog ran together with browser tests the watchdog shed
+twice (latency 18:57; available memory 889 MB at 19:03) — the browser tests should not have overlapped it; with the
+repost alone Práctica was at 1.33× the strict afternoon baseline (1.10× the morning one) with host CPU 71 %.
+
+**Live simulation:** switched on (private) 2026-11-20 21:35 New York time; per-minute ticks verified. The first live
+business events are due Monday 2026-11-23 07:15 New York time.
+
+**Browser tests on the full history (desktop Chromium + Pixel 7 phone layout), visitor flag on only for the run.**
+Desktop 7/8 and phone 7/8 in the first runs on the full data, then fixed specs: navigation 2/2 (both layouts);
+visitor spec passed on both layouts (entry without credentials, Desk lists and a submitted invoice read-only, six
+write attempts — insert customer/ToDo, edit/cancel/delete an invoice, edit a user — all 403, nothing written, Error
+Log 403); permissions (Sales User refused Purchase Invoice, GL Entry, Error Log, Scheduled Job Type, System Settings;
+cannot change another user; sees the user directory without Administrator — standard Frappe) and guest specs pass.
+The reports test failed once because its prepared report queued behind the repost backlog in the long queue; it is
+re-run outside the reposting window. Visitor entry is 403 again after every run (verified by the runner; monitor
+check `erp.visitor_closed`).
+
+Still to report in this section: reports re-run outside the reposting window, live business-day verification
+(Monday), the 24-hour stability window (Sunday 18:00 → Monday 18:00 server time) and the acceptance matrix.
